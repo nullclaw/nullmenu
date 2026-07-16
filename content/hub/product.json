@@ -1,0 +1,58 @@
+{
+	"hero": {
+		"kicker": "THE SOUS-CHEF — CONTROL PLANE",
+		"title": "One console for your whole local agent stack",
+		"sub": "A single Zig binary with an embedded Svelte dashboard that installs, supervises, monitors and updates NullClaw, NullBoiler, NullTickets and NullWatch. All state lives under ~/.nullhub — nothing goes to a hosted service."
+	},
+	"metrics": [
+		{ "value": "1", "label": "binary, UI embedded" },
+		{ "value": "7", "label": "platform targets" },
+		{ "value": "4", "label": "managed components" },
+		{ "value": ":19800", "label": "local dashboard" }
+	],
+	"install": {
+		"primary": {
+			"label": "Docker",
+			"code": "docker run --rm -p 19800:19800 -v nullhub-data:/nullhub-data ghcr.io/nullclaw/nullhub:latest"
+		},
+		"alts": [
+			{
+				"label": "Prebuilt binary",
+				"code": "curl -fL https://github.com/nullclaw/nullhub/releases/latest/download/nullhub-macos-aarch64.bin -o nullhub\nchmod +x nullhub && ./nullhub"
+			},
+			{
+				"label": "Build from source",
+				"code": "zig build\n./zig-out/bin/nullhub"
+			}
+		]
+	},
+	"quickstart": "Start the server, then add components from the same binary — the terminal wizard and the web UI run the same manifest-driven flow.\n\n```bash\n# start the server and open the dashboard\nnullhub\n# → http://nullhub.localhost:19800\n\n# add components (terminal wizard)\nnullhub install nullclaw\nnullhub install nullwatch\n\n# run and inspect\nnullhub start-all\nnullhub status\n```",
+	"features": [
+		{
+			"title": "Manifest-driven install wizard",
+			"body": "Each component publishes a nullhub-manifest.json describing its installation, wizard steps, launch and health checks. NullHub is a generic engine that interprets them — in the terminal or the browser."
+		},
+		{
+			"title": "Process supervision",
+			"body": "Start, stop, restart, crash recovery with backoff. Periodic HTTP health checks feed the dashboard status cards."
+		},
+		{
+			"title": "Updates with rollback",
+			"body": "check-updates, update, update-all: download the new version, migrate config, roll back on failure."
+		},
+		{
+			"title": "Live logs over SSE",
+			"body": "Tail or follow logs per instance — nullhub logs <c>/<n> -f in the terminal, live streaming in the browser."
+		},
+		{
+			"title": "Multi-instance",
+			"body": "Run several instances of the same component side by side. Everything is addressed as component/instance-name."
+		},
+		{
+			"title": "Web UI, CLI and raw API",
+			"body": "Browser dashboard for humans, CLI for automation, and nullhub api for raw JSON access to every endpoint."
+		}
+	],
+	"pairs": ["claw", "boiler", "tickets", "watch"],
+	"note": "Pre-1.0 and calendar-versioned (v2026.x.y): config and CLI may change between releases."
+}

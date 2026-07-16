@@ -1,0 +1,58 @@
+{
+	"hero": {
+		"kicker": "THE CHEF — AGENT RUNTIME",
+		"title": "A fully autonomous AI agent in 678 KB",
+		"sub": "One static Zig binary that connects 50+ model providers to 19 messaging channels — with memory, tools, sandboxing, cron and an HTTP gateway built in. Runs in about 1 MB of RAM, measured by the project."
+	},
+	"metrics": [
+		{ "value": "678 KB", "label": "static binary" },
+		{ "value": "50+", "label": "model providers" },
+		{ "value": "19", "label": "messaging channels" },
+		{ "value": "5,300+", "label": "tests" }
+	],
+	"install": {
+		"primary": {
+			"label": "Homebrew",
+			"code": "brew install nullclaw\nnullclaw --help"
+		},
+		"alts": [
+			{
+				"label": "Docker",
+				"code": "docker run --rm -it -v nullclaw-data:/nullclaw-data ghcr.io/nullclaw/nullclaw:latest status"
+			},
+			{
+				"label": "Build from source (Zig 0.16.0)",
+				"code": "git clone https://github.com/nullclaw/nullclaw.git\ncd nullclaw\nzig build -Doptimize=ReleaseSmall"
+			}
+		]
+	},
+	"quickstart": "Onboard once, then talk to it.\n\n```bash\n# quick setup with a provider key\nnullclaw onboard --api-key sk-... --provider openrouter\n\n# send a single message\nnullclaw agent -m \"Hello, nullclaw!\"\n\n# start the long-running runtime on 127.0.0.1:3000\nnullclaw gateway\n\n# health checks\nnullclaw status && nullclaw doctor\n```",
+	"features": [
+		{
+			"title": "50+ providers, one config",
+			"body": "OpenRouter, Anthropic, OpenAI, Gemini, Ollama, Groq, Bedrock and more — plus any OpenAI-compatible endpoint via a custom base URL."
+		},
+		{
+			"title": "19 messaging channels",
+			"body": "Telegram, Discord, Signal, Slack, WhatsApp, Matrix, IRC, Email, Nostr and others. Each channel sits behind its own allowlist; empty means deny."
+		},
+		{
+			"title": "Memory with hybrid search",
+			"body": "SQLite FTS5 keyword search merged with vector cosine similarity by default. Nine other engines, from Markdown files to PostgreSQL, when you need them."
+		},
+		{
+			"title": "Sandboxed by default",
+			"body": "Auto-selects Landlock, Firejail, Bubblewrap or Docker. File access is workspace-scoped and secrets are encrypted at rest with ChaCha20-Poly1305."
+		},
+		{
+			"title": "Speaks A2A, MCP and ACP",
+			"body": "Implements Google's A2A protocol v0.3.0, connects MCP servers over stdio or HTTP, and ships an ACP stdio adapter for editors."
+		},
+		{
+			"title": "OpenClaw-compatible",
+			"body": "Same config structure, snake_case and all. `nullclaw migrate openclaw` imports config and memory in one command."
+		}
+	],
+	"pairs": ["hub", "boiler", "tickets", "watch"],
+	"note": "Pre-1.0: config and CLI may change between releases. Size and memory figures are measured by the project."
+}

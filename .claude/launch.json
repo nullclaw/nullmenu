@@ -1,0 +1,8 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    { "name": "menu", "runtimeExecutable": "pnpm", "runtimeArgs": ["dev", "--port", "5173"], "port": 5173 },
+    { "name": "claw", "runtimeExecutable": "pnpm", "runtimeArgs": ["run", "dev:claw"], "port": 5174 },
+    { "name": "hub", "runtimeExecutable": "pnpm", "runtimeArgs": ["run", "dev:hub"], "port": 5175 }
+  ]
+}

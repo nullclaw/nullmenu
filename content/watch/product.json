@@ -1,0 +1,62 @@
+{
+	"hero": {
+		"kicker": "THE THERMOMETER — OBSERVABILITY",
+		"title": "Every span, verdict and dollar, kept on your machine",
+		"sub": "NullWatch ingests execution traces and eval results from NullClaw, stores them as local JSONL files, and serves run summaries — latency, errors, tokens, cost — over a JSON HTTP API and CLI. Headless by design; NullHub renders the UI."
+	},
+	"metrics": [
+		{ "value": "313–653 KB", "label": "static binary, per target" },
+		{ "value": "7", "label": "prebuilt platform targets" },
+		{ "value": "0", "label": "external services or databases" },
+		{ "value": "OTLP/HTTP", "label": "standard JSON trace ingest" }
+	],
+	"install": {
+		"primary": {
+			"label": "Prebuilt binary",
+			"code": "curl -LO https://github.com/nullclaw/nullwatch/releases/latest/download/nullwatch-macos-aarch64.bin\nchmod +x nullwatch-macos-aarch64.bin\n./nullwatch-macos-aarch64.bin serve"
+		},
+		"alts": [
+			{
+				"label": "Build from source (Zig 0.16.0)",
+				"code": "git clone https://github.com/nullclaw/nullwatch\ncd nullwatch\nzig build\nzig build run -- serve"
+			},
+			{
+				"label": "Via NullHub",
+				"code": "nullhub install nullwatch"
+			},
+			{
+				"label": "Docker",
+				"code": "docker run --rm -p 7710:7710 ghcr.io/nullclaw/nullwatch:latest"
+			}
+		]
+	},
+	"quickstart": "Seed a deterministic demo dataset — no API keys, no running agent — then read it back.\n\n```bash\n# seed demo runs: a passing review, a failed tool call, a retry\nzig build run -- demo-seed\n\n# start the JSON HTTP API on 127.0.0.1:7710\nzig build run -- serve\n\n# list runs and inspect the failure\nzig build run -- runs --limit 20\nzig build run -- run demo-tool-failure\n\n# same data over HTTP\ncurl http://127.0.0.1:7710/v1/runs?limit=20\n```",
+	"features": [
+		{
+			"title": "Span ingest for agents",
+			"body": "Records each timed unit inside a run — model calls, tool invocations, memory lookups, retries — with tokens, cost and status attached."
+		},
+		{
+			"title": "Evals as first-class data",
+			"body": "Scored assertions attach to runs: scorer, score, verdict, dataset. Regression gates and rubric checks live next to the traces they judge."
+		},
+		{
+			"title": "Run-level summaries",
+			"body": "Each run gets computed totals: duration, error count, token usage, cost, pass/fail counts and an overall verdict."
+		},
+		{
+			"title": "A tiny OTLP sink",
+			"body": "Accepts OTLP/HTTP JSON traces on /v1/traces. Point NullClaw's diagnostics OTLP endpoint at it and spans map into runs automatically."
+		},
+		{
+			"title": "Local JSONL storage",
+			"body": "Everything lands under ~/.nullwatch/data as plain JSONL. Storage is designed to swap for SQLite later without changing the API contract."
+		},
+		{
+			"title": "Demo data built in",
+			"body": "demo-seed creates a deterministic, idempotent dataset — runs, spans, evals, costs, failures — without API keys or a hosted service."
+		}
+	],
+	"pairs": ["claw", "hub"],
+	"note": "Pre-1.0 with one release so far; the README calls it a bootstrap implementation, and the repo has no license file yet."
+}

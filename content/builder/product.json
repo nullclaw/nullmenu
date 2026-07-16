@@ -1,0 +1,58 @@
+{
+	"hero": {
+		"kicker": "MISE EN PLACE — SHARED CI",
+		"title": "One YAML block, twelve targets, every release.",
+		"sub": "Reusable GitHub Actions workflows that test, cross-compile and release every Null-family Zig project. Maintainer infrastructure: nothing to install — a caller repo references the workflows and inherits the whole pipeline."
+	},
+	"metrics": [
+		{ "value": "12", "label": "default release targets" },
+		{ "value": "5", "label": "OS families" },
+		{ "value": "3", "label": "reusable workflows" },
+		{ "value": "0.16.0", "label": "pinned Zig default" }
+	],
+	"install": {
+		"primary": {
+			"label": "Reference from a caller repo",
+			"code": "jobs:\n  ci:\n    uses: nullclaw/nullbuilder/.github/workflows/zig-ci.yml@v1\n    permissions:\n      contents: read\n    with:\n      binary_name: nullclaw\n      artifact_prefix: nullclaw"
+		},
+		"alts": [
+			{
+				"label": "Nightly pipeline",
+				"code": "jobs:\n  nightly:\n    uses: nullclaw/nullbuilder/.github/workflows/zig-nightly.yml@v1\n    permissions:\n      actions: read\n      contents: read\n    with:\n      binary_name: nullclaw\n      artifact_prefix: nullclaw\n      force: ${{ inputs.force || false }}"
+			},
+			{
+				"label": "Release pipeline",
+				"code": "jobs:\n  release:\n    uses: nullclaw/nullbuilder/.github/workflows/zig-release.yml@v1\n    permissions:\n      contents: write\n      packages: write\n    secrets: inherit\n    with:\n      binary_name: nullclaw\n      artifact_prefix: nullclaw\n      publish_docker: true"
+			}
+		]
+	},
+	"quickstart": "There is nothing to install. In any Zig project on GitHub, add one workflow file that calls the shared pipeline:\n\n```bash\n# in your project repo\nmkdir -p .github/workflows\n\n# one job block wires up tests + cross-compiled ReleaseSmall builds\ncat > .github/workflows/ci.yml <<'EOF'\nname: CI\non: [push, pull_request]\njobs:\n  ci:\n    uses: nullclaw/nullbuilder/.github/workflows/zig-ci.yml@v1\n    permissions:\n      contents: read\n    with:\n      binary_name: myproject   # your binary under zig-out/bin\nEOF\n\ngit add .github/workflows/ci.yml\ngit commit -m \"ci: adopt nullbuilder shared workflows\"\ngit push\n```",
+	"features": [
+		{
+			"title": "One CI block",
+			"body": "zig-ci.yml runs your tests, then cross-compiles ReleaseSmall binaries on a configurable target matrix. Zig caches and artifact upload included."
+		},
+		{
+			"title": "Twelve-target releases",
+			"body": "Push a v* tag and zig-release.yml builds Linux, Android, macOS and Windows binaries, injects the version, and publishes a GitHub release with generated notes."
+		},
+		{
+			"title": "Nightlies that dedupe",
+			"body": "zig-nightly.yml skips commits that already have a successful nightly, keeps artifacts 14 days, and can maintain a rolling prerelease."
+		},
+		{
+			"title": "Android without Gradle",
+			"body": "aarch64, armv7 and x86_64 Android binaries cross-compiled with plain Zig plus an NDK sysroot libc file. No Java build system involved."
+		},
+		{
+			"title": "Hooks for odd builds",
+			"body": "Setup, pre-test and pre-build commands, custom test command and build args, one e2e command pinned to a chosen target, optional Node.js with npm caching."
+		},
+		{
+			"title": "SHA-pinned supply chain",
+			"body": "Every third-party action is pinned to a full commit SHA, with Dependabot updates. The helper actions are written in Zig and unit-tested with zig test."
+		}
+	],
+	"pairs": ["claw", "hub", "tickets", "boiler"],
+	"note": "Not an end-user tool, and no releases, tags or license file yet — callers pin to the v1 branch, and workflow inputs may change."
+}

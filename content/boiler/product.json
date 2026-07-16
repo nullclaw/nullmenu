@@ -1,0 +1,62 @@
+{
+	"hero": {
+		"kicker": "THE STOCKPOT — ORCHESTRATION",
+		"title": "Graph workflows for AI agents, in one native binary",
+		"sub": "NullBoiler decides what should run, when, and which worker executes it. Workflow graphs with checkpoints, fan-out, interrupts and replay — a static Zig binary with SQLite inside, dispatching to agents over six protocols."
+	},
+	"metrics": [
+		{ "value": "7", "label": "graph node types" },
+		{ "value": "6", "label": "worker dispatch protocols" },
+		{ "value": "36", "label": "HTTP operations, OpenAPI 3.1" },
+		{ "value": "355", "label": "unit tests plus e2e suite" }
+	],
+	"install": {
+		"primary": {
+			"label": "Prebuilt binary",
+			"code": "curl -LO https://github.com/nullclaw/nullboiler/releases/latest/download/nullboiler-macos-aarch64.bin\nchmod +x nullboiler-macos-aarch64.bin\n./nullboiler-macos-aarch64.bin --version"
+		},
+		"alts": [
+			{
+				"label": "Build from source (Zig 0.16.0)",
+				"code": "git clone https://github.com/nullclaw/nullboiler\ncd nullboiler\nzig build\n./zig-out/bin/nullboiler --config config.json --port 8080 --db nullboiler.db"
+			},
+			{
+				"label": "Via NullHub",
+				"code": "nullhub install nullboiler"
+			},
+			{
+				"label": "Docker Compose (from repo checkout)",
+				"code": "docker compose up -d nullboiler"
+			}
+		]
+	},
+	"quickstart": "Start the orchestrator, hand it one task, watch the run move. No external database, no broker.\n\n```bash\n# start the orchestrator — one binary, SQLite inside\n./zig-out/bin/nullboiler --config config.json --port 8080 --db nullboiler.db\n\n# create a run: one task step, dispatched to workers tagged \"coder\"\ncurl -sS -X POST http://127.0.0.1:8080/runs \\\n  -H 'Content-Type: application/json' \\\n  -d '{\"input\":{\"goal\":\"summarize the repo\"},\"steps\":[{\"id\":\"step-1\",\"type\":\"task\",\"worker_tags\":[\"coder\"],\"prompt_template\":\"{{input.goal}}\"}]}'\n\n# track progress; final output lands in steps[].output_json.output\ncurl -sS http://127.0.0.1:8080/runs/<run_id>\n```",
+	"features": [
+		{
+			"title": "Seven graph node types",
+			"body": "task, agent, route, interrupt, send, transform and subgraph nodes, wired with directed edges and conditional route labels."
+		},
+		{
+			"title": "Checkpoints after every node",
+			"body": "Replay a run from any checkpoint, fork it into a new run, set breakpoints with interrupt_before/after, or inject state mid-flight."
+		},
+		{
+			"title": "Fan-out with send",
+			"body": "A send node maps an array in state across workers in parallel and gathers results under a configurable output key."
+		},
+		{
+			"title": "Six dispatch protocols",
+			"body": "webhook, api_chat, openai_chat and A2A over HTTP, plus async MQTT and Redis Streams — heterogeneous workers in one config."
+		},
+		{
+			"title": "Pull mode against NullTickets",
+			"body": "Polls the tracker, claims tasks by role, heartbeats leases, detects stalls, and manages per-task workspaces with shell hooks."
+		},
+		{
+			"title": "Observability included",
+			"body": "Prometheus /metrics with live-state gauges, Grafana dashboards, AlertManager rules and an OpenAPI 3.1 spec ship in the repo."
+		}
+	],
+	"pairs": ["tickets", "claw", "hub"],
+	"note": "Pre-1.0 with CalVer releases: config and CLI may change between releases."
+}

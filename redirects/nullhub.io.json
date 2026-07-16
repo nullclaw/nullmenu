@@ -1,0 +1,7 @@
+{
+	"/": "https://hub.nullmenu.ai/",
+	"/chat-ui/": "https://hub.nullmenu.ai/docs/guides/web-dashboard/",
+	"/nullboiler/": "https://boiler.nullmenu.ai/",
+	"/nulltickets/": "https://tickets.nullmenu.ai/",
+	"*": "https://hub.nullmenu.ai/"
+}

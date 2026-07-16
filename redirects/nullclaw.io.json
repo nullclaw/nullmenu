@@ -1,0 +1,14 @@
+{
+	"/": "https://claw.nullmenu.ai/",
+	"/nullclaw/docs/getting-started/": "https://claw.nullmenu.ai/docs/start/quickstart/",
+	"/nullclaw/docs/overview/": "https://claw.nullmenu.ai/",
+	"/nullclaw/docs/architecture/": "https://claw.nullmenu.ai/docs/start/quickstart/",
+	"/nullclaw/docs/configuration/": "https://claw.nullmenu.ai/docs/configure/configuration/",
+	"/nullclaw/docs/providers/": "https://claw.nullmenu.ai/docs/configure/providers/",
+	"/nullclaw/docs/channels/": "https://claw.nullmenu.ai/docs/start/first-channel/",
+	"/nullclaw/docs/tools/": "https://claw.nullmenu.ai/docs/reference/cli/",
+	"/nullclaw/docs/memory/": "https://claw.nullmenu.ai/docs/configure/memory/",
+	"/nullclaw/docs/security/": "https://claw.nullmenu.ai/docs/operate/security/",
+	"/nullclaw/docs/cli/": "https://claw.nullmenu.ai/docs/reference/cli/",
+	"*": "https://claw.nullmenu.ai/"
+}

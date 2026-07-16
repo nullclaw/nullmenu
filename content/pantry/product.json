@@ -1,0 +1,58 @@
+{
+	"hero": {
+		"kicker": "THE LARDER — KNOWLEDGE SERVICE",
+		"title": "Knowledge, memory and citation-backed RAG behind one API",
+		"sub": "NullPantry is the headless knowledge base and long-term memory service for the Null ecosystem. It owns storage, permissions, retrieval, knowledge graph and context packs — agents and UIs consume it over HTTP."
+	},
+	"metrics": [
+		{ "value": "14+", "label": "agent-memory backends" },
+		{ "value": "8", "label": "vector store families" },
+		{ "value": "7", "label": "per-token capabilities" },
+		{ "value": "0", "label": "required external services" }
+	],
+	"install": {
+		"primary": {
+			"label": "Docker",
+			"code": "docker run --rm -p 8765:8765 \\\n  -e NULLPANTRY_TOKEN=dev-secret \\\n  ghcr.io/nullclaw/nullpantry:latest"
+		},
+		"alts": [
+			{
+				"label": "Build from source (Zig 0.16.0)",
+				"code": "zig build\nzig build test\nzig build run -- --db .nullpantry/nullpantry.db"
+			},
+			{
+				"label": "Pinned release image",
+				"code": "docker pull ghcr.io/nullclaw/nullpantry:v2026.06.09"
+			}
+		]
+	},
+	"quickstart": "Build, run, and ask the server to describe itself:\n\n```bash\n# default local NullClaw-compatible profile\nzig build\n\n# run with local SQLite records (vendored, no system dependency)\n# server listens on http://127.0.0.1:8765 by default\nzig build run -- --db .nullpantry/nullpantry.db\n\n# full runtime flag list\nzig build run -- --help\n\n# the running service publishes its own API manifest\ncurl -sS http://127.0.0.1:8765/v1/openapi.json\n```",
+	"features": [
+		{
+			"title": "One retrieval path",
+			"body": "Search, Ask and Context Packs share a single pipeline: ACL filter, keyword and vector candidates, graph expansion, fusion and rerank, citation-safe results."
+		},
+		{
+			"title": "Permission-aware by invariant",
+			"body": "An answer is only valid if every source, atom, relation, chunk and citation is visible to the requesting actor. Retrieval never leaks across scopes."
+		},
+		{
+			"title": "Backends chosen at compile time",
+			"body": "Engine profiles (nullclaw, minimal, full, custom) mean the binary contains only the adapters you pick: SQLite or Postgres records, 14+ memory runtimes, 8 vector families."
+		},
+		{
+			"title": "NullClaw-compatible memory API",
+			"body": "The /v1/agent namespace exposes the CRUD, search, session, history, feed, checkpoint and apply surface NullClaw's api memory engine expects."
+		},
+		{
+			"title": "Works fully offline",
+			"body": "Without provider config it uses deterministic local embeddings and extractive, citation-backed answers. SQLite is vendored; no external service is required."
+		},
+		{
+			"title": "Knowledge with a lifecycle",
+			"body": "Proposed, verified, accepted, stale, deprecated, superseded — plus freshness, expiry and conflict detection. Decisions are superseded, not deleted."
+		}
+	],
+	"pairs": ["claw", "hub", "desk"],
+	"note": "Early: one tagged release (v2026.06.09) and no license file yet. Pre-1.0: config and CLI may change between releases."
+}

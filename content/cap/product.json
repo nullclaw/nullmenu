@@ -1,0 +1,59 @@
+{
+	"hero": {
+		"kicker": "THE CLOCHE — CALL OVERLAY",
+		"title": "Live cue cards, routed only through your NullHub",
+		"sub": "NullCap is a desktop overlay for interviews, meetings, sales calls and demos. It captures screen and audio locally and talks to exactly one service: your NullHub gateway at 127.0.0.1:19800."
+	},
+	"metrics": [
+		{ "value": "7", "label": "session modes" },
+		{ "value": "127.0.0.1", "label": "only host it calls" },
+		{ "value": "0", "label": "provider keys stored" },
+		{ "value": "3", "label": "desktop platforms" }
+	],
+	"install": {
+		"primary": {
+			"label": "Build from source (Zig 0.16.0)",
+			"code": "zig build\nzig build run -- doctor"
+		},
+		"alts": [
+			{ "label": "Nix flake", "code": "nix build\nnix run . -- doctor" },
+			{
+				"label": "macOS app bundle",
+				"code": "zig build app-bundle -Doptimize=ReleaseSafe\nopen zig-out/nullCap.app"
+			},
+			{
+				"label": "Cross-compile",
+				"code": "zig build -Dtarget=x86_64-windows -Doptimize=ReleaseSafe"
+			}
+		]
+	},
+	"quickstart": "NullCap expects a running NullHub at `http://127.0.0.1:19800`. From the repo root:\n\n```bash\n# check environment, permissions and NullHub reachability\nzig build run -- doctor\n\n# first-run bootstrap: privacy preset, seed workflow profiles\nzig build run -- onboarding apply\n\n# pick a session mode\nzig build run -- mode meeting\n\n# start the native overlay with global hotkeys\nzig build run -- run\n```",
+	"features": [
+		{
+			"title": "Live cue cards",
+			"body": "Short on-screen answers, structures and follow-ups while a call is running. Seven session modes: interview, meeting, demo, sales, debug, system-design, general."
+		},
+		{
+			"title": "NullHub-only routing",
+			"body": "NullCap never calls model or transcription providers, and never calls NullClaw directly. All text, image and audio work goes through instance-scoped routes on your local NullHub."
+		},
+		{
+			"title": "Me / other transcript",
+			"body": "Microphone and system audio are captured as separate lanes, filtered with local voice-activity detection, and compacted into epoch summaries as calls run long."
+		},
+		{
+			"title": "Screen capture as evidence",
+			"body": "Full-screen, selected-region and fixed-area capture with prompt-injection guards: text on your screen is treated as evidence, never as instructions."
+		},
+		{
+			"title": "Post-call artifacts",
+			"body": "Local summaries, action items, follow-up email drafts and mode-specific scorecards. Tasks export as text, JSON, Jira, Linear or Asana."
+		},
+		{
+			"title": "Local-first stores",
+			"body": "Sessions, chats, transcripts and knowledge live under ~/.nullcap with opt-in persistence, retention windows and purge commands. No provider API keys are stored, ever."
+		}
+	],
+	"pairs": ["hub", "claw", "tickets"],
+	"note": "Experimental: no tagged releases and no license file yet — build from source and expect change."
+}

@@ -1,0 +1,90 @@
+name: Build & deploy the Null sites
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build all sites
+        run: node scripts/build-all.js
+
+      # apex — nullmenu.ai, served by this repo's GitHub Pages
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/menu
+
+      - name: Upload product builds
+        uses: actions/upload-artifact@v4
+        with:
+          name: product-sites
+          path: build/
+          retention-days: 1
+
+  deploy-apex:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+  deploy-subdomains:
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - { site: claw, repo: nullclaw/nullclaw, domain: claw.nullmenu.ai }
+          - { site: hub, repo: nullclaw/nullhub, domain: hub.nullmenu.ai }
+          - { site: boiler, repo: nullclaw/nullboiler, domain: boiler.nullmenu.ai }
+          - { site: tickets, repo: nullclaw/nulltickets, domain: tickets.nullmenu.ai }
+          - { site: watch, repo: nullclaw/nullwatch, domain: watch.nullmenu.ai }
+          - { site: pantry, repo: nullclaw/nullpantry, domain: pantry.nullmenu.ai }
+          - { site: clw, repo: nullclaw/nllclw, domain: clw.nullmenu.ai }
+          - { site: desk, repo: nullclaw/nulldesk, domain: desk.nullmenu.ai }
+          - { site: cap, repo: nullclaw/nullcap, domain: cap.nullmenu.ai }
+          - { site: builder, repo: nullclaw/nullbuilder, domain: builder.nullmenu.ai }
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: product-sites
+          path: build
+
+      - name: Deploy ${{ matrix.site }} → ${{ matrix.repo }}:gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          personal_token: ${{ secrets.NULLMENU_DEPLOY_TOKEN }}
+          external_repository: ${{ matrix.repo }}
+          publish_branch: gh-pages
+          publish_dir: build/${{ matrix.site }}
+          cname: ${{ matrix.domain }}
+          force_orphan: true
+          commit_message: 'deploy: ${{ matrix.domain }} from nullmenu@${{ github.sha }}'

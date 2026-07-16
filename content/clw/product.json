@@ -1,0 +1,58 @@
+{
+	"hero": {
+		"kicker": "THE PARING KNIFE — TINY ASSISTANT",
+		"title": "A complete AI assistant in under 1 MB",
+		"sub": "nllclw is a local-first assistant in readable Zig 0.16: OpenAI-compatible providers, local memory, a capability-gated tool loop, Telegram and WebSocket — one standalone binary, no provider SDKs, no Node, no Python."
+	},
+	"metrics": [
+		{ "value": "795 KiB", "label": "stripped binary" },
+		{ "value": "385/385", "label": "tests passing" },
+		{ "value": "20,903", "label": "lines of Zig" },
+		{ "value": "11", "label": "doc languages" }
+	],
+	"install": {
+		"primary": {
+			"label": "Release binary",
+			"code": "# download the asset for your OS/CPU from\n# github.com/nullclaw/nllclw/releases/latest\nchmod +x nllclw\n./nllclw --help"
+		},
+		"alts": [
+			{
+				"label": "Build from source (Zig 0.16.0)",
+				"code": "git clone https://github.com/nullclaw/nllclw.git\ncd nllclw\nzig build --release=small\n./zig-out/bin/nllclw --help"
+			},
+			{
+				"label": "Container",
+				"code": "docker run --rm ghcr.io/nullclaw/nllclw:v2026.6.1 --help"
+			}
+		]
+	},
+	"quickstart": "Run the setup wizard once, then talk to it.\n\n```bash\n./nllclw init              # setup wizard: provider, style, capabilities\n./nllclw \"what are you?\"   # one-shot question\n./nllclw                   # interactive terminal chat\n./nllclw status            # quick health line\n./nllclw doctor            # full diagnostics\n```",
+	"features": [
+		{
+			"title": "Stdlib-only single binary",
+			"body": "No runtime dependency on Node, Python, curl, a shell, or provider SDKs. The default build uses Zig stdlib adapters only."
+		},
+		{
+			"title": "Any OpenAI-compatible provider",
+			"body": "openai, openrouter, or any compatible base URL — including local servers like Ollama on loopback. SSE streaming for direct chat."
+		},
+		{
+			"title": "Capability-gated tool loop",
+			"body": "Filesystem, scheduling, web search and user-defined macro tools, each behind a plain config gate like NLLCLW_FILE_WRITE. Bounded rounds, bounded output."
+		},
+		{
+			"title": "Two-layer local memory",
+			"body": "Recent transcript plus durable keyed facts, stored as JSONL in the user state directory. Nothing leaves your machine."
+		},
+		{
+			"title": "Six channels, one runtime",
+			"body": "argv/stdin, interactive terminal, Telegram, token-protected WebSocket, heartbeat and daemon all share the same agent loop."
+		},
+		{
+			"title": "Shell compiled out by default",
+			"body": "shell_exec exists only in an explicit -Dshell-tool=true build. The default binary cannot run shell commands at all."
+		}
+	],
+	"pairs": ["claw"],
+	"note": "Pre-1.0 with one release (v2026.6.1); binary size and test counts are the project's own snapshot, and config and CLI may change between releases."
+}

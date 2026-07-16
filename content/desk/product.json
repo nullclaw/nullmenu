@@ -1,0 +1,58 @@
+{
+	"hero": {
+		"kicker": "THE PASS — OPERATIONS DESK",
+		"title": "Agents propose. You approve. Every change on record.",
+		"sub": "NullDesk is a local-first operations desk for humans running AI agents: structured tasks, side-by-side diff review, risk-classified command approval, and an append-only audit timeline. One Zig core, three frontends, driving nullclaw over ACP."
+	},
+	"metrics": [
+		{ "value": "3", "label": "frontends — GUI, TUI, web" },
+		{ "value": "9", "label": "task statuses, Draft to Done" },
+		{ "value": "5", "label": "autonomy modes per task" },
+		{ "value": "127.0.0.1", "label": "web UI binds loopback only" }
+	],
+	"install": {
+		"primary": {
+			"label": "Build from source (Zig 0.16.0)",
+			"code": "git clone https://github.com/nullclaw/nulldesk\ncd nulldesk\nzig build"
+		},
+		"alts": [
+			{
+				"label": "Release build",
+				"code": "zig build -Doptimize=ReleaseSafe"
+			},
+			{
+				"label": "Web frontend",
+				"code": "zig build web\nzig build run -- web --workspace \"$PWD\""
+			}
+		]
+	},
+	"quickstart": "Build once, then point NullDesk at a workspace. Every frontend runs from the same binary.\n\n```bash\n# build the debug binary\nzig build\n\n# run the default frontend against the current directory\nzig build run -- --workspace \"$PWD\"\n\n# or pick a frontend explicitly\nzig build run -- tui --workspace \"$PWD\"\n\n# local web UI on 127.0.0.1:8765\nzig build web\nzig build run -- web --workspace \"$PWD\"\n```",
+	"features": [
+		{
+			"title": "Review Center write boundary",
+			"body": "Agents never write files directly. Every proposed change becomes an approval item with a side-by-side diff; you accept or reject whole files or individual hunks, with stale-file protection."
+		},
+		{
+			"title": "Risk-classified command approval",
+			"body": "Shell commands an agent wants to run are classified low, medium, or high risk. High-risk patterns like curl|sh and rm -rf are shown but blocked from approval entirely."
+		},
+		{
+			"title": "Structured task packets",
+			"body": "Tasks are JSON files under .nulldesk/tasks/ with goal, constraints, done criteria, budget, and timeout. Nine statuses track each one from Draft to Done or Failed."
+		},
+		{
+			"title": "Five autonomy modes",
+			"body": "Per task, from ask_only up to autonomous_within_limits — the latter bounded to 20 actions, a $2.00 cost cap, and no network or destructive commands."
+		},
+		{
+			"title": "Append-only audit timeline",
+			"body": "Every task change, agent run, file read, review, approval, command, and commit lands in .nulldesk/events.jsonl. Decision history stays in the workspace, as plain files."
+		},
+		{
+			"title": "Three frontends, one core",
+			"body": "A native macOS AppKit GUI, a cross-platform TUI, and a loopback-only web UI (SvelteKit SPA on 127.0.0.1:8765) compile from one shared Zig core into one binary."
+		}
+	],
+	"pairs": ["claw", "hub", "watch"],
+	"note": "Pre-release: no published releases, tags, or license file yet — build from source and expect change."
+}

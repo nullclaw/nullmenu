@@ -1,0 +1,58 @@
+{
+	"hero": {
+		"kicker": "THE TICKET RAIL — TASK STATE",
+		"title": "Durable task state for autonomous agent fleets",
+		"sub": "A headless task tracker in one Zig binary, backed by vendored SQLite. Agents claim work by role, report progress, and move tasks through pipeline stages over plain JSON/HTTP."
+	},
+	"metrics": [
+		{ "value": "1", "label": "static binary, vendored SQLite" },
+		{ "value": "33", "label": "REST endpoints, OpenAPI 3.1" },
+		{ "value": "FTS5", "label": "full-text search over shared KV" },
+		{ "value": "7", "label": "prebuilt release targets" }
+	],
+	"install": {
+		"primary": {
+			"label": "Release binary",
+			"code": "curl -LO https://github.com/nullclaw/nulltickets/releases/download/v2026.5.29/nulltickets-linux-x86_64.bin\nchmod +x nulltickets-linux-x86_64.bin\n./nulltickets-linux-x86_64.bin --port 7700 --db tracker.db"
+		},
+		"alts": [
+			{
+				"label": "Build from source",
+				"code": "git clone https://github.com/nullclaw/nulltickets\ncd nulltickets\nzig build\nzig build run -- --port 7700 --db tracker.db"
+			},
+			{
+				"label": "Via NullHub",
+				"code": "nullhub install nulltickets"
+			}
+		]
+	},
+	"quickstart": "Start the tracker, then talk to it over plain JSON/HTTP.\n\n```bash\n# start the server (defaults: --port 7700, --db nulltickets.db)\nzig build run -- --port 7700 --db tracker.db\n\n# check service and queue health\ncurl http://127.0.0.1:7700/health\n\n# fetch the OpenAPI 3.1 schema agents bootstrap from\ncurl http://127.0.0.1:7700/openapi.json\n\n# run the test suite\nzig build test\n```",
+	"features": [
+		{
+			"title": "Lease-based claiming",
+			"body": "Agents claim the next task for their role via POST /leases/claim. Leases carry a TTL, extend by heartbeat, and expire cleanly; tokens are stored as SHA-256 hashes, never plaintext."
+		},
+		{
+			"title": "Pipeline state machines",
+			"body": "Pipelines declare states, transitions and terminal stages. Every stage change is validated against the FSM, with optimistic expected_stage and expected_task_version checks."
+		},
+		{
+			"title": "Retries and dead letters",
+			"body": "Per-task retry policy: max_attempts, retry_delay_ms, and an optional dead_letter_stage that catches exhausted tasks instead of losing them."
+		},
+		{
+			"title": "Dependencies and assignments",
+			"body": "DAG edges keep a task unclaimable until upstream tasks reach a terminal stage. Explicit assignments pin a task to one agent when you need that."
+		},
+		{
+			"title": "Shared agent memory",
+			"body": "A namespaced key-value store with SQLite FTS5 full-text search and exact JSON filtering gives agents durable memory across sessions."
+		},
+		{
+			"title": "Self-describing API",
+			"body": "The server publishes its own OpenAPI 3.1 schema at /openapi.json so agents can bootstrap themselves. It also ingests OTLP traces and links spans to runs."
+		}
+	],
+	"pairs": ["claw", "boiler", "hub"],
+	"note": "Pre-1.0: the API is documented and e2e-tested, but config and CLI may change between releases."
+}
