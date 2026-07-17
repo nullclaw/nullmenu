@@ -28,7 +28,7 @@
 	const favicon =
 		'data:image/svg+xml,' +
 		encodeURIComponent(
-			`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><circle cx="16" cy="16" r="10.5" stroke="#ece5d8" stroke-width="2.4" fill="none"/><line x1="7" y1="27" x2="25" y2="5" stroke="${site.accent}" stroke-width="2.4" stroke-linecap="round"/></svg>`
+			`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="#12100d"/><circle cx="16" cy="16" r="9" stroke="#ece5d8" stroke-width="3.4" fill="none"/><line x1="8.5" y1="25.5" x2="23.5" y2="6.5" stroke="${site.accent}" stroke-width="3.6" stroke-linecap="round"/></svg>`
 		);
 
 	// mirror the pre-paint theme choice into reactive state

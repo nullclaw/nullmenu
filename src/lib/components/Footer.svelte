@@ -60,7 +60,7 @@
 			<span class="mark"><Logo size={18} /></span>
 			<span class="mono note">© {year} the Null ecosystem</span>
 			<span class="mono note">cooked with Zig 0.16</span>
-			<span class="mono note">local-first · no cloud · no crypto tokens</span>
+			<span class="mono note">local-first · no cloud</span>
 		</div>
 	</div>
 </footer>

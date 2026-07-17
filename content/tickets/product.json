@@ -195,7 +195,7 @@
 		},
 		{
 			"title": "An agent loop that survives its own crashes",
-			"body": "An agent claims a task and gets a lease: a 32-byte crypto-random token (stored server-side only as a SHA-256 hash) with a 5-minute TTL it must heartbeat to keep. Kill the process mid-task and nothing is stuck — a janitor sweep expires the stale lease and the next claim hands the task to whoever asks. The claim itself is one SQL statement covering role match, dependency resolution, retry eligibility, and active-lease exclusion, so two agents can never claim the same task; optimistic expected_stage / expected_task_version checks return typed 409s if they still race on updates.",
+			"body": "An agent claims a task and gets a lease: a 32-byte random token (stored server-side only as a SHA-256 hash) with a 5-minute TTL it must heartbeat to keep. Kill the process mid-task and nothing is stuck — a janitor sweep expires the stale lease and the next claim hands the task to whoever asks. The claim itself is one SQL statement covering role match, dependency resolution, retry eligibility, and active-lease exclusion, so two agents can never claim the same task; optimistic expected_stage / expected_task_version checks return typed 409s if they still race on updates.",
 			"code": "curl -X POST http://127.0.0.1:7700/leases/claim -d '{\"agent_id\":\"builder-1\",\"agent_role\":\"builder\"}'\ncurl -X POST http://127.0.0.1:7700/leases/{lease_id}/heartbeat -H 'Authorization: Bearer {lease_token}'"
 		},
 		{

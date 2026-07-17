@@ -33,7 +33,6 @@ NullHub ties it together. It is a manifest-driven install engine with an embedde
 ## What Null is not
 
 - Not a cloud product. Everything binds to loopback by default and stores state locally.
-- Not a cryptocurrency project. NullClaw carries an explicit no-token, no-blockchain disclaimer.
 - Not 1.0. Versions are CalVer (`v2026.x.y`), and licensing varies by repo — NullClaw, NullHub, NullBoiler, NullTickets and nllclw are MIT; NullPantry, NullWatch, NullDesk, NullCap and NullBuilder have no license file yet.
 
 > [!NOTE]

@@ -36,7 +36,7 @@
 		},
 		{
 			title: 'As counted',
-			body: 'Pre-1.0, CalVer-versioned; the numbers on these pages come from the source tree and the release assets. No crypto tokens, ever.'
+			body: 'Pre-1.0, CalVer-versioned; the numbers on these pages come from the source tree and the release assets.'
 		}
 	];
 
@@ -47,17 +47,18 @@
 
 <!-- ———— hero ———— -->
 <section class="hero">
-	<Ink tint="#e8ddc9" />
+	<Ink tint="#e8ddc9" intensity={0.55} />
 	<div class="container hero-inner">
-		<p class="label kicker">The Null ecosystem &nbsp;·&nbsp; est. 2026 &nbsp;·&nbsp; 100% Zig</p>
+		<p class="label kicker">Open source &nbsp;·&nbsp; self-hosted AI agents &nbsp;·&nbsp; written in Zig</p>
 		<h1>
 			<span class="serif">Autonomous AI,</span>
 			<span class="serif-i accent">à&nbsp;la&nbsp;carte.</span>
 		</h1>
 		<p class="sub">
-			A family of single-binary Zig tools for running AI agents on your own hardware — runtime,
-			orchestration, tasks, memory, observability. Install NullHub, add components as you need
-			them.
+			Ten small open-source tools for running AI agents on your own hardware: an agent you can
+			message from Telegram or Slack, plus the orchestration, task queue, shared memory and
+			tracing to grow it into a fleet. Each one is a single Zig binary — install NullHub to
+			manage them all, or take any piece alone.
 		</p>
 		<div class="cta">
 			<a class="btn btn--solid" href="/docs/start/install-nullhub/">Install NullHub</a>

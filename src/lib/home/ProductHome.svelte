@@ -65,7 +65,7 @@
 			<a class="btn" href={site.github} target="_blank" rel="noopener">GitHub &nearr;</a>
 		</div>
 
-		{#if p}
+		{#if p && !site.comingSoon}
 			<div class="install">
 				<div class="tabs" role="group" aria-label="Install methods">
 					{#each installTabs as t, i}
@@ -83,7 +83,40 @@
 	</div>
 </section>
 
-{#if p}
+{#if p && site.comingSoon}
+	<!-- ———— coming soon: a menu card, not a full spread ———— -->
+	<section class="section">
+		<div class="container">
+			<Reveal>
+				<p class="label label--accent">In plain words</p>
+			</Reveal>
+			<dl class="plain">
+				<Reveal>
+					<div class="plain-row">
+						<dt class="serif-i">What it is</dt>
+						<dd>{p.plain.what}</dd>
+					</div>
+				</Reveal>
+				{#if p.plain.fit}
+					<Reveal delay={70}>
+						<div class="plain-row">
+							<dt class="serif-i">Where it fits</dt>
+							<dd>{p.plain.fit}</dd>
+						</div>
+					</Reveal>
+				{/if}
+			</dl>
+			<Reveal>
+				<p class="soon-note">
+					<span class="serif-i">Still on the stove.</span> No releases yet — the dish is being
+					cooked in the open at
+					<a href={site.github} target="_blank" rel="noopener">{site.name} on GitHub</a>. The
+					<a href="/docs/">notes so far</a> cover what already works.
+				</p>
+			</Reveal>
+		</div>
+	</section>
+{:else if p}
 	<!-- ———— in plain words ———— -->
 	{#if p.plain}
 		<section class="section">
@@ -449,6 +482,20 @@
 		font-weight: 400;
 		line-height: 1.12;
 		margin-top: 1rem;
+	}
+
+	.soon-note {
+		margin-top: 2.5rem;
+		padding: 1.5rem 1.75rem;
+		border: 1px dashed var(--line-2);
+		color: var(--ink-2);
+		max-width: 44rem;
+	}
+
+	.soon-note .serif-i {
+		color: var(--accent);
+		font-size: 1.15rem;
+		margin-right: 0.35rem;
 	}
 
 	.section-sub {
