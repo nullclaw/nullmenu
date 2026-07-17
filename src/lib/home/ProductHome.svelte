@@ -1,7 +1,8 @@
 <script>
 	import { site, sites } from '$lib/site';
 	import Seo from '$lib/components/Seo.svelte';
-	import FlowField from '$lib/components/FlowField.svelte';
+	import Ink from '$lib/components/Ink.svelte';
+	import Downloads from '$lib/components/Downloads.svelte';
 	import ProductMark from '$lib/components/ProductMark.svelte';
 	import Reveal from '$lib/components/Reveal.svelte';
 
@@ -26,7 +27,7 @@
 
 <!-- ———— hero ———— -->
 <section class="hero">
-	<FlowField tint={site.accent} opacity={0.45} />
+	<Ink tint={site.accent} />
 	<div class="watermark" aria-hidden="true">
 		<ProductMark id={site.id} size={560} stroke="var(--accent)" />
 	</div>
@@ -40,7 +41,12 @@
 		<p class="sub">{p?.hero.sub ?? site.description}</p>
 
 		<div class="cta">
-			<a class="btn btn--solid" href="/docs/">Documentation</a>
+			{#if data.release}
+				<a class="btn btn--solid" href="#download">Download &darr;</a>
+				<a class="btn" href="/docs/">Documentation</a>
+			{:else}
+				<a class="btn btn--solid" href="/docs/">Documentation</a>
+			{/if}
 			<a class="btn" href={site.github} target="_blank" rel="noopener">GitHub &nearr;</a>
 		</div>
 
@@ -102,6 +108,11 @@
 			</div>
 		</div>
 	</section>
+
+	<!-- ———— takeaway ———— -->
+	{#if data.release}
+		<Downloads release={data.release} />
+	{/if}
 
 	<!-- ———— quickstart ———— -->
 	<section class="section">

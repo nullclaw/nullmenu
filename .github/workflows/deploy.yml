@@ -4,6 +4,8 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  schedule:
+    - cron: '0 6 * * 1' # weekly: refresh baked-in release/download data
 
 permissions:
   contents: read
@@ -33,6 +35,8 @@ jobs:
 
       - name: Build all sites
         run: node scripts/build-all.js
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # apex — nullmenu.ai, served by this repo's GitHub Pages
       - uses: actions/upload-pages-artifact@v3

@@ -1,8 +1,17 @@
 <script>
-	/** Scroll-into-view reveal wrapper. No-op under prefers-reduced-motion (CSS). */
+	/**
+	 * Scroll reveal. On engines with CSS scroll-driven animations the reveal
+	 * is a pure-CSS scrubbed animation tied to the element's own view timeline
+	 * (reversible, jank-free, no JS). Elsewhere it falls back to a one-shot
+	 * IntersectionObserver reveal. No-op under prefers-reduced-motion.
+	 */
 	let { delay = 0, children, class: className = '' } = $props();
 
+	const sda =
+		typeof CSS !== 'undefined' && CSS.supports('animation-timeline: view()');
+
 	function reveal(node) {
+		if (sda) return;
 		// Huge top margin: anything at or above the viewport counts as "seen",
 		// so instant jumps (anchors, Home/End, restored scroll) can't skip reveals.
 		const io = new IntersectionObserver(
@@ -19,6 +28,10 @@
 	}
 </script>
 
-<div use:reveal class="reveal {className}" style:transition-delay="{delay}ms">
+<div
+	use:reveal
+	class="{sda ? 'sda' : 'reveal'} {className}"
+	style:transition-delay={sda ? undefined : `${delay}ms`}
+>
 	{@render children?.()}
 </div>

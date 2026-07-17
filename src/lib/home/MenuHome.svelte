@@ -1,7 +1,7 @@
 <script>
 	import { products, groups } from '$lib/site';
 	import Seo from '$lib/components/Seo.svelte';
-	import FlowField from '$lib/components/FlowField.svelte';
+	import Ink from '$lib/components/Ink.svelte';
 	import ProductMark from '$lib/components/ProductMark.svelte';
 	import Reveal from '$lib/components/Reveal.svelte';
 
@@ -47,7 +47,7 @@
 
 <!-- ———— hero ———— -->
 <section class="hero">
-	<FlowField tint="#e8ddc9" opacity={0.55} />
+	<Ink tint="#e8ddc9" />
 	<div class="container hero-inner">
 		<p class="label kicker">The Null ecosystem &nbsp;·&nbsp; est. 2026 &nbsp;·&nbsp; 100% Zig</p>
 		<h1>

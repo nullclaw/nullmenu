@@ -1,11 +1,23 @@
 <script>
 	import '../app.css';
+	import { onNavigate } from '$app/navigation';
 	import { site } from '$lib/site';
 	import Header from '$lib/components/Header.svelte';
 	import Footer from '$lib/components/Footer.svelte';
 	import Grain from '$lib/components/Grain.svelte';
 
 	let { children } = $props();
+
+	// page-to-page morphs via the View Transitions API
+	onNavigate((navigation) => {
+		if (!document.startViewTransition) return;
+		return new Promise((resolve) => {
+			document.startViewTransition(async () => {
+				resolve();
+				await navigation.complete;
+			});
+		});
+	});
 
 	// per-site theme + favicon (∅ plate in the site's accent).
 	// :root:root beats the app.css defaults regardless of stylesheet order.

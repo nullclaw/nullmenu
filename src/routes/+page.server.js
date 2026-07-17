@@ -1,5 +1,6 @@
 import { site } from '$lib/site';
 import { renderMarkdown } from '$lib/content/markdown.js';
+import { fetchRelease } from '$lib/content/releases.js';
 
 const productData = import.meta.glob('/content/*/product.json', {
 	eager: true,
@@ -34,10 +35,11 @@ export async function load() {
 
 	const data = productData[`/content/${site.id}/product.json`];
 	if (!data) {
-		return { kind: 'product', product: null };
+		return { kind: 'product', product: null, release: null };
 	}
 
-	const [installPrimary, quickstart, ...alts] = await Promise.all([
+	const [release, installPrimary, quickstart, ...alts] = await Promise.all([
+		fetchRelease(site.repo),
 		md(bash(data.install.primary.code)),
 		md(data.quickstart),
 		...(data.install.alts ?? []).map((a) => md(bash(a.code)))
@@ -46,6 +48,7 @@ export async function load() {
 	return {
 		kind: 'product',
 		product: data,
+		release,
 		code: {
 			installPrimary: installPrimary.html,
 			quickstart: quickstart.html,
