@@ -614,7 +614,7 @@
 		width: 100%;
 		height: 100%;
 		pointer-events: none;
-		-webkit-mask-image: radial-gradient(125% 118% at 78% 28%, black 40%, transparent 72%);
-		mask-image: radial-gradient(125% 118% at 78% 28%, black 40%, transparent 72%);
+		-webkit-mask-image: radial-gradient(118% 112% at 82% 30%, black 36%, transparent 68%);
+		mask-image: radial-gradient(118% 112% at 82% 30%, black 36%, transparent 68%);
 	}
 </style>

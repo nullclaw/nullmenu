@@ -226,6 +226,7 @@
 		margin-top: 1.5rem;
 		font-size: var(--text-lg);
 		color: var(--ink-2);
+		text-shadow: 0 1px 22px rgba(12, 10, 8, 0.7);
 	}
 
 	.cta {
