@@ -2,13 +2,25 @@
 	"hero": {
 		"kicker": "THE LARDER — KNOWLEDGE SERVICE",
 		"title": "Knowledge, memory and citation-backed RAG behind one API",
-		"sub": "NullPantry is the headless knowledge base and long-term memory service for the Null ecosystem. It owns storage, permissions, retrieval, knowledge graph and context packs — agents and UIs consume it over HTTP."
+		"sub": "An HTTP server that stores documents, decisions, and your agents' long-term memory, then answers questions over them — every result filtered by the caller's permissions and backed by citations. It has no UI of its own: NullClaw agents and the NullHub and NullDesk apps consume it over plain HTTP, with records stored in SQLite by default or in Postgres."
 	},
 	"metrics": [
-		{ "value": "14+", "label": "agent-memory backends" },
-		{ "value": "8", "label": "vector store families" },
-		{ "value": "7", "label": "per-token capabilities" },
-		{ "value": "0", "label": "required external services" }
+		{
+			"value": "14+",
+			"label": "agent-memory backends"
+		},
+		{
+			"value": "8",
+			"label": "vector store families"
+		},
+		{
+			"value": "7",
+			"label": "per-token capabilities"
+		},
+		{
+			"value": "0",
+			"label": "required external services"
+		}
 	],
 	"install": {
 		"primary": {
@@ -30,7 +42,7 @@
 	"features": [
 		{
 			"title": "One retrieval path",
-			"body": "Search, Ask and Context Packs share a single pipeline: ACL filter, keyword and vector candidates, graph expansion, fusion and rerank, citation-safe results."
+			"body": "Search (/v1/search), question answering (/v1/ask), and context packs — pre-assembled bundles of relevant material for an agent's prompt (/v1/context-packs) — all run one pipeline: filter by the caller's permissions, gather keyword and vector matches, expand through the knowledge graph, rerank, and return results with citations."
 		},
 		{
 			"title": "Permission-aware by invariant",
@@ -38,11 +50,11 @@
 		},
 		{
 			"title": "Backends chosen at compile time",
-			"body": "Engine profiles (nullclaw, minimal, full, custom) mean the binary contains only the adapters you pick: SQLite or Postgres records, 14+ memory runtimes, 8 vector families."
+			"body": "Build flags decide what the binary contains. Records go to SQLite or Postgres; agent memory to Redis, ClickHouse, Markdown files, or hosted services like Mem0 and Zep; vectors to pgvector, Qdrant, LanceDB, Weaviate, Chroma, or OpenSearch. Pick a profile — nullclaw, minimal, full, or custom — and unused adapters are never compiled in."
 		},
 		{
 			"title": "NullClaw-compatible memory API",
-			"body": "The /v1/agent namespace exposes the CRUD, search, session, history, feed, checkpoint and apply surface NullClaw's api memory engine expects."
+			"body": "Point a NullClaw agent's memory backend at NullPantry and it works unchanged. The /v1/agent, /v1/memory, and /v1/agent-sessions routes cover create/read/update/delete, search, session history, and the feed/checkpoint/apply flow agents use to sync shared memory."
 		},
 		{
 			"title": "Works fully offline",
@@ -53,6 +65,15 @@
 			"body": "Proposed, verified, accepted, stale, deprecated, superseded — plus freshness, expiry and conflict detection. Decisions are superseded, not deleted."
 		}
 	],
-	"pairs": ["claw", "hub", "desk"],
-	"note": "Early: one tagged release (v2026.06.09) and no license file yet. Pre-1.0: config and CLI may change between releases."
+	"pairs": [
+		"claw",
+		"hub",
+		"desk"
+	],
+	"note": "Early: one tagged release (v2026.06.09) and no license file yet. Pre-1.0: config and CLI may change between releases.",
+	"plain": {
+		"what": "A single-binary HTTP service, written in Zig, that stores knowledge records (docs, specs, decisions, notes) and agents' long-term memory, and serves search, Q&A, and memory APIs on port 8765 by default.",
+		"why": "It exists so shared knowledge and agent memory live in one governed place instead of scattered per-agent files — with permissions enforced on every read and answers that always cite their sources.",
+		"when": "Reach for it when more than one agent or app needs the same searchable docs and shared memory — say, several NullClaw agents that should remember the same things — and you'd rather point them all at one URL than sync files between them."
+	}
 }

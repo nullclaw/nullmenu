@@ -2,13 +2,25 @@
 	"hero": {
 		"kicker": "THE SOUS-CHEF — CONTROL PLANE",
 		"title": "One console for your whole local agent stack",
-		"sub": "A single Zig binary with an embedded Svelte dashboard that installs, supervises, monitors and updates NullClaw, NullBoiler, NullTickets and NullWatch. All state lives under ~/.nullhub — nothing goes to a hosted service."
+		"sub": "A management console for the Null stack: one binary with a built-in web dashboard and CLI that installs NullClaw agents, NullBoiler workflows, NullTickets task queues and NullWatch tracing, keeps them running, and updates them with rollback. Everything stays on your machine — all state lives in ~/.nullhub, nothing goes to a hosted service."
 	},
 	"metrics": [
-		{ "value": "1", "label": "binary, UI embedded" },
-		{ "value": "7", "label": "platform targets" },
-		{ "value": "4", "label": "managed components" },
-		{ "value": ":19800", "label": "local dashboard" }
+		{
+			"value": "1",
+			"label": "binary, UI embedded"
+		},
+		{
+			"value": "7",
+			"label": "platform targets"
+		},
+		{
+			"value": "4",
+			"label": "managed components"
+		},
+		{
+			"value": ":19800",
+			"label": "local dashboard"
+		}
 	],
 	"install": {
 		"primary": {
@@ -30,7 +42,7 @@
 	"features": [
 		{
 			"title": "Manifest-driven install wizard",
-			"body": "Each component publishes a nullhub-manifest.json describing its installation, wizard steps, launch and health checks. NullHub is a generic engine that interprets them — in the terminal or the browser."
+			"body": "Add a component through a guided setup flow — in the terminal or in the browser. Each component ships a nullhub-manifest.json that tells NullHub how to install, configure, launch and health-check it, so NullHub stays a generic engine and new components need no changes to it."
 		},
 		{
 			"title": "Process supervision",
@@ -42,7 +54,7 @@
 		},
 		{
 			"title": "Live logs over SSE",
-			"body": "Tail or follow logs per instance — nullhub logs <c>/<n> -f in the terminal, live streaming in the browser."
+			"body": "Tail or follow logs per instance: `nullhub logs nullclaw/main -f` in the terminal, live streaming over SSE (server-sent events) in the browser."
 		},
 		{
 			"title": "Multi-instance",
@@ -53,6 +65,16 @@
 			"body": "Browser dashboard for humans, CLI for automation, and nullhub api for raw JSON access to every endpoint."
 		}
 	],
-	"pairs": ["claw", "boiler", "tickets", "watch"],
-	"note": "Pre-1.0 and calendar-versioned (v2026.x.y): config and CLI may change between releases."
+	"pairs": [
+		"claw",
+		"boiler",
+		"tickets",
+		"watch"
+	],
+	"note": "Pre-1.0 and calendar-versioned (v2026.x.y): config and CLI may change between releases.",
+	"plain": {
+		"what": "A management console for locally run Null services — a single Zig binary with an embedded web dashboard and a CLI, serving at http://nullhub.localhost:19800.",
+		"why": "Running NullClaw (agents), NullBoiler (workflows), NullTickets (task queues) and NullWatch (tracing) by hand means four separate daemons to install, configure, restart and update — NullHub replaces that with one supervisor, one dashboard and one CLI.",
+		"when": "You are setting up the Null stack on a machine and want to add components through a guided wizard, watch their health and logs in a browser, and run `nullhub update-all` instead of updating each daemon by hand."
+	}
 }

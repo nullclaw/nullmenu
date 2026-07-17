@@ -2,13 +2,25 @@
 	"hero": {
 		"kicker": "THE CHEF — AGENT RUNTIME",
 		"title": "A fully autonomous AI agent in 678 KB",
-		"sub": "One static Zig binary that connects 50+ model providers to 19 messaging channels — with memory, tools, sandboxing, cron and an HTTP gateway built in. Runs in about 1 MB of RAM, measured by the project."
+		"sub": "One static binary that connects 50+ model providers (OpenAI, Anthropic, Ollama and more) to Telegram, Discord, Slack, Signal and 15 more chat channels — memory, tool use, cron scheduling and sandboxing built in. No Node, no Python, nothing but libc: it runs in about 1 MB of RAM, small enough for a $5 ARM board."
 	},
 	"metrics": [
-		{ "value": "678 KB", "label": "static binary" },
-		{ "value": "50+", "label": "model providers" },
-		{ "value": "19", "label": "messaging channels" },
-		{ "value": "5,300+", "label": "tests" }
+		{
+			"value": "678 KB",
+			"label": "static binary"
+		},
+		{
+			"value": "50+",
+			"label": "model providers"
+		},
+		{
+			"value": "19",
+			"label": "messaging channels"
+		},
+		{
+			"value": "5,300+",
+			"label": "tests"
+		}
 	],
 	"install": {
 		"primary": {
@@ -38,21 +50,31 @@
 		},
 		{
 			"title": "Memory with hybrid search",
-			"body": "SQLite FTS5 keyword search merged with vector cosine similarity by default. Nine other engines, from Markdown files to PostgreSQL, when you need them."
+			"body": "The agent remembers past conversations and facts in SQLite, and finds them again with keyword search (FTS5) and embedding similarity combined. Nine other backends — from plain Markdown files to PostgreSQL and Redis — when you need them."
 		},
 		{
 			"title": "Sandboxed by default",
-			"body": "Auto-selects Landlock, Firejail, Bubblewrap or Docker. File access is workspace-scoped and secrets are encrypted at rest with ChaCha20-Poly1305."
+			"body": "Commands the agent runs are isolated in a sandbox: NullClaw auto-picks the best backend available on your system (Landlock, Firejail, Bubblewrap or Docker). File access is limited to the agent's workspace, and API keys are encrypted at rest with ChaCha20-Poly1305."
 		},
 		{
 			"title": "Speaks A2A, MCP and ACP",
-			"body": "Implements Google's A2A protocol v0.3.0, connects MCP servers over stdio or HTTP, and ships an ACP stdio adapter for editors."
+			"body": "Other agents can discover and call it over Google's A2A protocol (v0.3.0, JSON-RPC). It can use tools from any MCP (Model Context Protocol) server over stdio or HTTP, and an adapter lets code editors that speak the Agent Client Protocol (ACP) drive it directly."
 		},
 		{
 			"title": "OpenClaw-compatible",
-			"body": "Same config structure, snake_case and all. `nullclaw migrate openclaw` imports config and memory in one command."
+			"body": "Uses the same config format as OpenClaw, the TypeScript AI assistant — same structure, same snake_case keys. `nullclaw migrate openclaw` imports your existing config and memory in one command."
 		}
 	],
-	"pairs": ["hub", "boiler", "tickets", "watch"],
-	"note": "Pre-1.0: config and CLI may change between releases. Size and memory figures are measured by the project."
+	"pairs": [
+		"hub",
+		"boiler",
+		"tickets",
+		"watch"
+	],
+	"note": "Pre-1.0: config and CLI may change between releases. Size and memory figures are measured by the project.",
+	"plain": {
+		"what": "NullClaw is an AI assistant runtime: a single 678 KB static binary, written in Zig, that runs an LLM-backed agent you can message from Telegram, Discord, Slack, Signal and 15 other channels, backed by any of 50+ model providers.",
+		"why": "Comparable agent stacks run on Node.js or Python and need 100 MB to over 1 GB of RAM; NullClaw compiles to one small native binary that does the same job in about 1 MB, so an always-on assistant fits on a $5 ARM board or in a corner of any server.",
+		"when": "Reach for it when you want your own always-on AI bot — say, a Telegram or Discord assistant with persistent memory — running 24/7 on a Raspberry Pi, a VPS or an edge device, without maintaining a heavy runtime."
+	}
 }

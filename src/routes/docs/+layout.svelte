@@ -70,7 +70,7 @@
 		grid-template-columns: 15rem minmax(0, 1fr);
 		gap: 3.5rem;
 		align-items: start;
-		padding-block: 2.5rem 5rem;
+		padding-block: 2.5rem var(--section-pad-sm);
 	}
 
 	.nav-toggle {
@@ -82,7 +82,8 @@
 		top: calc(var(--header-h) + 2rem);
 		max-height: calc(100vh - var(--header-h) - 4rem);
 		overflow-y: auto;
-		padding-right: 1rem;
+		padding: 6px 1rem 0 6px;
+		margin-left: -6px;
 		scrollbar-width: thin;
 	}
 

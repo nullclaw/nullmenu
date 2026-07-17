@@ -128,6 +128,10 @@
 	.big {
 		font-size: var(--text-base);
 		padding: 1em 1.6em;
+		white-space: normal;
+		max-width: 100%;
+		flex-wrap: wrap;
+		text-align: left;
 	}
 
 	.big .size {
@@ -237,7 +241,7 @@
 		color: var(--ink-2);
 	}
 
-	@media (max-width: 760px) {
+	@media (max-width: 860px) {
 		.binaries {
 			columns: 1;
 		}

@@ -2,13 +2,25 @@
 	"hero": {
 		"kicker": "THE STOCKPOT — ORCHESTRATION",
 		"title": "Graph workflows for AI agents, in one native binary",
-		"sub": "NullBoiler decides what should run, when, and which worker executes it. Workflow graphs with checkpoints, fan-out, interrupts and replay — a static Zig binary with SQLite inside, dispatching to agents over six protocols."
+		"sub": "NullBoiler runs multi-step AI agent workflows: define a graph of steps and it dispatches each one to a worker — an agent runtime like NullClaw, any OpenAI-compatible API, or your own webhook — with retries, concurrency limits, and a checkpoint saved after every node. One native Zig binary with SQLite embedded: no external database, no message broker required."
 	},
 	"metrics": [
-		{ "value": "7", "label": "graph node types" },
-		{ "value": "6", "label": "worker dispatch protocols" },
-		{ "value": "36", "label": "HTTP operations, OpenAPI 3.1" },
-		{ "value": "355", "label": "unit tests plus e2e suite" }
+		{
+			"value": "7",
+			"label": "graph node types"
+		},
+		{
+			"value": "6",
+			"label": "worker dispatch protocols"
+		},
+		{
+			"value": "36",
+			"label": "HTTP operations, OpenAPI 3.1"
+		},
+		{
+			"value": "355",
+			"label": "unit tests plus e2e suite"
+		}
 	],
 	"install": {
 		"primary": {
@@ -42,21 +54,30 @@
 		},
 		{
 			"title": "Fan-out with send",
-			"body": "A send node maps an array in state across workers in parallel and gathers results under a configurable output key."
+			"body": "Hand a send node an array — twenty files to review, say — and it runs the target step once per item, picking a worker from your pool for each, then gathers the results under a single configurable output key."
 		},
 		{
 			"title": "Six dispatch protocols",
-			"body": "webhook, api_chat, openai_chat and A2A over HTTP, plus async MQTT and Redis Streams — heterogeneous workers in one config."
+			"body": "Four HTTP protocols — plain webhook, api_chat, openai_chat, and A2A (Agent2Agent) — plus async MQTT and Redis Streams. One config can mix the NullClaw agent runtime over webhook with any OpenAI-compatible endpoint in the same worker pool."
 		},
 		{
 			"title": "Pull mode against NullTickets",
-			"body": "Polls the tracker, claims tasks by role, heartbeats leases, detects stalls, and manages per-task workspaces with shell hooks."
+			"body": "NullTickets is its companion task tracker for agent work. Point NullBoiler at it and it polls for open tasks, claims them by role, keeps leases alive with heartbeats, detects stalled tasks, and prepares a per-task workspace with your shell hooks."
 		},
 		{
 			"title": "Observability included",
 			"body": "Prometheus /metrics with live-state gauges, Grafana dashboards, AlertManager rules and an OpenAPI 3.1 spec ship in the repo."
 		}
 	],
-	"pairs": ["tickets", "claw", "hub"],
-	"note": "Pre-1.0 with CalVer releases: config and CLI may change between releases."
+	"pairs": [
+		"tickets",
+		"claw",
+		"hub"
+	],
+	"note": "Pre-1.0 with CalVer releases: config and CLI may change between releases.",
+	"plain": {
+		"what": "An orchestration engine for AI agents: a single native Zig binary (SQLite embedded) that serves an HTTP API, runs workflows defined as graphs, and dispatches each step to worker agents over HTTP, MQTT, or Redis Streams.",
+		"why": "Multi-step, multi-agent work needs something to own coordination — ordering, routing, retries, concurrency caps, crash recovery — and that job doesn't belong inside the task tracker or the agent itself, so NullBoiler does it and nothing else.",
+		"when": "Reach for it when one agent in a loop stops being enough — you want to fan a job out across several workers, cap how many run at once, or let agents work through a backlog overnight and resume from the last checkpoint if something dies."
+	}
 }

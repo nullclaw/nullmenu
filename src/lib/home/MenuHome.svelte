@@ -190,16 +190,27 @@
 				<Reveal delay={i * 60}>
 					<a class="menu-row" href="https://{p.domain}" style:--spice={p.accent}>
 						<span class="mark"><ProductMark id={p.id} size={26} /></span>
-						<span class="name mono">{p.name}</span>
-						<span class="course serif-i">{p.course}</span>
-						<span class="leaders" aria-hidden="true"></span>
-						<span class="stat mono">{p.stat}</span>
+						<span class="ident">
+							<span class="topline">
+								<span class="name mono">{p.name}</span>
+								<span class="course serif-i">{p.course}</span>
+								<span class="leaders" aria-hidden="true"></span>
+								<span class="stat mono">{p.stat}</span>
+							</span>
+							<span class="line">{p.line}</span>
+						</span>
 					</a>
 				</Reveal>
 			{/each}
 		</div>
 
 		<Reveal>
+			<p class="also">
+				<span class="mono also-label">also in the kitchen</span>
+				{#each products.filter((p) => p.group !== 'mains') as o, i}
+					<a href="https://{o.domain}" class="mono">{o.name}</a>{#if i < products.filter((p) => p.group !== 'mains').length - 1}<span class="dot" aria-hidden="true">·</span>{/if}
+				{/each}
+			</p>
 			<div class="menu-more">
 				<a class="btn" href="/products/">Full menu — all {products.length} products</a>
 			</div>
@@ -500,19 +511,27 @@
 		grid-template-columns: repeat(4, minmax(0, 1fr));
 	}
 
+	/* reveal wrappers must pass the row height down to the plates;
+	   -1px collapse handles both column and row seams at any breakpoint */
+	.stations {
+		padding: 1px 0 0 1px;
+	}
+
+	.stations > :global(div) {
+		display: grid;
+		margin: -1px 0 0 -1px;
+	}
+
 	.station {
 		border: 1px solid var(--line);
 		padding: 1.75rem 1.5rem;
 		display: flex;
 		flex-direction: column;
 		gap: 0.65rem;
+		height: 100%;
 		background: var(--bg);
 		transition: background 0.3s var(--ease-out), border-color 0.3s var(--ease-out);
 		position: relative;
-	}
-
-	.station:not(:first-child) {
-		margin-left: -1px;
 	}
 
 	.station:hover {
@@ -555,11 +574,31 @@
 
 	.menu-row {
 		display: flex;
+		align-items: flex-start;
+		gap: 1.1rem;
+		padding: var(--row-pad);
+		border-bottom: 1px solid var(--line);
+		transition: background var(--t-row) var(--ease-out);
+	}
+
+	.menu-row .ident {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		gap: 0.3rem;
+		min-width: 0;
+	}
+
+	.menu-row .topline {
+		display: flex;
 		align-items: baseline;
 		gap: 1.1rem;
-		padding: 1.35rem 0.75rem;
-		border-bottom: 1px solid var(--line);
-		transition: background 0.45s var(--ease-out);
+	}
+
+	.menu-row .line {
+		color: var(--ink-2);
+		font-size: var(--text-sm);
+		max-width: 44rem;
 	}
 
 	.menu-row:hover {
@@ -567,7 +606,7 @@
 	}
 
 	.menu-row .mark {
-		align-self: center;
+		margin-top: 0.35rem;
 		color: var(--ink-3);
 		transition: color 0.25s var(--ease-out);
 	}
@@ -595,6 +634,35 @@
 		font-size: var(--text-xs);
 		color: var(--ink-2);
 		letter-spacing: 0.06em;
+	}
+
+	.also {
+		margin-top: 2rem;
+		display: flex;
+		align-items: baseline;
+		gap: 0.9rem;
+		flex-wrap: wrap;
+		font-size: var(--text-sm);
+	}
+
+	.also-label {
+		font-size: var(--text-xs);
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--ink-3);
+	}
+
+	.also a {
+		color: var(--ink-2);
+		transition: color 0.2s var(--ease-out);
+	}
+
+	.also a:hover {
+		color: var(--accent);
+	}
+
+	.also .dot {
+		color: var(--ink-3);
 	}
 
 	.menu-more {
@@ -649,6 +717,13 @@
 		}
 		.solo :global(.code-figure) {
 			min-width: 0;
+		}
+	}
+
+	@media (max-width: 640px) {
+		.hub-band .desc,
+		.pantry-band .desc {
+			display: none;
 		}
 	}
 

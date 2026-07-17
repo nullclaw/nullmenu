@@ -2,13 +2,25 @@
 	"hero": {
 		"kicker": "THE PASS — OPERATIONS DESK",
 		"title": "Agents propose. You approve. Every change on record.",
-		"sub": "NullDesk is a local-first operations desk for humans running AI agents: structured tasks, side-by-side diff review, risk-classified command approval, and an append-only audit timeline. One Zig core, three frontends, driving nullclaw over ACP."
+		"sub": "NullDesk is a local app for running AI agents under human control: you assign structured tasks, review each proposed file change as a side-by-side diff, and approve or block shell commands before they run. Unless you explicitly put a task in its bounded autonomous mode, nothing touches disk until you accept, and every decision lands in an append-only log inside your workspace."
 	},
 	"metrics": [
-		{ "value": "3", "label": "frontends — GUI, TUI, web" },
-		{ "value": "9", "label": "task statuses, Draft to Done" },
-		{ "value": "5", "label": "autonomy modes per task" },
-		{ "value": "127.0.0.1", "label": "web UI binds loopback only" }
+		{
+			"value": "3",
+			"label": "frontends — GUI, TUI, web"
+		},
+		{
+			"value": "9",
+			"label": "task statuses, Draft to Done"
+		},
+		{
+			"value": "5",
+			"label": "autonomy modes per task"
+		},
+		{
+			"value": "127.0.0.1",
+			"label": "web UI binds loopback only"
+		}
 	],
 	"install": {
 		"primary": {
@@ -30,7 +42,7 @@
 	"features": [
 		{
 			"title": "Review Center write boundary",
-			"body": "Agents never write files directly. Every proposed change becomes an approval item with a side-by-side diff; you accept or reject whole files or individual hunks, with stale-file protection."
+			"body": "Agents never write files directly. Every proposed change appears as a side-by-side diff you accept or reject — whole files or individual hunks. If the file changed on disk after the diff was made, accepting is refused instead of silently overwriting your work."
 		},
 		{
 			"title": "Risk-classified command approval",
@@ -42,7 +54,7 @@
 		},
 		{
 			"title": "Five autonomy modes",
-			"body": "Per task, from ask_only up to autonomous_within_limits — the latter bounded to 20 actions, a $2.00 cost cap, and no network or destructive commands."
+			"body": "Each task sets how much its agent may do on its own, from ask_only (read and answer, nothing else) up to autonomous_within_limits — capped by default at 20 actions, $2.00 in cost (or the task budget, if lower), files under src/ and tests/ only, and no network or destructive commands."
 		},
 		{
 			"title": "Append-only audit timeline",
@@ -53,6 +65,15 @@
 			"body": "A native macOS AppKit GUI, a cross-platform TUI, and a loopback-only web UI (SvelteKit SPA on 127.0.0.1:8765) compile from one shared Zig core into one binary."
 		}
 	],
-	"pairs": ["claw", "hub", "watch"],
-	"note": "Pre-release: no published releases, tags, or license file yet — build from source and expect change."
+	"pairs": [
+		"claw",
+		"hub",
+		"watch"
+	],
+	"note": "Pre-release: no published releases, tags, or license file yet — build from source and expect change.",
+	"plain": {
+		"what": "A single Zig binary that opens a local project folder and gives you three frontends — a native macOS GUI, a cross-platform terminal UI, and a web UI served on 127.0.0.1 by default — for assigning work to AI agents (run through nullclaw, a small local agent runtime) and approving what they produce.",
+		"why": "Agents that edit files and run shell commands unsupervised are hard to trust, so NullDesk turns proposed file changes into reviewable diffs, requested commands into risk-classified approvals, and each decision into a line in an append-only audit log.",
+		"when": "When you want an AI agent to work on a repo or docs folder — fix a bug, write tests, draft docs — but you want to see and accept each diff and command yourself before anything lands on disk."
+	}
 }

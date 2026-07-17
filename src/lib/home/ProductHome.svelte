@@ -84,6 +84,37 @@
 </section>
 
 {#if p}
+	<!-- ———— in plain words ———— -->
+	{#if p.plain}
+		<section class="section">
+			<div class="container">
+				<Reveal>
+					<p class="label label--accent">In plain words</p>
+				</Reveal>
+				<dl class="plain">
+					<Reveal>
+						<div class="plain-row">
+							<dt class="serif-i">What it is</dt>
+							<dd>{p.plain.what}</dd>
+						</div>
+					</Reveal>
+					<Reveal delay={70}>
+						<div class="plain-row">
+							<dt class="serif-i">Why it exists</dt>
+							<dd>{p.plain.why}</dd>
+						</div>
+					</Reveal>
+					<Reveal delay={140}>
+						<div class="plain-row">
+							<dt class="serif-i">When you need it</dt>
+							<dd>{p.plain.when}</dd>
+						</div>
+					</Reveal>
+				</dl>
+			</div>
+		</section>
+	{/if}
+
 	<!-- ———— metrics ———— -->
 	<section class="section">
 		<div class="container">
@@ -251,24 +282,26 @@
 		flex-wrap: wrap;
 	}
 
+	/* one framed unit: the tab strip and the code share edges exactly */
 	.install {
 		margin-top: 3rem;
 		max-width: 38rem;
+		border: 1px solid var(--line-2);
+		background: var(--bg-2);
 	}
 
 	.tabs {
 		display: flex;
+		flex-wrap: wrap;
 		gap: 0;
-		border: 1px solid var(--line);
-		border-bottom: none;
-		width: fit-content;
+		border-bottom: 1px solid var(--line);
 	}
 
 	.tab {
 		font-size: var(--text-xs);
 		letter-spacing: 0.1em;
 		text-transform: uppercase;
-		padding: 0.55em 1.1em;
+		padding: 0.7em 1.2em;
 		color: var(--ink-3);
 		border-right: 1px solid var(--line);
 		transition: color 0.2s, background 0.2s;
@@ -280,11 +313,15 @@
 
 	.tab.active {
 		color: var(--accent);
-		background: var(--bg-2);
+		background: var(--bg-3);
 	}
 
 	.install :global(.code-figure) {
 		margin: 0;
+	}
+
+	.install :global(pre.shiki) {
+		border: none;
 	}
 
 	.install :global(pre.shiki) {
@@ -298,6 +335,38 @@
 		margin-top: 1rem;
 	}
 
+	/* in plain words */
+	.plain {
+		margin-top: 2.5rem;
+		border-top: 1px solid var(--line);
+	}
+
+	.plain-row {
+		display: grid;
+		grid-template-columns: 13rem minmax(0, 1fr);
+		gap: 2rem;
+		padding: 1.5rem 0.5rem;
+		border-bottom: 1px solid var(--line);
+	}
+
+	.plain-row dt {
+		font-size: 1.3rem;
+		color: var(--accent);
+	}
+
+	.plain-row dd {
+		color: var(--ink-2);
+		max-width: 44rem;
+		line-height: 1.7;
+	}
+
+	@media (max-width: 720px) {
+		.plain-row {
+			grid-template-columns: 1fr;
+			gap: 0.5rem;
+		}
+	}
+
 	/* metrics */
 	.metrics {
 		display: grid;
@@ -306,9 +375,14 @@
 		margin-top: 2.5rem;
 	}
 
+	.metrics > :global(div) {
+		display: grid;
+	}
+
 	.metric {
 		border-left: 1px solid var(--line-2);
 		padding-left: 1.5rem;
+		height: 100%;
 		display: flex;
 		flex-direction: column-reverse; /* value above label; dt precedes dd in DOM */
 	}
@@ -340,8 +414,16 @@
 	.features {
 		display: grid;
 		grid-template-columns: repeat(3, minmax(0, 1fr));
-		gap: 1.25rem;
+		gap: 1.5rem;
 		margin-top: 3rem;
+	}
+
+	.features > :global(div) {
+		display: grid;
+	}
+
+	.feature {
+		height: 100%;
 	}
 
 	.feature h3 {
@@ -386,9 +468,9 @@
 		grid-template-columns: auto 14rem 1fr auto;
 		align-items: center;
 		gap: 1.5rem;
-		padding: 1.3rem 0.75rem;
+		padding: var(--row-pad);
 		border-bottom: 1px solid var(--line);
-		transition: background 0.45s var(--ease-out);
+		transition: background var(--t-row) var(--ease-out);
 	}
 
 	.pair:hover {

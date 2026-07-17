@@ -47,7 +47,7 @@
 
 <div class="page" class:has-toc={doc.toc.length > 1}>
 	<article data-pagefind-body>
-		<p class="label label--accent crumb" data-pagefind-ignore>{data.sectionTitle}</p>
+		<p class="label label--accent" data-pagefind-ignore>{data.sectionTitle}</p>
 		<h1 class="serif">{doc.title}</h1>
 
 		<div class="meta mono" data-pagefind-ignore>
@@ -113,14 +113,11 @@
 		grid-template-columns: minmax(0, 1fr) 12rem;
 	}
 
-	.crumb {
-		margin-bottom: 0.75rem;
-	}
-
 	h1 {
 		font-size: clamp(2.2rem, 5vw, 3.2rem);
 		font-weight: 400;
 		line-height: 1.1;
+		margin-top: 1rem;
 	}
 
 	.meta {

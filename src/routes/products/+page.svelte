@@ -44,11 +44,13 @@
 						<a class="row" href="https://{p.domain}" style:--spice={p.accent}>
 							<span class="mark"><ProductMark id={p.id} size={30} /></span>
 							<span class="ident">
-								<span class="name mono">{p.name}</span>
-								<span class="course serif-i">{p.course}</span>
+								<span class="topline">
+									<span class="name mono">{p.name}</span>
+									<span class="course serif-i">{p.course}</span>
+									<span class="leaders" aria-hidden="true"></span>
+								</span>
+								<span class="line">{p.line}</span>
 							</span>
-							<span class="line">{p.line}</span>
-							<span class="leaders" aria-hidden="true"></span>
 							<span class="meta">
 								<span class="stat mono">{p.stat}</span>
 								<span class="tags mono">
@@ -82,7 +84,7 @@
 		font-size: clamp(3rem, 9vw, 6rem);
 		font-weight: 400;
 		line-height: 1;
-		margin-top: 1.25rem;
+		margin-top: 1rem;
 	}
 
 	h1 .serif-i {
@@ -117,6 +119,10 @@
 		color: var(--ink);
 	}
 
+	.group-head :global(.leaders) {
+		font-size: clamp(1.7rem, 3.5vw, 2.4rem);
+	}
+
 	.group-head .note {
 		font-size: var(--text-xs);
 		color: var(--ink-3);
@@ -124,16 +130,30 @@
 	}
 
 	.row {
-		display: grid;
-		grid-template-columns: auto 15rem minmax(0, 26rem) 1fr auto;
-		align-items: center;
-		gap: 1.5rem;
-		padding: 1.4rem 0.75rem;
+		display: flex;
+		align-items: flex-start;
+		gap: 1.25rem;
+		padding: var(--row-pad);
 		border-bottom: 1px solid var(--line);
-		transition: background 0.25s var(--ease-out);
+		transition: background var(--t-row) var(--ease-out);
 	}
 
-	.group .row:first-of-type {
+	.ident {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		gap: 0.35rem;
+		min-width: 0;
+	}
+
+	.topline {
+		display: flex;
+		align-items: baseline;
+		gap: 1rem;
+	}
+
+	/* child 1 is the group heading's wrapper; child 2 wraps the first row */
+	:global(.group > div:nth-child(2)) .row {
 		border-top: 1px solid var(--line);
 	}
 
@@ -142,6 +162,7 @@
 	}
 
 	.mark {
+		margin-top: 0.3rem;
 		color: var(--ink-3);
 		transition: color 0.25s var(--ease-out), transform 0.25s var(--ease-out);
 	}
@@ -149,12 +170,6 @@
 	.row:hover .mark {
 		color: var(--spice);
 		transform: scale(1.08);
-	}
-
-	.ident {
-		display: flex;
-		flex-direction: column;
-		gap: 0.15rem;
 	}
 
 	.name {
@@ -184,6 +199,7 @@
 	.line {
 		color: var(--ink-2);
 		font-size: var(--text-sm);
+		max-width: 42rem;
 	}
 
 	.row:hover .leaders {
@@ -234,34 +250,19 @@
 		color: var(--ink-3);
 	}
 
-	@media (max-width: 1080px) {
-		.row {
-			grid-template-columns: auto 13rem 1fr auto;
-		}
-		.line {
-			display: none;
-		}
-	}
-
 	@media (max-width: 640px) {
 		.row {
-			grid-template-columns: auto 1fr;
-			grid-template-areas: 'mark ident' 'mark meta';
-			row-gap: 0.5rem;
+			flex-wrap: wrap;
 		}
-		.mark {
-			grid-area: mark;
-			align-self: start;
-		}
-		.ident {
-			grid-area: ident;
-		}
-		.row :global(.leaders) {
+		.topline :global(.leaders) {
 			display: none;
 		}
 		.meta {
-			grid-area: meta;
-			align-items: flex-start;
+			width: 100%;
+			flex-direction: row;
+			align-items: baseline;
+			justify-content: space-between;
+			padding-left: calc(30px + 1.25rem);
 		}
 	}
 </style>

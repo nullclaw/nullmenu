@@ -68,7 +68,7 @@
 <style>
 	footer {
 		border-top: 1px solid var(--line);
-		padding: clamp(3rem, 8vw, 5.5rem) 0 2.5rem;
+		padding: var(--section-pad-sm) 0 2.5rem;
 		position: relative;
 		background:
 			radial-gradient(80rem 30rem at 50% 130%, var(--accent-glow), transparent 60%),

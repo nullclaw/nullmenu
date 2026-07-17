@@ -10,6 +10,7 @@
 	let results = $state([]);
 	let sel = $state(0);
 	let unavailable = $state(false);
+	let ready = $state(false);
 	let input = $state();
 	let lastFocus = null;
 
@@ -23,6 +24,8 @@
 			const url = '/pagefind/pagefind.js';
 			pagefind = await import(/* @vite-ignore */ `${url}`);
 			pagefind.init?.();
+			ready = true;
+			if (query.trim()) run(query); // replay what was typed while loading
 		} catch {
 			unavailable = true;
 		}
@@ -75,6 +78,21 @@
 				return;
 			}
 			if (e.key === 'Escape') searchState.open = false;
+			if (e.key === 'Tab') {
+				const panel = document.querySelector('.panel');
+				const focusables = panel ? [...panel.querySelectorAll('input, a[href], button')] : [];
+				if (focusables.length) {
+					const first = focusables[0];
+					const last = focusables[focusables.length - 1];
+					if (e.shiftKey && document.activeElement === first) {
+						e.preventDefault();
+						last.focus();
+					} else if (!e.shiftKey && document.activeElement === last) {
+						e.preventDefault();
+						first.focus();
+					}
+				}
+			}
 			if (e.key === 'ArrowDown') {
 				e.preventDefault();
 				sel = Math.min(sel + 1, results.length - 1);
@@ -129,6 +147,8 @@
 
 			{#if unavailable}
 				<p class="hint mono">the search index is baked at build time — run a production build</p>
+			{:else if query.trim() && !ready}
+				<p class="hint mono">warming up…</p>
 			{:else if query.trim() && results.length === 0}
 				<p class="hint mono">nothing on the menu for “{query}”</p>
 			{:else if results.length}
@@ -189,6 +209,11 @@
 		gap: 0.75rem;
 		padding: 0.5rem 1rem;
 		border-bottom: 1px solid var(--line);
+		transition: border-color 0.2s var(--ease-out);
+	}
+
+	.field:focus-within {
+		border-bottom-color: var(--accent);
 	}
 
 	.glyph {

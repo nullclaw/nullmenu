@@ -24,10 +24,11 @@
 		<path d="M17 4.5 C15 13 15 20 18 27.5" />
 		<path d="M25 6 C23 14 23 20 26 26" />
 	{:else if id === 'hub'}
-		<!-- the sous-chef — plate with spokes: every station in reach -->
-		<circle cx="16" cy="16" r="11" />
-		<circle cx="16" cy="16" r="2" fill={stroke} stroke="none" />
-		<path d="M16 5v5M16 22v5M5 16h5M22 16h5M8.2 8.2l3.6 3.6M20.2 20.2l3.6 3.6M23.8 8.2l-3.6 3.6M11.8 20.2l-3.6 3.6" opacity="0.8" />
+		<!-- the sous-chef — the oven dial that runs every station -->
+		<circle cx="16" cy="16" r="10.5" />
+		<path d="M16 16l4.6-6.2" stroke-width="2.2" />
+		<circle cx="16" cy="16" r="1.6" fill={stroke} stroke="none" />
+		<path d="M16 2.5v2M29.5 16h-2M16 29.5v-2M2.5 16h2" opacity="0.7" />
 	{:else if id === 'pantry'}
 		<!-- the larder — shelves, stocked -->
 		<path d="M5 9.5h22M5 16.5h22M5 23.5h22" />

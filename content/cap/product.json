@@ -2,13 +2,25 @@
 	"hero": {
 		"kicker": "THE CLOCHE — CALL OVERLAY",
 		"title": "Live cue cards, routed only through your NullHub",
-		"sub": "NullCap is a desktop overlay for interviews, meetings, sales calls and demos. It captures screen and audio locally and talks to exactly one service: your NullHub gateway at 127.0.0.1:19800."
+		"sub": "NullCap is a desktop overlay that shows short answer cards on your screen during interviews, meetings, sales calls and demos. It captures screen and audio locally and sends every AI request to exactly one service: NullHub, a gateway running on your own machine at 127.0.0.1:19800 by default."
 	},
 	"metrics": [
-		{ "value": "7", "label": "session modes" },
-		{ "value": "127.0.0.1", "label": "only host it calls" },
-		{ "value": "0", "label": "provider keys stored" },
-		{ "value": "3", "label": "desktop platforms" }
+		{
+			"value": "7",
+			"label": "session modes"
+		},
+		{
+			"value": "127.0.0.1",
+			"label": "only host it calls"
+		},
+		{
+			"value": "0",
+			"label": "provider keys stored"
+		},
+		{
+			"value": "3",
+			"label": "desktop platforms"
+		}
 	],
 	"install": {
 		"primary": {
@@ -16,7 +28,10 @@
 			"code": "zig build\nzig build run -- doctor"
 		},
 		"alts": [
-			{ "label": "Nix flake", "code": "nix build\nnix run . -- doctor" },
+			{
+				"label": "Nix flake",
+				"code": "nix build\nnix run . -- doctor"
+			},
 			{
 				"label": "macOS app bundle",
 				"code": "zig build app-bundle -Doptimize=ReleaseSafe\nopen zig-out/nullCap.app"
@@ -35,11 +50,11 @@
 		},
 		{
 			"title": "NullHub-only routing",
-			"body": "NullCap never calls model or transcription providers, and never calls NullClaw directly. All text, image and audio work goes through instance-scoped routes on your local NullHub."
+			"body": "Every request — text, image or audio — goes to exactly one address: your local NullHub gateway, 127.0.0.1:19800 by default. NullCap stores no provider API keys and never contacts a model or speech-to-text provider itself; which model actually answers is decided behind the gateway, not in the app."
 		},
 		{
 			"title": "Me / other transcript",
-			"body": "Microphone and system audio are captured as separate lanes, filtered with local voice-activity detection, and compacted into epoch summaries as calls run long."
+			"body": "Your microphone is transcribed as \"me\"; system audio — the other side of the call — as \"other\". With voice-activity detection enabled, clearly silent chunks are dropped locally before anything is transcribed, and long calls are compacted into rolling local summaries so the context never grows without bound."
 		},
 		{
 			"title": "Screen capture as evidence",
@@ -54,6 +69,15 @@
 			"body": "Sessions, chats, transcripts and knowledge live under ~/.nullcap with opt-in persistence, retention windows and purge commands. No provider API keys are stored, ever."
 		}
 	],
-	"pairs": ["hub", "claw", "tickets"],
-	"note": "Experimental: no tagged releases and no license file yet — build from source and expect change."
+	"pairs": [
+		"hub",
+		"claw",
+		"tickets"
+	],
+	"note": "Experimental: no tagged releases and no license file yet — build from source and expect change.",
+	"plain": {
+		"what": "A native desktop overlay app, written in Zig for macOS, Windows and Linux, that floats above your call window showing short AI-generated cue cards, while keeping a live in-memory transcript and generating post-call summaries on demand.",
+		"why": "Switching to a chatbot mid-call is too slow and hands your conversation to whichever cloud service that chatbot uses; NullCap puts answers on screen in real time and sends every AI request to one place only — your local NullHub gateway, never a model provider directly.",
+		"when": "Before a job interview, customer demo or sales call: run `nullcap run`, pick one of seven session modes, and get on-screen hints during the call plus a summary, action items and a follow-up email draft after it ends."
+	}
 }

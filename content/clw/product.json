@@ -2,13 +2,25 @@
 	"hero": {
 		"kicker": "THE PARING KNIFE — TINY ASSISTANT",
 		"title": "A complete AI assistant in under 1 MB",
-		"sub": "nllclw is a local-first assistant in readable Zig 0.16: OpenAI-compatible providers, local memory, a capability-gated tool loop, Telegram and WebSocket — one standalone binary, no provider SDKs, no Node, no Python."
+		"sub": "A local AI assistant that ships as one standalone binary under 1 MB — no Node, no Python, no SDKs to install. Point it at OpenAI, OpenRouter, or any OpenAI-compatible server and chat from your terminal or Telegram while it remembers facts, edits files, and runs scheduled tasks — each capability behind an on/off switch in config."
 	},
 	"metrics": [
-		{ "value": "795 KiB", "label": "stripped binary" },
-		{ "value": "385/385", "label": "tests passing" },
-		{ "value": "20,903", "label": "lines of Zig" },
-		{ "value": "11", "label": "doc languages" }
+		{
+			"value": "795 KiB",
+			"label": "stripped binary"
+		},
+		{
+			"value": "385/385",
+			"label": "tests passing"
+		},
+		{
+			"value": "20,903",
+			"label": "lines of Zig"
+		},
+		{
+			"value": "11",
+			"label": "doc languages"
+		}
 	],
 	"install": {
 		"primary": {
@@ -30,29 +42,36 @@
 	"features": [
 		{
 			"title": "Stdlib-only single binary",
-			"body": "No runtime dependency on Node, Python, curl, a shell, or provider SDKs. The default build uses Zig stdlib adapters only."
+			"body": "One file you download and run. No Node, no Python, no curl, no provider SDK — the default build uses only Zig's standard library, including its own HTTP and streaming code."
 		},
 		{
 			"title": "Any OpenAI-compatible provider",
-			"body": "openai, openrouter, or any compatible base URL — including local servers like Ollama on loopback. SSE streaming for direct chat."
+			"body": "Works with OpenAI, OpenRouter, or any server that speaks the OpenAI chat API — including local ones like Ollama. Replies stream token by token as they arrive."
 		},
 		{
 			"title": "Capability-gated tool loop",
-			"body": "Filesystem, scheduling, web search and user-defined macro tools, each behind a plain config gate like NLLCLW_FILE_WRITE. Bounded rounds, bounded output."
+			"body": "The model can list, read, write, and edit files, set cron schedules, search the web once you configure a search provider (Brave, Tavily, and others), and save its own macro tools. Every capability sits behind a config switch — set NLLCLW_FILE_WRITE=off and file writes are gone — and rounds per answer and output size are both capped."
 		},
 		{
 			"title": "Two-layer local memory",
-			"body": "Recent transcript plus durable keyed facts, stored as JSONL in the user state directory. Nothing leaves your machine."
+			"body": "Keeps the recent conversation plus facts you ask it to remember (\"remember that this project uses Zig 0.16\"), stored as plain files on your disk. Nothing is synced anywhere."
 		},
 		{
 			"title": "Six channels, one runtime",
-			"body": "argv/stdin, interactive terminal, Telegram, token-protected WebSocket, heartbeat and daemon all share the same agent loop."
+			"body": "Ask a one-shot question from the command line, chat in the terminal, message it on Telegram, connect a browser UI over WebSocket, have its heartbeat mode pick up pending tasks from a markdown TODO file, or run it as a daemon executing scheduled tasks — the same assistant, config, and memory everywhere."
 		},
 		{
 			"title": "Shell compiled out by default",
 			"body": "shell_exec exists only in an explicit -Dshell-tool=true build. The default binary cannot run shell commands at all."
 		}
 	],
-	"pairs": ["claw"],
-	"note": "Pre-1.0 with one release (v2026.6.1); binary size and test counts are the project's own snapshot, and config and CLI may change between releases."
+	"pairs": [
+		"claw"
+	],
+	"note": "Pre-1.0 with one release (v2026.6.1); binary size and test counts are the project's own snapshot, and config and CLI may change between releases.",
+	"plain": {
+		"what": "A command-line AI assistant that ships as a single standalone binary under 1 MB, written in Zig, with chat, local memory, file tools, scheduling, Telegram, and a WebSocket API built in.",
+		"why": "Most AI assistants require a Node or Python runtime and bury their logic in a plugin platform; nllclw fits the whole assistant — provider calls, streaming, tools, memory, channels — into about 21,000 lines of dependency-free Zig you can actually read.",
+		"when": "Reach for it when you want an AI helper on a machine where you won't install Node or Python — a bare server, a container, your laptop — or when you want a complete agent implementation small enough to read end to end and fork into your own."
+	}
 }

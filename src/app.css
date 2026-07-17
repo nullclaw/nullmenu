@@ -45,9 +45,16 @@
 	--pad: clamp(1.25rem, 4vw, 2.5rem);
 	--header-h: 4rem;
 
+	/* rhythm */
+	--section-pad: clamp(4.5rem, 11vw, 8.5rem);
+	--section-pad-sm: clamp(3rem, 8vw, 5.5rem);
+	--row-pad: 1.35rem 0.75rem;
+	--row-gap: 1.25rem;
+
 	/* motion */
 	--ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 	--ease-swift: cubic-bezier(0.55, 0, 0.1, 1);
+	--t-row: 0.3s;
 
 	color-scheme: dark;
 }
@@ -251,7 +258,7 @@ pre {
 }
 
 .section {
-	padding-block: clamp(4.5rem, 11vw, 8.5rem);
+	padding-block: var(--section-pad);
 	position: relative;
 }
 
@@ -424,7 +431,7 @@ pre {
 	border-radius: 4px;
 	font-size: 0.85em;
 	color: color-mix(in srgb, var(--accent) 70%, var(--ink));
-	white-space: nowrap;
+	overflow-wrap: break-word;
 }
 
 .prose blockquote {

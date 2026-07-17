@@ -2,13 +2,25 @@
 	"hero": {
 		"kicker": "THE THERMOMETER — OBSERVABILITY",
 		"title": "Every span, verdict and dollar, kept on your machine",
-		"sub": "NullWatch ingests execution traces and eval results from NullClaw, stores them as local JSONL files, and serves run summaries — latency, errors, tokens, cost — over a JSON HTTP API and CLI. Headless by design; NullHub renders the UI."
+		"sub": "A single sub-megabyte binary that records what your agent runs actually did — every model call, tool invocation, retry and eval verdict — as plain JSONL files on your own disk. Query latency, errors, token usage and cost per run over a JSON HTTP API or the CLI; a companion dashboard, NullHub, renders the UI on top."
 	},
 	"metrics": [
-		{ "value": "313–653 KB", "label": "static binary, per target" },
-		{ "value": "7", "label": "prebuilt platform targets" },
-		{ "value": "0", "label": "external services or databases" },
-		{ "value": "OTLP/HTTP", "label": "standard JSON trace ingest" }
+		{
+			"value": "313–653 KB",
+			"label": "static binary, per target"
+		},
+		{
+			"value": "7",
+			"label": "prebuilt platform targets"
+		},
+		{
+			"value": "0",
+			"label": "external services or databases"
+		},
+		{
+			"value": "OTLP/HTTP",
+			"label": "standard JSON trace ingest"
+		}
 	],
 	"install": {
 		"primary": {
@@ -38,7 +50,7 @@
 		},
 		{
 			"title": "Evals as first-class data",
-			"body": "Scored assertions attach to runs: scorer, score, verdict, dataset. Regression gates and rubric checks live next to the traces they judge."
+			"body": "An eval is a scored quality check attached to a run — scorer name, score, pass/fail verdict, dataset. Send them over /v1/evals or the CLI and they are stored and queried right next to the trace they judged."
 		},
 		{
 			"title": "Run-level summaries",
@@ -46,7 +58,7 @@
 		},
 		{
 			"title": "A tiny OTLP sink",
-			"body": "Accepts OTLP/HTTP JSON traces on /v1/traces. Point NullClaw's diagnostics OTLP endpoint at it and spans map into runs automatically."
+			"body": "Accepts standard OpenTelemetry traces (OTLP/HTTP JSON) on /v1/traces. Point any tool that emits OpenTelemetry traces at it — including NullClaw, the companion agent runtime — and incoming spans are mapped into runs automatically."
 		},
 		{
 			"title": "Local JSONL storage",
@@ -54,9 +66,17 @@
 		},
 		{
 			"title": "Demo data built in",
-			"body": "demo-seed creates a deterministic, idempotent dataset — runs, spans, evals, costs, failures — without API keys or a hosted service."
+			"body": "Run demo-seed to get a realistic sample dataset — a passing code-review run, a failed tool call, a handoff with retries — with no API keys, no hosted service and no agent running. Re-running it is safe: it always produces the same data."
 		}
 	],
-	"pairs": ["claw", "hub"],
-	"note": "Pre-1.0 with one release so far; the README calls it a bootstrap implementation, and the repo has no license file yet."
+	"pairs": [
+		"claw",
+		"hub"
+	],
+	"note": "Pre-1.0 with one release so far; the README calls it a bootstrap implementation, and the repo has no license file yet.",
+	"plain": {
+		"what": "NullWatch is an observability service in a single sub-megabyte Zig binary: it serves a JSON HTTP API on 127.0.0.1:7710 and stores AI-agent execution traces and eval results as JSONL files under ~/.nullwatch/data.",
+		"why": "When an agent run fails or burns money, you need a record of every model call, tool invocation and eval verdict to see what happened — NullWatch keeps that record on your own machine instead of a hosted observability platform.",
+		"when": "Reach for it when an agent run misbehaves and you want to list its spans, find the failed tool call and total up tokens and cost — or when you need a local OpenTelemetry (OTLP/HTTP JSON) endpoint to point an agent's trace output at."
+	}
 }

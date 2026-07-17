@@ -2,13 +2,25 @@
 	"hero": {
 		"kicker": "MISE EN PLACE — SHARED CI",
 		"title": "One YAML block, twelve targets, every release.",
-		"sub": "Reusable GitHub Actions workflows that test, cross-compile and release every Null-family Zig project. Maintainer infrastructure: nothing to install — a caller repo references the workflows and inherits the whole pipeline."
+		"sub": "Reusable GitHub Actions workflows for Zig projects. Add a ten-line job block per pipeline — `uses: nullclaw/nullbuilder/.github/workflows/zig-ci.yml@v1` for tests and cross-compiled binaries, plus sibling workflows for nightly builds and tag-driven GitHub releases that ship binaries for 12 targets across Linux, Android, macOS, and Windows. Nothing to install — it all runs in your repo's own Actions."
 	},
 	"metrics": [
-		{ "value": "12", "label": "default release targets" },
-		{ "value": "5", "label": "OS families" },
-		{ "value": "3", "label": "reusable workflows" },
-		{ "value": "0.16.0", "label": "pinned Zig default" }
+		{
+			"value": "12",
+			"label": "default release targets"
+		},
+		{
+			"value": "5",
+			"label": "OS families"
+		},
+		{
+			"value": "3",
+			"label": "reusable workflows"
+		},
+		{
+			"value": "0.16.0",
+			"label": "pinned Zig default"
+		}
 	],
 	"install": {
 		"primary": {
@@ -30,7 +42,7 @@
 	"features": [
 		{
 			"title": "One CI block",
-			"body": "zig-ci.yml runs your tests, then cross-compiles ReleaseSmall binaries on a configurable target matrix. Zig caches and artifact upload included."
+			"body": "zig-ci.yml runs your test suite, then cross-compiles size-optimized (ReleaseSmall) binaries for a configurable target matrix — x86_64 Linux (musl), aarch64 macOS, and x86_64 Windows by default. Zig build caching and artifact upload are included."
 		},
 		{
 			"title": "Twelve-target releases",
@@ -46,13 +58,23 @@
 		},
 		{
 			"title": "Hooks for odd builds",
-			"body": "Setup, pre-test and pre-build commands, custom test command and build args, one e2e command pinned to a chosen target, optional Node.js with npm caching."
+			"body": "Nonstandard build? Pass your commands as workflow inputs: setup, pre-test, and pre-build hooks, a custom test command and build flags, one end-to-end test pinned to a target of your choice, and optional Node.js with npm caching for repos that build UI assets before the Zig build."
 		},
 		{
 			"title": "SHA-pinned supply chain",
 			"body": "Every third-party action is pinned to a full commit SHA, with Dependabot updates. The helper actions are written in Zig and unit-tested with zig test."
 		}
 	],
-	"pairs": ["claw", "hub", "tickets", "boiler"],
-	"note": "Not an end-user tool, and no releases, tags or license file yet — callers pin to the v1 branch, and workflow inputs may change."
+	"pairs": [
+		"claw",
+		"hub",
+		"tickets",
+		"boiler"
+	],
+	"note": "Not an end-user tool, and no releases, tags or license file yet — callers pin to the v1 branch, and workflow inputs may change.",
+	"plain": {
+		"what": "A set of reusable GitHub Actions workflows (referenced with `uses: nullclaw/nullbuilder/...@v1`) that give a Zig repo on GitHub its CI, nightly-build, and release pipelines.",
+		"why": "Every Zig repo in the NullClaw GitHub org needs the same pipeline — run tests, cross-compile small size-optimized binaries for a dozen platforms, publish GitHub releases — and copy-pasting that YAML into each repo means fixing every bug in every copy; this keeps it in one place that all repos reference.",
+		"when": "You maintain a Zig project on GitHub and want tests plus cross-compiled release binaries for Linux, Android, macOS, and Windows without writing your own matrix workflows — you add a ten-line job block per pipeline instead."
+	}
 }

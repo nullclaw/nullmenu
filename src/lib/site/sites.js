@@ -55,7 +55,7 @@ export const sites = {
 		status: 'beta',
 		license: 'MIT',
 		version: 'v2026.5.29',
-		line: 'One binary that installs, supervises and updates your whole agent stack.',
+		line: 'A web console in one binary that installs, runs, monitors and updates the Null agent stack.',
 		stat: '1 binary · 7 platforms',
 		docsSections: [
 			{ slug: 'start', title: 'Start' },
@@ -83,7 +83,7 @@ export const sites = {
 		status: 'beta',
 		license: 'MIT',
 		version: 'v2026.5.29',
-		line: 'A fully autonomous AI agent in a 678 KB static binary.',
+		line: 'A self-hosted AI assistant in one 678 KB binary — talk to it from Telegram, Discord or Slack.',
 		stat: '678 KB · ~1 MB RAM',
 		docsSections: [
 			{ slug: 'start', title: 'Start' },
@@ -111,7 +111,7 @@ export const sites = {
 		status: 'beta',
 		license: 'MIT',
 		version: 'v2026.5.29',
-		line: 'Workflow graphs — checkpoints, fan-out, interrupts, replay — compiled native.',
+		line: 'An orchestration engine for AI agents — decides what runs, when, and which worker executes it.',
 		stat: '7 node types · 355 tests',
 		docsSections: [
 			{ slug: 'start', title: 'Start' },
@@ -138,7 +138,7 @@ export const sites = {
 		status: 'beta',
 		license: 'MIT',
 		version: 'v2026.5.29',
-		line: 'Durable task state: lease-based claiming, FSM pipelines, retries.',
+		line: 'A task queue for AI agents: one SQLite-backed binary; agents claim work and report over HTTP.',
 		stat: 'OpenAPI 3.1 · SQLite',
 		docsSections: [
 			{ slug: 'start', title: 'Start' },
@@ -165,7 +165,7 @@ export const sites = {
 		status: 'early',
 		license: null,
 		version: 'v2026.5.29',
-		line: 'A sub-megabyte local OTLP sink with evals built in.',
+		line: 'A local observability service for AI agent runs: traces, evals and cost in one tiny binary.',
 		stat: '313–653 KB binaries',
 		docsSections: [
 			{ slug: 'start', title: 'Start' },
@@ -191,7 +191,7 @@ export const sites = {
 		status: 'early',
 		license: null,
 		version: 'v2026.06.09',
-		line: 'Knowledge, memory and citation-backed RAG behind one API.',
+		line: 'A knowledge-base and agent-memory server: permission-aware search that cites its sources.',
 		stat: '14+ memory backends',
 		docsSections: [
 			{ slug: 'start', title: 'Start' },
@@ -218,8 +218,8 @@ export const sites = {
 		status: 'early',
 		license: 'MIT',
 		version: 'v2026.6.1',
-		line: 'A complete AI assistant in under 1 MB — 21k lines of readable Zig.',
-		stat: '795 KB stripped',
+		line: 'A local AI assistant in one binary under 1 MB — chat, memory, file tools, and Telegram, in Zig.',
+		stat: '< 1 MB · 385 tests',
 		docsSections: [
 			{ slug: 'start', title: 'Start' },
 			{ slug: 'guides', title: 'Guides' },
@@ -245,7 +245,7 @@ export const sites = {
 		status: 'pre-release',
 		license: null,
 		version: null,
-		line: 'Agents propose, you approve: diff review, command approval, audit trail.',
+		line: 'A local app for supervising AI agents: assign tasks, review diffs, approve commands.',
 		stat: 'GUI · TUI · web',
 		docsSections: [{ slug: 'start', title: 'Start' }]
 	},
@@ -268,7 +268,7 @@ export const sites = {
 		status: 'experimental',
 		license: null,
 		version: null,
-		line: 'A local-first meeting copilot, routed through your own NullHub.',
+		line: 'Desktop overlay with live cue cards for interviews and calls; talks only to one local gateway.',
 		stat: 'experimental',
 		docsSections: [{ slug: 'start', title: 'Start' }]
 	},
@@ -291,7 +291,7 @@ export const sites = {
 		status: 'infra',
 		license: null,
 		version: null,
-		line: 'One YAML block, twelve targets: shared CI for the whole family.',
+		line: 'Reusable GitHub Actions workflows that give Zig repos CI, nightlies, and 12-target releases.',
 		stat: '12 targets · 5 OS families',
 		docsSections: [
 			{ slug: 'start', title: 'Start' },

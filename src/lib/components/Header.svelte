@@ -327,13 +327,16 @@
 		color: var(--accent);
 	}
 
-	@media (max-width: 720px) {
+	@media (max-width: 880px) {
 		nav.desktop {
 			display: none;
 		}
 		.burger {
 			display: flex;
 		}
+	}
+
+	@media (max-width: 480px) {
 		.version {
 			display: none;
 		}
