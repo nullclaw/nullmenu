@@ -72,8 +72,166 @@
 	],
 	"note": "Pre-1.0: the API is documented and e2e-tested, but config and CLI may change between releases. The server binds 127.0.0.1 only and handles one connection at a time — a local coordinator by design; put a reverse proxy in front if remote agents need it. Known quirk in v2026.5.29: --version and GET /health still report the stale version string 2026.3.2.",
 	"plain": {
-		"what": "A single-binary HTTP service (written in Zig, SQLite embedded) that stores tasks for AI agents and hands them out through a JSON REST API on 127.0.0.1 — agents claim work by role, report progress events, and move tasks through defined stages.",
-		"why": "Long-running agent work normally dies with the process that runs it; NullTickets keeps the backlog, retries, and full history in SQLite on disk, so a crashed or restarted agent loop picks up where it left off instead of needing a human to restart it.",
-		"when": "You have a backlog too big for one session — say 100 tasks loaded in one POST /tasks/bulk call — and want an agent loop (nullclaw, the companion agent runtime, or any runtime that implements the claim → events → transition contract) to grind through it unattended, with failed tasks retried automatically."
-	}
+		"what": "A single-binary HTTP service, written in Zig with SQLite embedded, that stores tasks for AI agents and hands them out over a JSON REST API on 127.0.0.1. Agents claim work by role under expiring leases, report progress events, and move tasks through stages you declare as a validated state machine. The whole thing — 33 endpoints, full-text-searchable key-value store, OpenTelemetry trace ingest — fits in a 1.3–1.7 MB file with no dependencies to install.",
+		"why": "Long-running agent work normally dies with the process that runs it: the context window ends, the loop crashes, and the backlog lives nowhere. NullTickets keeps tasks, retries, dependencies, and full run history in one SQLite file on disk, so a restarted agent claims the next eligible task and continues instead of needing a human to reconstruct state. Leases, idempotency keys, and typed 409 conflicts mean crashes and retried requests are the expected case, not corruption.",
+		"when": "You have a backlog too big for one session — say 100 tasks loaded in a single POST /tasks/bulk call — and want an agent loop (nullclaw, the companion agent runtime from the same project, or anything that speaks the claim → events → transition contract over HTTP) to grind through it unattended. It fits when the coordinator can live on the same machine as the agents, or behind a proxy you control; it is the wrong tool if you need a multi-tenant, high-concurrency task service on the open network."
+	},
+	"how": {
+		"intro": "NullTickets is one binary and one SQLite file. The path from download to a working agent queue is: run the binary, confirm it answers on 127.0.0.1:7700, declare a pipeline, load tasks, and point an agent loop at the claim endpoint.",
+		"steps": [
+			{
+				"title": "Get the binary",
+				"body": "Download a prebuilt release for your platform — there are 7, from macOS arm64 down to riscv64 Linux, each 1.3–1.7 MB with SQLite 3.51.2 and FTS5 already inside. No runtime, no package manager, no external dependencies to install. If you prefer, `zig build` from source works too, as does `nullhub install nulltickets` via NullHub — the installer shared by the Null family of agent tools that NullTickets belongs to.",
+				"code": "curl -LO https://github.com/nullclaw/nulltickets/releases/download/v2026.5.29/nulltickets-linux-x86_64 && chmod +x nulltickets-linux-x86_64"
+			},
+			{
+				"title": "Start the tracker",
+				"body": "Launch it with a port and a database path. On startup it reads ~/.nulltickets/config.json if present (flags override it), creates the SQLite database if missing, runs its embedded migrations, and binds a JSON REST API to 127.0.0.1 — localhost only, by design. Add --token to require a bearer token on admin routes.",
+				"code": "./nulltickets-linux-x86_64 --port 7700 --db tracker.db"
+			},
+			{
+				"title": "Verify and discover",
+				"body": "GET /health confirms it is up; GET /openapi.json returns the full OpenAPI 3.1 schema (924 lines, embedded in the binary, also at /.well-known/openapi.json), so an agent can enumerate all 33 endpoints at runtime instead of shipping a hand-written client. Known quirk: /health still reports the stale version string 2026.3.2 in v2026.5.29.",
+				"code": "curl http://127.0.0.1:7700/health && curl http://127.0.0.1:7700/openapi.json"
+			},
+			{
+				"title": "Declare a pipeline, load tasks",
+				"body": "POST /pipelines with your stages and allowed transitions — e.g. plan → review → done. The definition is validated as a state machine (8 distinct error cases: missing initial state, transitions to unknown states, no terminal state, orphan states, and so on) before it is accepted. Then POST /tasks for single tasks or POST /tasks/bulk to load a whole backlog in one transaction; send an Idempotency-Key header so a retried request can never double-create.",
+				"code": "curl -X POST http://127.0.0.1:7700/tasks/bulk -H 'Idempotency-Key: batch-001' -d @tasks.json"
+			},
+			{
+				"title": "Point an agent loop at it",
+				"body": "The agent contract is three calls: POST /leases/claim to get the next eligible task for an agent id and role (5-minute lease by default, extended via POST /leases/{id}/heartbeat using the lease token from the claim response as a bearer token), POST /runs/{id}/events to report progress, and POST /runs/{id}/transition to move the task to its next stage — or POST /runs/{id}/fail to trigger the retry/dead-letter policy. If the agent crashes, its lease expires and the task becomes claimable again.",
+				"code": "curl -X POST http://127.0.0.1:7700/leases/claim -d '{\"agent_id\":\"agent-1\",\"agent_role\":\"reviewer\"}'"
+			}
+		]
+	},
+	"inside": [
+		{
+			"title": "33 REST endpoints",
+			"items": [
+				"/health",
+				"/openapi.json",
+				"/.well-known/openapi.json",
+				"/pipelines",
+				"/tasks",
+				"/tasks/bulk",
+				"/tasks/{id}/run-state",
+				"/tasks/{id}/dependencies",
+				"/tasks/{id}/assignments",
+				"/leases/claim",
+				"/leases/{id}/heartbeat",
+				"/runs/{id}/events",
+				"/runs/{id}/transition",
+				"/runs/{id}/fail",
+				"/artifacts",
+				"/ops/queue",
+				"/store/{ns}/{key}",
+				"/store/search",
+				"/v1/traces (OTLP)",
+				"+5 more paths"
+			],
+			"note": "33 counts method+path combinations across 24 route paths. Every route is dispatched from one function in src/api.zig and documented in the embedded OpenAPI 3.1 spec; /health and the OpenAPI routes are always public, run and lease routes accept per-lease tokens, everything else needs the admin token when one is set."
+		},
+		{
+			"title": "11 SQLite tables",
+			"items": [
+				"pipelines",
+				"tasks",
+				"runs",
+				"leases",
+				"events",
+				"artifacts",
+				"task_dependencies",
+				"task_assignments",
+				"idempotency_keys",
+				"otlp_batches",
+				"otlp_spans"
+			],
+			"note": "One WAL-mode database file holds the whole state — backlog, history, retries, traces — so backup is copying a file."
+		},
+		{
+			"title": "7 CLI flags, no subcommands",
+			"items": [
+				"--port",
+				"--db",
+				"--token",
+				"--config",
+				"--version",
+				"--export-manifest",
+				"--from-json"
+			],
+			"note": "--export-manifest and --from-json exist for integration with NullHub (the Null suite's installer): printing an install manifest and writing config.json from wizard JSON."
+		},
+		{
+			"title": "7 release targets",
+			"items": [
+				"macOS aarch64",
+				"macOS x86_64",
+				"Linux x86_64",
+				"Linux aarch64",
+				"Linux riscv64",
+				"Windows x86_64",
+				"Windows aarch64"
+			],
+			"note": "Each is a static binary between 1.3 and 1.7 MB with the vendored SQLite 3.51.2 amalgamation compiled in — yes, including the riscv64 build."
+		},
+		{
+			"title": "3 config keys",
+			"items": [
+				"port",
+				"db",
+				"api_token"
+			],
+			"note": "Read from $NULLTICKETS_HOME/config.json (default ~/.nulltickets/config.json); a relative db path resolves against the config file's directory, and flags always win."
+		}
+	],
+	"useCases": [
+		{
+			"title": "A 100-task backlog ground through overnight",
+			"body": "You have more work than one agent session can hold: refactor 100 files, triage 100 issues. Load them in a single transactional POST /tasks/bulk call against a pipeline like plan → review → done, set max_attempts and retry_delay_ms per task, and let one or more agent loops claim by role until the queue is empty. Tasks that exhaust their retries land in a dead_letter_stage with the failure reason recorded, instead of silently vanishing — in the morning you read /tasks?stage=dead_letter, not a truncated chat log.",
+			"code": "curl -X POST http://127.0.0.1:7700/pipelines -d @refactor-pipeline.json\ncurl -X POST http://127.0.0.1:7700/tasks/bulk -H 'Idempotency-Key: refactor-run-1' -d @tasks.json"
+		},
+		{
+			"title": "An agent loop that survives its own crashes",
+			"body": "An agent claims a task and gets a lease: a 32-byte crypto-random token (stored server-side only as a SHA-256 hash) with a 5-minute TTL it must heartbeat to keep. Kill the process mid-task and nothing is stuck — a janitor sweep expires the stale lease and the next claim hands the task to whoever asks. The claim itself is one SQL statement covering role match, dependency resolution, retry eligibility, and active-lease exclusion, so two agents can never claim the same task; optimistic expected_stage / expected_task_version checks return typed 409s if they still race on updates.",
+			"code": "curl -X POST http://127.0.0.1:7700/leases/claim -d '{\"agent_id\":\"builder-1\",\"agent_role\":\"builder\"}'\ncurl -X POST http://127.0.0.1:7700/leases/{lease_id}/heartbeat -H 'Authorization: Bearer {lease_token}'"
+		},
+		{
+			"title": "Shared memory agents can actually search",
+			"body": "Agents in different sessions — or different runtimes — need somewhere to leave notes for each other. The namespaced key-value store (PUT /store/{ns}/{key}, with any JSON wrapped in a {\"value\": ...} envelope) is backed by SQLite FTS5, so GET /store/search does real full-text search over everything written, kept in sync by triggers. A research agent writes findings under one namespace; a writer agent later searches them by phrase instead of guessing keys.",
+			"code": "curl -X PUT http://127.0.0.1:7700/store/research/vendor-comparison -d '{\"value\":{\"summary\":\"...\"}}'\ncurl 'http://127.0.0.1:7700/store/search?q=vendor+pricing'"
+		},
+		{
+			"title": "Seeing what a fleet did, and where it is stuck",
+			"body": "The tracker doubles as a small observability sink: POST /v1/traces ingests OpenTelemetry (OTLP) spans — JSON parsed and linked to tasks and runs via nulltickets.run_id / nulltickets.task_id attributes, protobuf stored as blob batches — and GET /runs/{id}/events replays what each run reported. When something stalls, GET /ops/queue lists near-expiry leases and stuck tasks with tunable thresholds, so your orchestrator can detect a wedged agent instead of you tailing logs.",
+			"code": "curl 'http://127.0.0.1:7700/ops/queue?stuck_ms=600000'"
+		}
+	],
+	"faq": [
+		{
+			"q": "Can agents on other machines connect to it?",
+			"a": "Not directly. The server hard-binds 127.0.0.1 and the address is not configurable — private by default is a deliberate posture, not an oversight. If remote agents need access, put a reverse proxy or a tunnel (SSH, Tailscale) in front, and set --token so admin routes require a bearer token."
+		},
+		{
+			"q": "How many concurrent agents can it handle?",
+			"a": "It is a strictly sequential server: one accept loop, one connection at a time, Connection: close, and a 64 KB cap per request. That is entirely fine for a local coordinator where each call is a fast SQLite operation, but it is not a high-concurrency web service — do not put hundreds of chatty clients directly on it."
+		},
+		{
+			"q": "Is it production-ready?",
+			"a": "It is pre-1.0. The 33-endpoint API is specified in an embedded OpenAPI 3.1 document and exercised by a 665-line end-to-end bash suite plus 17 Zig test blocks, but config keys and CLI flags may change between releases. One known quirk in v2026.5.29: --version and GET /health still report the stale string 2026.3.2."
+		},
+		{
+			"q": "What does it depend on?",
+			"a": "Exactly one thing: a vendored SQLite 3.51.2 amalgamation compiled with FTS5. The HTTP server is hand-rolled on Zig 0.16's standard library networking — no framework — which is how the full release binaries stay at 1.3–1.7 MB."
+		},
+		{
+			"q": "What stops a retried request from creating duplicate tasks?",
+			"a": "Every write accepts an Idempotency-Key header. The server stores a SHA-256 hash of the request body per key: replaying the identical request returns the cached response, while reusing a key with a different body gets a 409 idempotency_conflict. An agent on a flaky connection can retry any write blindly."
+		},
+		{
+			"q": "What happens to a task when its agent dies mid-run?",
+			"a": "The lease stops being heartbeated and expires (default TTL 300 seconds); a janitor sweep before each claim marks stale leases expired, and the task becomes claimable again. If the run was explicitly failed, the per-task retry policy applies — attempts counted, a retry_delay_ms backoff before re-eligibility, and a dead_letter_stage with the recorded reason once max_attempts is exhausted."
+		}
+	]
 }

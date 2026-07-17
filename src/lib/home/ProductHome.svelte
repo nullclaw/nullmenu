@@ -115,6 +115,35 @@
 		</section>
 	{/if}
 
+	<!-- ———— how it works ———— -->
+	{#if p.how}
+		<section class="section">
+			<div class="container">
+				<Reveal>
+					<p class="label label--accent">How it works</p>
+					<h2 class="serif">From zero to running.</h2>
+					{#if p.how.intro}<p class="section-sub">{p.how.intro}</p>{/if}
+				</Reveal>
+				<ol class="how">
+					{#each p.how.steps as step, i}
+						<Reveal delay={i * 60}>
+							<li class="how-step">
+								<span class="num serif-i" aria-hidden="true">{i + 1}</span>
+								<div class="how-body">
+									<h3 class="mono">{step.title}</h3>
+									<p>{step.body}</p>
+									{#if step.code}
+										<figure class="code-figure mini"><pre class="mono">{step.code}</pre></figure>
+									{/if}
+								</div>
+							</li>
+						</Reveal>
+					{/each}
+				</ol>
+			</div>
+		</section>
+	{/if}
+
 	<!-- ———— metrics ———— -->
 	<section class="section">
 		<div class="container">
@@ -135,6 +164,35 @@
 		</div>
 	</section>
 
+	<!-- ———— what's inside ———— -->
+	{#if p.inside?.length}
+		<section class="section">
+			<div class="container">
+				<Reveal>
+					<p class="label label--accent">What's inside</p>
+					<h2 class="serif">Counted in the source,<br />not the brochure.</h2>
+				</Reveal>
+				<div class="inside">
+					{#each p.inside as group, i}
+						<Reveal delay={i * 60}>
+							<div class="inside-group">
+								<div class="inside-head">
+									<h3 class="serif-i">{group.title}</h3>
+									{#if group.note}<p class="inside-note">{group.note}</p>{/if}
+								</div>
+								<ul class="chips" role="list">
+									{#each group.items as item}
+										<li class="chip-item mono">{item}</li>
+									{/each}
+								</ul>
+							</div>
+						</Reveal>
+					{/each}
+				</div>
+			</div>
+		</section>
+	{/if}
+
 	<!-- ———— features ———— -->
 	<section class="section">
 		<div class="container">
@@ -154,6 +212,31 @@
 			</div>
 		</div>
 	</section>
+
+	<!-- ———— use it for ———— -->
+	{#if p.useCases?.length}
+		<section class="section">
+			<div class="container">
+				<Reveal>
+					<p class="label label--accent">Use it for</p>
+					<h2 class="serif">Three dinners it cooks well.</h2>
+				</Reveal>
+				<div class="cases">
+					{#each p.useCases as c, i}
+						<Reveal delay={i * 70}>
+							<article class="card case">
+								<h3 class="serif-i">{c.title}</h3>
+								<p>{c.body}</p>
+								{#if c.code}
+									<figure class="code-figure mini"><pre class="mono">{c.code}</pre></figure>
+								{/if}
+							</article>
+						</Reveal>
+					{/each}
+				</div>
+			</div>
+		</section>
+	{/if}
 
 	<!-- ———— takeaway ———— -->
 	{#if data.release}
@@ -180,6 +263,31 @@
 			</Reveal>
 		</div>
 	</section>
+
+	<!-- ———— honest questions ———— -->
+	{#if p.faq?.length}
+		<section class="section">
+			<div class="container faq-wrap">
+				<Reveal>
+					<p class="label label--accent">Honest questions</p>
+					<h2 class="serif">Asked before you order.</h2>
+				</Reveal>
+				<div class="faq">
+					{#each p.faq as f, i}
+						<Reveal delay={i * 40}>
+							<details class="faq-item">
+								<summary>
+									<span class="serif q">{f.q}</span>
+									<span class="ind mono" aria-hidden="true">+</span>
+								</summary>
+								<p class="a">{f.a}</p>
+							</details>
+						</Reveal>
+					{/each}
+				</div>
+			</div>
+		</section>
+	{/if}
 
 	<!-- ———— pairs well with ———— -->
 	{#if pairs.length}
@@ -333,6 +441,202 @@
 		font-weight: 400;
 		line-height: 1.12;
 		margin-top: 1rem;
+	}
+
+	.section-sub {
+		color: var(--ink-2);
+		margin-top: 1.25rem;
+		max-width: 40rem;
+	}
+
+	/* how it works */
+	.how {
+		list-style: none;
+		margin: 3rem 0 0;
+		padding: 0;
+		max-width: 46rem;
+		display: flex;
+		flex-direction: column;
+	}
+
+	.how-step {
+		display: grid;
+		grid-template-columns: 3.5rem minmax(0, 1fr);
+		gap: 1.25rem;
+		padding: 1.75rem 0;
+		border-top: 1px solid var(--line);
+	}
+
+	.how-step .num {
+		font-size: 2.6rem;
+		line-height: 1;
+		color: var(--accent);
+		opacity: 0.85;
+	}
+
+	.how-body h3 {
+		font-size: var(--text-xs);
+		font-weight: 500;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--accent);
+		margin-bottom: 0.6rem;
+	}
+
+	.how-body p {
+		color: var(--ink-2);
+		max-width: 40rem;
+	}
+
+	.code-figure.mini {
+		margin: 0.9rem 0 0;
+		max-width: 36rem;
+	}
+
+	.code-figure.mini pre {
+		margin: 0;
+		background: #0a0806;
+		color: #d9d1c3;
+		border: 1px solid var(--line);
+		padding: 0.7rem 1rem;
+		font-size: 0.78rem;
+		line-height: 1.6;
+		overflow-x: auto;
+		white-space: pre;
+	}
+
+	/* what's inside */
+	.inside {
+		margin-top: 3rem;
+		border-top: 1px solid var(--line);
+	}
+
+	.inside-group {
+		display: grid;
+		grid-template-columns: 17rem minmax(0, 1fr);
+		gap: 2rem;
+		padding: 1.75rem 0.5rem;
+		border-bottom: 1px solid var(--line);
+	}
+
+	.inside-head h3 {
+		font-size: 1.45rem;
+		color: var(--accent);
+	}
+
+	.inside-note {
+		color: var(--ink-3);
+		font-size: var(--text-sm);
+		margin-top: 0.4rem;
+	}
+
+	.chips {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.45rem;
+		align-content: flex-start;
+	}
+
+	.chip-item {
+		font-size: 0.68rem;
+		letter-spacing: 0.05em;
+		color: var(--ink-2);
+		border: 1px solid var(--line);
+		border-radius: 99px;
+		padding: 0.25em 0.75em;
+		transition: color var(--t-row) var(--ease-out), border-color var(--t-row) var(--ease-out);
+	}
+
+	.chip-item:hover {
+		color: var(--accent);
+		border-color: var(--accent-dim);
+	}
+
+	/* use it for */
+	.cases {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 1.5rem;
+		margin-top: 3rem;
+	}
+
+	.cases > :global(div) {
+		display: grid;
+	}
+
+	.case {
+		height: 100%;
+		display: flex;
+		flex-direction: column;
+		gap: 0.85rem;
+	}
+
+	.case h3 {
+		font-size: 1.5rem;
+		color: var(--accent);
+	}
+
+	.case p {
+		color: var(--ink-2);
+		font-size: var(--text-sm);
+		flex: 1;
+	}
+
+	/* honest questions */
+	.faq {
+		margin-top: 2.5rem;
+		border-top: 1px solid var(--line);
+		max-width: 50rem;
+	}
+
+	.faq-item {
+		border-bottom: 1px solid var(--line);
+	}
+
+	.faq-item summary {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 1.5rem;
+		padding: 1.25rem 0.5rem;
+		cursor: pointer;
+		list-style: none;
+		transition: color var(--t-row) var(--ease-out);
+	}
+
+	.faq-item summary::-webkit-details-marker {
+		display: none;
+	}
+
+	.faq-item summary .q {
+		font-size: 1.25rem;
+		color: var(--ink);
+		transition: color var(--t-row) var(--ease-out);
+	}
+
+	.faq-item summary:hover .q {
+		color: var(--accent);
+	}
+
+	.faq-item .ind {
+		color: var(--ink-3);
+		font-size: 1rem;
+		transition: transform 0.3s var(--ease-swift), color 0.3s var(--ease-out);
+	}
+
+	.faq-item[open] .ind {
+		transform: rotate(45deg);
+		color: var(--accent);
+	}
+
+	.faq-item .a {
+		padding: 0 2.5rem 1.4rem 0.5rem;
+		color: var(--ink-2);
+		max-width: 44rem;
+		line-height: 1.7;
 	}
 
 	/* in plain words */
@@ -538,6 +842,13 @@
 		}
 		.features {
 			grid-template-columns: 1fr 1fr;
+		}
+		.cases {
+			grid-template-columns: 1fr;
+		}
+		.inside-group {
+			grid-template-columns: 1fr;
+			gap: 1rem;
 		}
 		.quickstart {
 			grid-template-columns: 1fr;

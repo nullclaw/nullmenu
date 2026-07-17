@@ -76,8 +76,152 @@
 	],
 	"note": "Experimental: no tagged releases and no license file yet — build from source and expect change.",
 	"plain": {
-		"what": "A native desktop overlay app, written in Zig with hand-written windowing for macOS, Windows and Linux, that floats above your call showing short AI cue cards. It captures screen, microphone and system audio locally, transcribes speech with on-device ONNX models, keeps a live in-memory transcript, and generates post-call summaries on demand. A large batch-mode CLI covers setup, diagnostics and post-call artifacts.",
-		"why": "Switching to a chatbot mid-call is slow and hands your conversation to whichever cloud service that chatbot uses. NullCap puts answers on screen in real time and sends every AI request to one place only — your local NullHub gateway, never a model provider directly — so no provider API keys ever live in the app.",
-		"when": "Before a job interview, customer demo or sales call: run `nullcap run`, pick one of seven session modes, and get on-screen hints during the call plus a summary, action items and a follow-up email draft after it ends."
-	}
+		"what": "NullCap is a native desktop overlay app, written in Zig with hand-written windowing code for each OS — Objective-C on macOS, C on Windows and Linux — that floats above your call and shows short AI cue cards: answers, structures, follow-up questions, code hints. It captures screen, microphone and system audio locally, transcribes speech on-device with ONNX Whisper and Moonshine models, and keeps a live transcript in memory. Around the overlay sits a batch-mode CLI of roughly 90 subcommands covering setup, diagnostics, privacy controls, post-call artifacts and job-search coaching.",
+		"why": "Alt-tabbing to a chatbot mid-call is slow, and it hands your conversation to whichever cloud service that chatbot uses. NullCap keeps transcription on your machine and sends every AI request to exactly one address — your local NullHub gateway (the Null ecosystem's model router, a companion app you run yourself) at 127.0.0.1:19800 — never to OpenAI, Anthropic, Gemini or Groq directly. The app stores zero provider API keys; the gateway holds them and decides which model answers each request.",
+		"when": "Before a job interview, customer demo or sales call: start a NullHub gateway, run the overlay, and pick one of seven session modes — the default is interview. During the call you get on-screen cues drawn from what it sees and hears; afterwards you get a local summary, action items, a mode-specific scorecard and a follow-up email draft, with tasks exportable to Jira, Linear or Asana."
+	},
+	"how": {
+		"intro": "NullCap has no tagged releases yet, so the path is build-from-source with Zig 0.16.0 (or the Nix flake). Everything below assumes one prerequisite: a NullHub gateway reachable at http://127.0.0.1:19800.",
+		"steps": [
+			{
+				"title": "Build it",
+				"body": "Clone the repo and build. There are zero third-party dependencies — every import is the Zig standard library or local code — so the build is just the compiler. On macOS, the app-bundle target also writes an Info.plist with the microphone and screen-recording usage strings and ad-hoc codesigns with a pinned identifier, so the OS-level screen and microphone permission grants survive rebuilds.",
+				"code": "zig build"
+			},
+			{
+				"title": "Run the self-test",
+				"body": "doctor checks your environment end to end: OS permissions for screen and microphone capture, the local speech-to-text model directory, and whether a NullHub is actually answering at the configured URL. If your gateway lives somewhere else, point the app at it once with config set-nullhub — the URL is validated client-side (http/https only, no userinfo, no path traversal).",
+				"code": "zig build run -- doctor"
+			},
+			{
+				"title": "Apply first-run defaults",
+				"body": "onboarding apply applies the balanced privacy preset and seeds workflow profiles for the session modes. Privacy presets — strict, balanced, memory, open — control what persists under ~/.nullcap and for how long; switch later with the privacy preset command. Nothing about this step touches the network beyond your gateway.",
+				"code": "zig build run -- onboarding apply"
+			},
+			{
+				"title": "Pick a session mode",
+				"body": "Seven modes — interview, meeting, demo, sales, debug, system-design, general — reshape every cue and every post-call artifact. The shipped default is interview, which tells you what this tool was built around; switch it per call.",
+				"code": "zig build run -- mode meeting"
+			},
+			{
+				"title": "Start the overlay",
+				"body": "run launches the always-on-top native overlay with global hotkeys and starts the capture lanes you enabled. From here the loop is: audio is transcribed locally, cue cards appear as the call unfolds, and when you hang up the session, transcript and notes are yours to summarize, review or purge.",
+				"code": "zig build run -- run"
+			}
+		]
+	},
+	"inside": [
+		{
+			"title": "4 cloud providers behind the gateway, 0 keys in the app",
+			"items": [
+				"Gemini",
+				"Groq",
+				"OpenAI",
+				"Claude"
+			],
+			"note": "Keys are managed in NullHub, never stored client-side; six model families — OpenAI, Gemini Flash, Gemini Pro, Claude, Groq Llama, Local Llama — are classified for tier routing so the gateway can pick fast or careful models per request."
+		},
+		{
+			"title": "15 local speech-to-text models",
+			"items": [
+				"Moonshine Tiny",
+				"Moonshine Base",
+				"Whisper Large v3 Turbo",
+				"Whisper Tiny",
+				"Whisper Base",
+				"Whisper Small",
+				"Whisper Medium",
+				"Distil-Whisper Small",
+				"Distil-Whisper Medium",
+				"Distil-Whisper Large-v2",
+				"Distil-Whisper Large-v3"
+			],
+			"note": "ONNX models that run on-device; Whisper Tiny through Medium ship in both English-only (.en) and multilingual variants, which is how the catalog reaches 15 entries."
+		},
+		{
+			"title": "7 session modes, 21 cue prompt modes",
+			"items": [
+				"Interview",
+				"Meeting",
+				"Demo",
+				"Sales",
+				"Debug",
+				"System-design",
+				"General"
+			],
+			"note": "Each mode reshapes cues and post-call artifacts; the cue/ask command adds 21 prompt flags — --assist, --answer, --structure, --followups, --code-hint, --system-design and more — for one-shot questions outside the live loop."
+		},
+		{
+			"title": "5 capture lanes",
+			"items": [
+				"Screen",
+				"Mic",
+				"System Audio",
+				"Voice-Activity Detection",
+				"Live Transcript"
+			],
+			"note": "Each lane toggles independently via capture enable/disable; mic is labelled \"me\", system audio — the other side of the call — is labelled \"other\"."
+		},
+		{
+			"title": "3 hand-written native overlays",
+			"items": [
+				"macOS (ScreenCaptureKit + AppKit)",
+				"Windows (GDI+)",
+				"Linux (X11)"
+			],
+			"note": "About 7,200 lines of Objective-C and C, not a shared toolkit — which is what lets each platform ask its OS to exclude the overlay from screen capture."
+		}
+	],
+	"useCases": [
+		{
+			"title": "A mock interview loop that never leaves your laptop",
+			"body": "You have a systems-design interview on Friday. Set mode interview (the default), drill questions and answers against the overlay with the mock command, and use the prep, speech and salary commands to work on answers, pacing and negotiation. Audio is transcribed by a local Whisper model, cues come through your own NullHub, and the review command scores a transcript or your notes afterwards — nothing about your practice run is stored with a model provider.",
+			"code": "zig build run -- mode interview\nzig build run -- mock question\nzig build run -- review --scorecard"
+		},
+		{
+			"title": "Sales calls that end with tickets, not memory",
+			"body": "Switch to sales mode for a discovery call. During the call the overlay surfaces structures and follow-up questions from the live transcript; afterwards you get a scorecard, action items and a follow-up email draft, all generated locally through the gateway. Tasks export as text, JSON, or straight into Jira, Linear or Asana.",
+			"code": "zig build run -- mode sales\nzig build run -- tasks export --format linear"
+		},
+		{
+			"title": "Your phone as the control surface",
+			"body": "You're presenting full-screen and can't touch the overlay. mirror serve starts a small HTTP server (port 4123 by default) that shows live status and controls on your phone, paired with a 24-byte random token compared in constant time and stored 0600 in ~/.nullcap. It binds to 127.0.0.1 unless you explicitly pass --lan, and the token can be rotated at any time.",
+			"code": "zig build run -- mirror serve --port 4123\nzig build run -- mirror rotate-token"
+		},
+		{
+			"title": "A trusted colleague on the line, with consent",
+			"body": "duo mode lets you invite a second operator — a mentor watching your demo, a senior engineer backing you up — who can push short live tips onto your overlay. Tips only flow after an explicit consent gate on your side, and you can list and revoke helpers at any point.",
+			"code": "zig build run -- duo invite helper@example\nzig build run -- duo consent on"
+		}
+	],
+	"faq": [
+		{
+			"q": "Does my call audio ever reach a cloud service?",
+			"a": "Raw audio, no. Speech-to-text runs on-device with local ONNX models, and voice-activity detection drops silent chunks before transcription. Text and screen evidence that need an LLM go to exactly one host — your NullHub gateway at 127.0.0.1:19800 — which then decides whether a cloud provider (Gemini, Groq, OpenAI, Claude) or a local model answers. So transcript excerpts can reach a provider, but only through your gateway and its policy, never from the app directly."
+		},
+		{
+			"q": "Is this production-ready?",
+			"a": "No. The build files pin version 1.0.0, but there are no tagged releases and no license file yet — you build from source and should expect breaking changes. On the plus side, the repo carries 513 test blocks and the code is dependency-free Zig, so \"experimental\" describes the release process more than the code quality."
+		},
+		{
+			"q": "The overlay hides from screen shares — does that beat proctoring software?",
+			"a": "No, and it isn't meant to. The overlay uses OS-level capture exclusion (NSWindowSharingNone on macOS, WDA_EXCLUDEFROMCAPTURE on Windows), which keeps it out of Zoom, Meet, Teams and OBS shares. It does nothing against proctoring agents, kernel-level capture drivers or an HDMI capture card. There is also a build-time process-disguise flag that renames the binary to look like Terminal or Activity Monitor; it exists in the tree, and you should check the rules of whatever call you're on before using either feature."
+		},
+		{
+			"q": "What happens if someone puts malicious text on my screen during a call?",
+			"a": "Screen text and transcripts are modelled as untrusted evidence, not instructions: the assistant snapshot carries ordered trust levels, marks screen/transcript/reference content untrusted, and enables prompt-injection detection and evidence escaping. It's a real, first-class defense — but like all prompt-injection mitigation today, it reduces risk rather than eliminating it."
+		},
+		{
+			"q": "What do I need besides the app?",
+			"a": "A running NullHub — the Null ecosystem's local gateway that holds provider keys and routes model requests — plus Zig 0.16.0 to build (or Nix). Two more services from the same tool family are wired in with defaults, nulltracker on port 7700 and nullboiler on port 8080, but they're optional integrations, not requirements."
+		},
+		{
+			"q": "Is the phone mirror safe to expose?",
+			"a": "By default it isn't exposed at all: the server binds 127.0.0.1 and only listens on 0.0.0.0 if you pass --lan. Every route is gated by a 24-byte hex pairing token compared in constant time, stored with 0600 permissions, and rotatable with mirror rotate-token. There's no auth beyond the token, so treat --lan as trusted-network-only."
+		},
+		{
+			"q": "Where does my data live, and can I delete it?",
+			"a": "Everything is under ~/.nullcap: config.json, session state, transcripts, notes and logs. Persistence is opt-in with retention windows set by privacy presets (strict, balanced, memory, open), and privacy purge expired or purge all removes stored data on demand. No provider API keys are ever written anywhere by the app."
+		}
+	]
 }

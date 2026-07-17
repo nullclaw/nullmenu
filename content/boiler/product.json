@@ -76,8 +76,156 @@
 	],
 	"note": "Pre-1.0 with CalVer releases: config and CLI may change between releases. Default bind is 127.0.0.1 with auth off — set api_token before exposing it beyond localhost.",
 	"plain": {
-		"what": "An orchestration engine for AI agents: a single native Zig binary (SQLite embedded) that serves an HTTP API, runs workflows defined as graphs, and dispatches each step to worker agents over webhook, OpenAI-compatible chat APIs, or the A2A agent protocol.",
-		"why": "Multi-step, multi-agent work needs something to own coordination — ordering, routing, retries, concurrency caps, crash recovery — and that job doesn't belong inside the task tracker or the agent itself, so NullBoiler does it and nothing else.",
-		"when": "Reach for it when one agent in a loop stops being enough — you want to fan a job out across several workers, cap how many run at once, or let agents work through a backlog overnight and resume from the last checkpoint if something dies."
-	}
+		"what": "An orchestration engine for AI agents: one native Zig binary, roughly 2 MB with SQLite embedded, that serves an HTTP API and executes workflows defined as graphs of steps. Each step is dispatched to a worker — an agent runtime like NullClaw, any OpenAI-compatible chat API, a plain webhook, or an A2A (Agent2Agent JSON-RPC) endpoint — and a checkpoint is written after every node so runs survive crashes and restarts.",
+		"why": "The moment work spans multiple steps and multiple agents, something has to own coordination: ordering, routing between branches, retries with backoff, concurrency caps, and recovery when a worker or the whole process dies. That job does not belong inside the task tracker or inside the agent itself, so NullBoiler does exactly that and nothing else — no framework to import, no database or broker to run alongside it.",
+		"when": "Reach for it when one agent in a loop stops being enough: you want to fan a job out across twenty items in parallel, mix an expensive agent runtime with a cheap completion API in one pipeline, or let agents claim tickets from a backlog overnight under leases and turn limits. It also earns its keep the first time a long run fails at step eight and you resume from the last checkpoint instead of paying for steps one through seven again."
+	},
+	"how": {
+		"intro": "NullBoiler is one native binary with SQLite inside, so the whole flow is: download, write one JSON file, start it, POST a run. There is no database to provision and no broker to stand up.",
+		"steps": [
+			{
+				"title": "Get the binary",
+				"body": "Download the prebuilt release for your platform — there are seven, covering Linux (x86_64, aarch64, riscv64), macOS (x86_64, aarch64), and Windows (x86_64, aarch64) — each 1.9-2.3 MB with SQLite 3.51.2 statically embedded. Make it executable and check the version.",
+				"code": "curl -LO https://github.com/nullclaw/nullboiler/releases/latest/download/nullboiler-macos-aarch64.bin && chmod +x nullboiler-macos-aarch64.bin"
+			},
+			{
+				"title": "Describe your workers",
+				"body": "Config lives at ~/.nullboiler/config.json (override the directory with NULLBOILER_HOME or the file with --config); a missing file silently yields working defaults. The part you actually write is workers[]: each worker gets an id, a url, a protocol (webhook by default; api_chat, openai_chat, or a2a (Agent2Agent JSON-RPC) also work end-to-end), optional tags for routing, and max_concurrent. Everything else — engine timings, retries, tracker mode — has defaults you can tune later.",
+				"code": "{\"workers\": [{\"id\": \"coder-1\", \"url\": \"http://127.0.0.1:9100/hook\", \"protocol\": \"webhook\", \"tags\": [\"coder\"]}]}"
+			},
+			{
+				"title": "Start the orchestrator",
+				"body": "One process: it opens the SQLite database, seeds workers from config, and serves a hand-written HTTP/1.1 API on 127.0.0.1:8080. A background engine thread polls every 500 ms and walks each run's graph from its latest checkpoint. Note the security posture: localhost-only bind and no auth by default — set api_token before exposing it further.",
+				"code": "./nullboiler-macos-aarch64.bin --config config.json --port 8080 --db nullboiler.db"
+			},
+			{
+				"title": "Create a run",
+				"body": "POST a graph of steps to /runs — here a single task step routed to any worker tagged \"coder\", with the prompt built from a {{input.goal}} template expression. The engine dispatches it, retries with backoff on failure, and writes a checkpoint after the node completes.",
+				"code": "curl -sS -X POST http://127.0.0.1:8080/runs -H 'Content-Type: application/json' -d '{\"input\":{\"goal\":\"summarize the repo\"},\"steps\":[{\"id\":\"step-1\",\"type\":\"task\",\"worker_tags\":[\"coder\"],\"prompt_template\":\"{{input.goal}}\"}]}'"
+			},
+			{
+				"title": "Watch it move",
+				"body": "Poll GET /runs/{id} for the final output, or attach to GET /runs/{id}/stream for a live event stream in values, updates, or debug mode with an after_seq cursor for reconnects. Prometheus text is at GET /metrics (11 counters, 4 gauges, all prefixed nullboiler_), and GET /workflows/{id}/mermaid renders any saved workflow as a Mermaid diagram.",
+				"code": "curl -sS http://127.0.0.1:8080/runs/<run_id>/stream?mode=values"
+			}
+		]
+	},
+	"inside": [
+		{
+			"title": "7 graph node types",
+			"items": [
+				"Task",
+				"Agent",
+				"Route",
+				"Interrupt",
+				"Send",
+				"Transform",
+				"Subgraph"
+			],
+			"note": "Route picks the next edge by label, Send fans a step out once per array item, Interrupt pauses a run for a human, Subgraph nests a whole workflow as one node."
+		},
+		{
+			"title": "7 state reducers",
+			"items": [
+				"last_value",
+				"append",
+				"merge",
+				"add",
+				"min",
+				"max",
+				"add_messages"
+			],
+			"note": "Each state key declares its reducer, so parallel branches merge deterministically — the same unified-state model LangGraph uses, here as a language-agnostic server."
+		},
+		{
+			"title": "6 worker protocols — 4 work end to end",
+			"items": [
+				"Webhook",
+				"API chat",
+				"OpenAI chat",
+				"A2A (JSON-RPC 2.0)",
+				"MQTT (stub)",
+				"Redis Streams (stub)"
+			],
+			"note": "The four HTTP protocols actually transport work today; the MQTT and Redis Streams response listeners are explicit stubs in the current release."
+		},
+		{
+			"title": "36 HTTP operations",
+			"items": [
+				"POST /runs",
+				"GET /runs/{id}/stream",
+				"POST /runs/{id}/replay",
+				"POST /runs/fork",
+				"POST /runs/{id}/state",
+				"GET /runs/{id}/checkpoints",
+				"POST /workflows/{id}/run",
+				"GET /workflows/{id}/mermaid",
+				"GET /tracker/status",
+				"GET /rate-limits",
+				"POST /admin/drain",
+				"GET /metrics",
+				"+24 more"
+			],
+			"note": "Runs, workflows, workers, tracker, and operations groups — every run is inspectable down to individual steps, events, and parent-chained checkpoints."
+		},
+		{
+			"title": "6 template expressions, 2 shipped strategies",
+			"items": [
+				"{{input.X}}",
+				"{{state.X.Y}} with [-1] indexing",
+				"{{item}}",
+				"{{task.X}}",
+				"{{attempt}}",
+				"{{store.ns.key}}",
+				"Sequential (chain)",
+				"Parallel (independent)"
+			],
+			"note": "Prompt templates read run input, unified state, fan-out items, and the shared key-value store served by NullTickets (the stack's companion task tracker); strategies are JSON files that expand a one-word field into a depends_on graph."
+		}
+	],
+	"useCases": [
+		{
+			"title": "A review pipeline that fans out over twenty files",
+			"body": "You want every changed file reviewed by an agent, then one summary. Define a workflow where a Send node takes the file array and dispatches a review step once per item across your tagged worker pool, an append reducer collects the results, and a final task step summarizes {{state.reviews}}. The engine caps concurrency per worker via max_concurrent, retries flaky steps with jittered backoff, and checkpoints after every node — kill the process mid-run and it resumes from the last checkpoint on restart.",
+			"code": "curl -sS -X POST http://127.0.0.1:8080/workflows/{id}/run -d '{\"input\":{\"files\":[...]}}'"
+		},
+		{
+			"title": "Agents working a ticket backlog overnight",
+			"body": "Turn on tracker mode and NullBoiler becomes a pull-mode supervisor against NullTickets (the stack's task tracker for agent work): it polls for open tasks, claims them by role under leases with heartbeats, prepares a per-task workspace with your shell hooks, and runs each task in a NullClaw (the stack's agent runtime) subprocess with health checks, a 20-turn ceiling, and stall detection. Concurrency is capped per pipeline, per role, and per state, so ten agents grinding through a backlog cannot trample each other. Check on it in the morning at GET /tracker/stats."
+		},
+		{
+			"title": "One worker pool mixing agent runtimes and plain APIs",
+			"body": "Your graph has steps that need a full agent and steps that just need a completion. Register a NullClaw worker over webhook and any OpenAI-compatible endpoint over openai_chat in the same workers[] array, tag them (\"coder\", \"cheap-llm\"), and let each step's worker_tags pick the right one. Per-worker circuit breakers open after repeated failures so a dead endpoint stops receiving dispatches, and GET /rate-limits shows what the engine is tracking per worker."
+		},
+		{
+			"title": "Debugging a failed run without re-running everything",
+			"body": "A ten-step run died at step eight. Because a checkpoint with a parent-chained ID exists after every node, you can POST /runs/{id}/replay from any checkpoint, POST /runs/fork to branch an experiment off the same history, set interrupt_before/interrupt_after breakpoints, or POST /runs/{id}/state to inject corrected state mid-flight and resume. The whole trail is inspectable at /runs/{id}/steps, /events, and /checkpoints."
+		}
+	],
+	"faq": [
+		{
+			"q": "Do the MQTT and Redis Streams protocols work?",
+			"a": "Not end to end, no. Requests can be formed for them, but the response listeners are explicit stubs that sleep until shutdown, and the vendored C libraries are no-op fakes. Today the four HTTP protocols — webhook, api_chat, openai_chat, and A2A — are the ones that actually transport work; treat mqtt and redis_stream as a preview of the enum, not a feature."
+		},
+		{
+			"q": "Do I need Postgres, Redis, or a message broker?",
+			"a": "No. SQLite 3.51.2 is statically embedded in the ~2 MB binary and holds runs, steps, events, and checkpoints; dispatch to workers happens over plain HTTP. The trade-off is that one NullBoiler process owns one database file — there is no multi-node clustering story."
+		},
+		{
+			"q": "Does it require the rest of the Null ecosystem?",
+			"a": "The core engine does not: point it at any webhook or OpenAI-compatible endpoint and it orchestrates them standalone. Tracker mode is the exception — pull-mode task claiming needs a NullTickets server (the stack's task tracker), and its subprocess runner shells out to the nullclaw command (the stack's agent runtime CLI). NullHub (the stack's installer console) is optional sugar: nullboiler --export-manifest emits its 22-step install-wizard manifest and --from-json generates a config from wizard answers."
+		},
+		{
+			"q": "Is it safe to expose on a network?",
+			"a": "The defaults are deliberately conservative: it binds 127.0.0.1 only, and authentication is disabled until you set api_token (bearer token) in config or via --token. If you move it off localhost, set the token first and put TLS in front — the built-in server speaks plain HTTP/1.1 with an 8 MiB request cap."
+		},
+		{
+			"q": "How does it relate to LangGraph?",
+			"a": "It borrows LangGraph's execution model — a unified state with per-key reducers (including add_messages), route/send/subgraph nodes, checkpointing, interrupts — but implements it as a language-agnostic server in Zig rather than a Python library. Your workers can be written in anything that answers HTTP; you talk to the graph over 36 REST operations instead of importing a framework."
+		},
+		{
+			"q": "Is it production-ready?",
+			"a": "It is pre-1.0 with CalVer releases (v2026.5.29 currently), so config and CLI shapes may change between versions. The engineering is serious for its age — 355 test blocks, an e2e harness, circuit breakers, drain mode, idempotency keys — but pin a release, read the changelog before upgrading, and know that building from source without the -Dversion flag stamps a stale version string into --version."
+		}
+	]
 }

@@ -72,8 +72,162 @@
 	],
 	"note": "Early: one tagged release (v2026.06.09) and no license file yet. Pre-1.0: config and CLI may change between releases. A plain zig build from source stamps the older default version string (2026.5.26); release binaries are built with -Dversion.",
 	"plain": {
-		"what": "A single-binary HTTP service, written in Zig, that stores knowledge records (docs, specs, decisions, notes) and agents' long-term memory, and serves search, Q&A, and memory APIs on port 8765 by default. Release binaries are 4.1–4.9 MB across 7 platforms: Linux (x86_64, aarch64, riscv64), macOS (x86_64, aarch64) and Windows (x86_64, aarch64).",
-		"why": "It exists so shared knowledge and agent memory live in one governed place instead of scattered per-agent files — with permissions enforced on every read and answers that always cite their sources.",
-		"when": "Reach for it when more than one agent or app needs the same searchable docs and shared memory — say, several NullClaw agents that should remember the same things — and you'd rather point them all at one URL than sync files between them."
-	}
+		"what": "A single-binary HTTP service, written in Zig, that stores knowledge records — docs, specs, decisions, notes — plus agents' long-term memory, and answers search, questions, and memory calls over one /v1 API on port 8765. Every answer is filtered by the caller's permissions and cites its sources. Release binaries are 4.1–4.9 MB across 7 platforms: Linux (x86_64, aarch64, riscv64), macOS (x86_64, aarch64), and Windows (x86_64, aarch64).",
+		"why": "Shared knowledge and agent memory usually end up scattered across per-agent files that quietly drift apart. NullPantry puts them in one governed place: permissions are enforced on every read, answers always carry citations, and a background worker keeps summaries, hygiene, and vector indexes current so nothing rots unnoticed. It deliberately has no UI of its own — it exists to be the memory layer that agents and apps call over plain HTTP.",
+		"when": "Reach for it when more than one agent or app needs the same searchable docs and shared memory — say, several NullClaw agents (NullClaw is the agent runtime in the same Null family of tools) that should remember the same things — and you'd rather point them all at one URL than sync files between machines. It also fits a single agent that has outgrown NullClaw's flat brain.db memory file, since that imports directly. If one agent with local files is all you'll ever run, you don't need it yet."
+	},
+	"how": {
+		"intro": "NullPantry is a pure server binary — no subcommands, roughly 150 --flags, one JSON config file, and a /v1 HTTP API. The whole flow is: start it, verify it describes itself, feed it records, then point your agents and apps at the URL.",
+		"steps": [
+			{
+				"title": "Start the server",
+				"body": "Run the Docker image, a 4.1–4.9 MB release binary (7 platforms: Linux x86_64/aarch64/riscv64, macOS x86_64/aarch64, Windows x86_64/aarch64), or build from source with Zig 0.16.0. With no configuration it binds 127.0.0.1:8765, opens vendored SQLite with FTS5 full-text search at .nullpantry/nullpantry.db, and spawns a background worker that drains durable jobs every 5 seconds — zero external services required.",
+				"code": "docker run --rm -p 8765:8765 -e NULLPANTRY_TOKEN=dev-secret ghcr.io/nullclaw/nullpantry:latest"
+			},
+			{
+				"title": "Verify it is up",
+				"body": "The running service publishes its own API description: /v1/health for liveness, /v1/capabilities and /v1/engines for what this particular binary was compiled with, and /v1/openapi.json for the full document. All 197 routes come from one catalog in src/api_routes.zig, so what the OpenAPI says and what actually dispatches cannot drift.",
+				"code": "curl -sS http://127.0.0.1:8765/v1/openapi.json"
+			},
+			{
+				"title": "Configure only what differs",
+				"body": "Everything has a default; override via nullpantry.json (in --home or --config), NULLPANTRY_* environment variables (212 recognized, unknown names rejected), or CLI flags — precedence is config file < env < flags. Typical first overrides: --token for auth, --backend postgres --postgres-url for shared storage, --embedding-provider and --llm-model for real embeddings and answers instead of the offline fallbacks.",
+				"code": "nullpantry --home ~/.nullpantry --token $NULLPANTRY_TOKEN --port 8765"
+			},
+			{
+				"title": "Ingest and ask",
+				"body": "POST documents to /v1/sources (or pull them through a connector like git, markdown, or transcript), then query /v1/search and /v1/ask. Retrieval filters candidates by the caller's permissions first, picks keyword-only, vector-only, or hybrid per query, fuses ranked lists with reciprocal-rank fusion, and returns citations with every answer.",
+				"code": "curl -sS -X POST http://127.0.0.1:8765/v1/ask -H \"Authorization: Bearer dev-secret\" -d '{\"query\":\"why did we pick SQLite?\"}'"
+			},
+			{
+				"title": "Point your agents at it",
+				"body": "A NullClaw agent — NullClaw is the agent runtime in the same Null family of tools NullPantry comes from — uses NullPantry as its memory backend unchanged: the compatibility routes /v1/agent/*, /v1/memories, /v1/sessions, and /v1/history are compiled in by default alongside the native /v1/agent-memory API. An existing NullClaw brain.db (its local memory database) imports in one call.",
+				"code": "curl -sS -X POST http://127.0.0.1:8765/v1/lifecycle/import-brain-db -H \"Authorization: Bearer dev-secret\" -d '{\"path\":\"~/.nullclaw/brain.db\"}'"
+			}
+		]
+	},
+	"inside": [
+		{
+			"title": "17 agent-memory backends",
+			"items": [
+				"Native",
+				"Markdown",
+				"Memory LRU",
+				"Redis",
+				"ClickHouse",
+				"API",
+				"Supermemory",
+				"OpenViking",
+				"Honcho",
+				"Mem0",
+				"Hindsight",
+				"RetainDB",
+				"Byterover (CLI)",
+				"Holographic",
+				"Zep",
+				"FalkorDB",
+				"None"
+			],
+			"note": "Where agents' long-term memory physically lives — from a plain Markdown directory to hosted memory vendors; 11 of these expose a provider registry with tools, config schema, and feature flags over the API."
+		},
+		{
+			"title": "8 vector backends",
+			"items": [
+				"Local SQLite ANN",
+				"pgvector",
+				"Qdrant",
+				"LanceDB (SDK via CLI)",
+				"LanceDB HTTP",
+				"Weaviate",
+				"Chroma",
+				"OpenSearch"
+			],
+			"note": "The local SQLite index is the default and needs nothing installed; the rest are wire adapters selected at build or run time."
+		},
+		{
+			"title": "5 embedding providers",
+			"items": [
+				"OpenAI-compatible",
+				"Gemini",
+				"Ollama",
+				"Voyage",
+				"Local deterministic (offline fallback)"
+			],
+			"note": "The deterministic local provider means search works with zero API keys — same input, same vector, forever."
+		},
+		{
+			"title": "9 built-in connectors",
+			"items": [
+				"Manual",
+				"Markdown",
+				"QMD",
+				"Transcript",
+				"Ticket",
+				"Git",
+				"Incident",
+				"NullTickets",
+				"NullWatch"
+			],
+			"note": "Ingest paths under /v1/connectors/{name}/ingest with cursors for incremental pulls. QMD ingests JSON results from the qmd markdown-search tool; NullTickets and NullWatch are push connectors from the ticketing and monitoring services in the same Null tool family."
+		},
+		{
+			"title": "2 record stores, plus projections",
+			"items": [
+				"SQLite (vendored, FTS5)",
+				"Postgres (runtime-loaded libpq)",
+				"Neo4j graph projection",
+				"FalkorDB graph projection",
+				"ClickHouse analytics"
+			],
+			"note": "Canonical records live in SQLite or Postgres; graph and analytics stores are derived projections kept current by the background worker."
+		}
+	],
+	"useCases": [
+		{
+			"title": "One memory for a fleet of NullClaw agents",
+			"body": "You run several NullClaw agents (NullClaw is the agent runtime in the same Null tool family) that each keep their own brain.db local memory file, and they keep re-learning the same facts. Import each brain.db once, point every agent's memory backend at the NullPantry URL, and they share one permission-scoped memory: the compat aliases (/v1/memories, /v1/sessions, /v1/history) mean the agents need no code changes, while the agent-memory mirror job keeps a chosen backend (say Redis or Mem0) in sync.",
+			"code": "curl -X POST http://127.0.0.1:8765/v1/lifecycle/import-brain-db -H \"Authorization: Bearer $TOKEN\" -d '{\"path\":\"agent-a/brain.db\"}'"
+		},
+		{
+			"title": "Citation-backed Q&A on an air-gapped box",
+			"body": "A machine with no internet access needs searchable team docs. NullPantry runs fully offline: vendored SQLite with FTS5, the local deterministic embedding provider, the local SQLite ANN vector index, and extractive answers — every response still cites its sources. The whole thing is one 4.1–4.9 MB binary; riscv64 Linux is a shipped target, so it fits on unusual hardware too.",
+			"code": "./nullpantry --db .nullpantry/nullpantry.db\ncurl -sS -X POST http://127.0.0.1:8765/v1/search -d '{\"query\":\"deploy checklist\"}'"
+		},
+		{
+			"title": "A governed knowledge API in front of Postgres",
+			"body": "Your team already runs Postgres and wants knowledge and memory in it, not in per-host SQLite files. Point records at Postgres (libpq is dlopen'd at runtime — no build-time dependency) and vectors at pgvector; retrieval stays the same permission-filtered, RRF-fused pipeline, and every caller's token carries scopes plus 7 capabilities (read, write, delete, propose, export, verify, feed_apply) enforced at call sites.",
+			"code": "nullpantry --records-backend postgres --postgres-url $PG_URL --vector-backend pgvector --pgvector-url $PG_URL --token $TOKEN"
+		},
+		{
+			"title": "Canary a retrieval change before trusting it",
+			"body": "You want to try the LLM reranker or a new hybrid strategy without betting all traffic on it. Retrieval rollout policies split traffic by percentage with canary and shadow modes — shadow runs the new plan alongside the old one without affecting responses — gated by scopes and capabilities, with cache and rollout stats exposed under /v1/lifecycle.",
+			"code": "nullpantry --retrieval-rollout-mode canary --retrieval-canary-percent 5 --retrieval-shadow-percent 20"
+		}
+	],
+	"faq": [
+		{
+			"q": "Does it need any external services to be useful?",
+			"a": "No. The default build vendors SQLite with FTS5, generates deterministic local embeddings, and produces extractive citation-backed answers — zero required external services. Providers, vector stores, and memory vendors are upgrades you opt into, not prerequisites."
+		},
+		{
+			"q": "Is this production-ready?",
+			"a": "It is early: one tagged release (v2026.06.09), no license file yet, and pre-1.0 means config and CLI may change between releases. The counterweight is 1290 test blocks in-tree, a 3-profile engine test matrix, and opt-in live contract suites against Postgres, pgvector, Redis, Qdrant, LanceDB, and ClickHouse. Also note a quirk: a plain zig build from source stamps the older default version string 2026.5.26; release binaries are built with -Dversion."
+		},
+		{
+			"q": "Why doesn't my binary have the backend I configured?",
+			"a": "Backends are selected at compile time: 30 -Denable-* toggles and four profiles (nullclaw is the default, plus minimal, full, custom), and unselected adapters are genuinely absent from the binary — each engine has a stub twin, not a runtime error path. Check /v1/engines on your running instance to see what it was built with, or rebuild with -Dengine-profile=full."
+		},
+		{
+			"q": "How does auth work?",
+			"a": "A bearer token via --token or NULLPANTRY_TOKEN, with per-token scopes and 7 capabilities (read, write, delete, propose, export, verify, feed_apply) checked at call sites. The server refuses to bind a non-loopback address without a token unless you explicitly pass --allow-no-auth-non-loopback, and outbound provider URLs must be HTTPS unless the host is local or insecure HTTP is explicitly allowed."
+		},
+		{
+			"q": "Can existing NullClaw agents use it without changes?",
+			"a": "Yes — NullClaw (the agent runtime in the same Null tool family) talks to compatibility routes that are compiled in by default via -Denable-nullclaw-adapter: /v1/agent/*, plus the bare aliases /v1/memories, /v1/sessions, and /v1/history, alongside the native /v1/agent-memory and /v1/agent-sessions API. A NullClaw brain.db imports directly through /v1/lifecycle/import-brain-db."
+		},
+		{
+			"q": "Does Postgres support drag in a compile-time dependency?",
+			"a": "No. libpq is loaded with dlopen at runtime (point NULLPANTRY_LIBPQ_PATH at it if it's somewhere unusual), so the same binary runs on machines with or without Postgres client libraries. The connection pool defaults to 8 idle connections with a max of 128."
+		}
+	]
 }

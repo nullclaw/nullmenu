@@ -77,8 +77,170 @@
 	],
 	"note": "Pre-1.0, and the repo has no license file yet. Sized for one developer's machine: the whole JSONL store is reloaded into memory at startup (8 MiB per file), HTTP requests cap at 256 KiB, and the server handles one connection at a time.",
 	"plain": {
-		"what": "NullWatch is an observability service in a single sub-megabyte Zig binary: it serves a JSON HTTP API on 127.0.0.1:7710, answers the same queries offline through CLI subcommands, and stores AI-agent execution traces and eval results as append-only JSONL files under ~/.nullwatch/data.",
-		"why": "When an agent run fails or burns money, you need a record of every model call, tool invocation and eval verdict to see what happened — NullWatch keeps that record on your own machine instead of a hosted observability platform.",
-		"when": "Reach for it when an agent run misbehaves and you want to list its spans, find the failed tool call and total up tokens and cost — or when you need a local OpenTelemetry (OTLP/HTTP JSON) endpoint to point an agent's trace output at."
-	}
+		"what": "NullWatch is an observability service for AI agent runs, shipped as one static Zig binary between 313 and 653 KB with literally zero dependencies in its build manifest. It records spans (model calls, tool invocations, retries), eval verdicts and standard OpenTelemetry traces as append-only JSONL files on your own disk, then answers questions about them two ways: a JSON HTTP API on 127.0.0.1:7710, and CLI subcommands that read the same files with no server running.",
+		"why": "When an agent run fails or quietly burns money, you need the raw record — every model call with its tokens and cost, every tool invocation with its status, every eval verdict — to reconstruct what happened. Hosted observability platforms keep that record on someone else's servers and charge per span; NullWatch keeps it in two JSONL files under ~/.nullwatch/data that you can query, grep, back up or delete. Run-level rollups (duration, errors, cost, pass/fail counts, overall verdict) are computed on the fly from the stored records, so a summary can never drift out of sync with its evidence.",
+		"when": "Reach for it when a run misbehaves and you want to list its spans, find the failed tool call and total up tokens and cost — `nullwatch runs --status error` then `nullwatch run <run-id>` is the whole workflow. It is also the fastest way to get a local OTLP/HTTP JSON endpoint: point any OpenTelemetry trace exporter at http://127.0.0.1:7710/otlp/v1/traces and the spans land as queryable runs. It is sized for one developer's machine, not a team's fleet — see the FAQ for the honest ceilings."
+	},
+	"how": {
+		"intro": "One binary, no runtime, no database server. The path from download to a queryable failure trace is five commands, and you can rehearse all of it on seeded demo data before any real agent is involved.",
+		"steps": [
+			{
+				"title": "Get the binary",
+				"body": "Download one of the 7 prebuilt targets — linux x86_64/aarch64/riscv64 (musl-static), macos aarch64/x86_64, windows x86_64/aarch64 — each 313–653 KB with SHA256SUMS published. Alternatives, ranked: `nullhub install nullwatch` if you run NullHub (the ecosystem's installer and dashboard), `zig build` from source if you are contributing (needs Zig 0.16.0), Docker if you want it off your host.",
+				"code": "curl -LO https://github.com/nullclaw/nullwatch/releases/latest/download/nullwatch-macos-aarch64.bin && chmod +x nullwatch-macos-aarch64.bin"
+			},
+			{
+				"title": "Seed demo data before real data",
+				"body": "demo-seed writes 3 realistic runs — demo-code-review-pass, demo-tool-failure, demo-handoff-retry — totalling 11 spans and 3 evals. It is idempotent: re-running reports runs_skipped:3 and creates nothing, so it is safe next to real data. This gives you something to query in step 4 without an agent, an API key, or the network.",
+				"code": "./nullwatch-macos-aarch64.bin demo-seed"
+			},
+			{
+				"title": "Start the server",
+				"body": "With no arguments (or `serve`) the binary binds a JSON HTTP API on 127.0.0.1:7710 and loads the whole JSONL store into memory. Flags: --host, --port, --data-dir, --config, --token. If you set --token or api_token in ~/.nullwatch/config.json, every route except GET /health answers 401 without the matching bearer header.",
+				"code": "./nullwatch-macos-aarch64.bin serve"
+			},
+			{
+				"title": "Point spans at it",
+				"body": "Three ingest paths: POST /v1/spans and /v1/evals (single or /bulk batch), the ingest-span and ingest-eval CLI commands, or — the zero-code path — aim any OpenTelemetry trace exporter at POST /otlp/v1/traces (OTLP/HTTP JSON). The OTLP mapper reads attribute keys from four ecosystems (nullwatch.*, nullclaw.*, nulltickets.*, openclaw.*) plus bare keys like run_id and model, so existing emitters land as runs without renaming anything.",
+				"code": "curl -X POST http://127.0.0.1:7710/v1/spans -H 'content-type: application/json' -d @span.json"
+			},
+			{
+				"title": "Query it, server optional",
+				"body": "GET /v1/runs lists run summaries with rollups computed on the fly; GET /v1/runs/<run-id> returns the full detail with every span and eval. The summary, runs, run, spans and evals CLI subcommands read the same JSONL files directly, so every query also works offline — useful when the server is down or you are inspecting a copied data dir.",
+				"code": "./nullwatch-macos-aarch64.bin run demo-tool-failure"
+			}
+		]
+	},
+	"inside": [
+		{
+			"title": "13 HTTP endpoints",
+			"items": [
+				"GET /health",
+				"GET /v1/capabilities",
+				"GET /v1/summary",
+				"GET /v1/spans",
+				"POST /v1/spans",
+				"POST /v1/spans/bulk",
+				"GET /v1/evals",
+				"POST /v1/evals",
+				"POST /v1/evals/bulk",
+				"GET /v1/runs",
+				"GET /v1/runs/<run-id>",
+				"POST /v1/traces",
+				"POST /otlp/v1/traces"
+			],
+			"note": "When a token is configured, bearer auth guards every route except GET /health; /v1/capabilities lets tools discover the API instead of hardcoding it."
+		},
+		{
+			"title": "13 CLI commands",
+			"items": [
+				"serve",
+				"summary",
+				"runs",
+				"run",
+				"spans",
+				"evals",
+				"ingest-span",
+				"ingest-eval",
+				"demo-seed",
+				"version",
+				"help",
+				"--export-manifest",
+				"--from-json"
+			],
+			"note": "Every subcommand takes --data-dir, --config and --token; --export-manifest and --from-json implement NullHub's install manifest and 4-step setup wizard."
+		},
+		{
+			"title": "11 span filters",
+			"items": [
+				"run_id",
+				"trace_id",
+				"source",
+				"operation",
+				"status",
+				"model",
+				"tool_name",
+				"task_id",
+				"session_id",
+				"agent_id",
+				"limit"
+			],
+			"note": "The same filter names work as HTTP query parameters on GET /v1/spans and as -- flags on the spans subcommand."
+		},
+		{
+			"title": "4 OTLP attribute dialects",
+			"items": [
+				"nullwatch.*",
+				"nullclaw.*",
+				"nulltickets.*",
+				"openclaw.*"
+			],
+			"note": "The trace sink accepts both modern scopeSpans and legacy instrumentationLibrarySpans payloads, and coerces every OTLP AnyValue shape — stringValue, intValue, doubleValue, boolValue, bytesValue."
+		},
+		{
+			"title": "7 release targets",
+			"items": [
+				"linux-x86_64",
+				"linux-aarch64",
+				"linux-riscv64",
+				"macos-aarch64",
+				"macos-x86_64",
+				"windows-x86_64",
+				"windows-aarch64"
+			],
+			"note": "ReleaseSmall builds, musl-static on Linux, 313–653 KB per binary, shipped with SHA256SUMS and a multi-arch Docker image running as a non-root user."
+		}
+	],
+	"useCases": [
+		{
+			"title": "Reconstruct why last night's run cost four dollars",
+			"body": "An overnight agent run finished with a suspicious bill and no obvious error. List recent runs with their computed rollups — duration, error count, tokens, cost, verdict — then pull the full detail for the expensive one: every model call with tokens and cost attached, every tool invocation with its status, every retry as its own span. Because rollups are derived on the fly from stored spans, the totals you see are provably the sum of the records you are looking at.",
+			"code": "./nullwatch runs --limit 20\n./nullwatch run demo-tool-failure\n./nullwatch spans --run-id demo-tool-failure --status error"
+		},
+		{
+			"title": "A local OTLP sink for an agent you didn't write",
+			"body": "Your agent framework already emits OpenTelemetry traces and you want them on your disk, not in a hosted APM trial. Point its OTLP/HTTP JSON exporter at the sink and the spans arrive as queryable runs — the attribute mapper reads run id, session, task, model, tokens and cost from nullwatch.*, nullclaw.*, nulltickets.* and openclaw.* key prefixes (OpenClaw is the open-source multi-channel agent gateway), plus bare keys. Non-JSON content types are refused with a 415 rather than silently dropped.",
+			"code": "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://127.0.0.1:7710/otlp/v1/traces"
+		},
+		{
+			"title": "A pass/fail scoreboard for a prompt-regression dataset",
+			"body": "Evals are first-class records, not span attributes: each carries a scorer, score, pass/fail verdict, eval_key and dataset, and is stored next to the run it judged. Ingest one per test case from your eval script via ingest-eval or POST /v1/evals/bulk, then slice by dataset and verdict to see what regressed. Run rollups fold the verdicts in, so a run's overall verdict flips as soon as one eval fails.",
+			"code": "./nullwatch ingest-eval --json '{\"run_id\":\"nightly-042\",\"eval_key\":\"tone\",\"verdict\":\"fail\"}'\n./nullwatch evals --dataset nightly --verdict fail"
+		},
+		{
+			"title": "Observability on a 313 KB budget",
+			"body": "You run agents on a Raspberry Pi or a RISC-V board and a JVM-sized observability stack is not an option. The linux-riscv64 binary is 313 KB, musl-static, with zero dependencies to install; data is two append-only files — spans.jsonl and evals.jsonl — that you can grep, rsync or archive like any other text. When the box is headless, the CLI subcommands answer every query offline against those files, no server process required.",
+			"code": "curl -LO https://github.com/nullclaw/nullwatch/releases/latest/download/nullwatch-linux-riscv64.bin"
+		}
+	],
+	"faq": [
+		{
+			"q": "How much data can it actually handle?",
+			"a": "It is deliberately sized for one developer's machine. The whole JSONL store is re-read into memory at every process start with an 8 MiB per-file cap, HTTP requests cap at 256 KiB, and the hand-rolled server handles one connection at a time with Connection: close. For a team's production fleet you would outgrow it; for debugging your own agent runs those ceilings are far away."
+		},
+		{
+			"q": "The README mentions swapping storage for SQLite later — is that real?",
+			"a": "It is intent, not code. There is no SQLite or storage-abstraction code anywhere in the repo today: the store is a concrete append-only JSONL implementation, and GET /v1/capabilities hardcodes storage as \"jsonl\". Plan around JSONL files."
+		},
+		{
+			"q": "Can I put the API on a network?",
+			"a": "There is real, wired bearer-token auth: set api_token in the config or pass --token, and every route except GET /health returns 401 without the matching Authorization header — the end-to-end tests exercise both paths. Two caveats: the token comparison is a plain byte compare rather than constant-time, and there is no TLS, so the sensible deployment is the default 127.0.0.1 bind, or a private network like a VPN or tailnet if you must expose it."
+		},
+		{
+			"q": "What does the OTLP endpoint actually accept?",
+			"a": "Traces only, as OTLP/HTTP JSON, on both POST /v1/traces and the canonical POST /otlp/v1/traces; non-JSON content types get a 415. There is no protobuf support and no metrics or logs signal — it is a trace sink, not a full OpenTelemetry collector."
+		},
+		{
+			"q": "Do I need the rest of the Null ecosystem?",
+			"a": "No. NullWatch runs standalone; the ecosystem hooks are optional. NullHub (the companion installer and dashboard) can install it through a built-in protocol — --export-manifest prints an install manifest with a 4-step setup wizard, --from-json writes the resulting ~/.nullwatch/config.json — and the manifest declares connections to NullClaw (the agent runtime), NullTickets (the task tracker for agents) and NullBoiler (the workflow orchestrator). Without any of them you still get the full API and CLI."
+		},
+		{
+			"q": "Where does my data actually live?",
+			"a": "By default in ~/.nullwatch/data as spans.jsonl and evals.jsonl, but the mechanism is worth knowing: data_dir defaults to the relative path \"data\" resolved against the config file's directory. Pass --data-dir, use a config file elsewhere, or set the NULLWATCH_HOME environment variable and the files land accordingly — check with GET /health if in doubt."
+		},
+		{
+			"q": "Is it production ready?",
+			"a": "It is pre-1.0 and the repository has no license file yet, which formally means all rights reserved — worth resolving before depending on it commercially. The code itself is small and tested (9 in-source test blocks plus an end-to-end shell suite covering auth, ingest and CLI parity), but treat versioned releases like 2026.5.29 as snapshots, not stability promises."
+		}
+	]
 }

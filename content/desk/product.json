@@ -72,8 +72,158 @@
 	],
 	"note": "Pre-release: the code carries version 2026.5.7, but there are no published releases, tags, or license file yet — build from source and expect change.",
 	"plain": {
-		"what": "A single Zig binary — 332 files, zero external Zig dependencies — that opens a local project folder and runs one of three frontends: a native macOS GUI, a cross-platform terminal UI (the default outside macOS), or a web UI bound to 127.0.0.1. Inside is both a code editor (LSP, Tree-sitter, debugging, git, terminal) and a supervision desk for AI agents run through nullclaw, the companion agent runtime, over the Agent Client Protocol.",
-		"why": "Agents that edit files and run shell commands unsupervised are hard to trust, and supervising them in a separate tool from your editor is constant friction. NullDesk makes direct writes impossible for agents — they can only propose diffs into a review queue — puts commands behind risk-classified approval, records every decision in a Blake3 hash-chained log, and keeps the editor, git workbench, and terminal in the same window.",
-		"when": "When you want an AI agent working on a repo — fixing a bug, writing tests, drafting docs — but you want to read and accept every diff and command yourself, in the same place you edit the code."
-	}
+		"what": "NullDesk is a single Zig binary — 332 source files, zero external Zig dependencies — that opens a local project folder and runs one of three frontends: a native macOS AppKit GUI, a cross-platform terminal UI, or a web UI bound to 127.0.0.1:8765. Inside that one window sit two things at once: a working code editor (LSP for 14 languages, Tree-sitter, a DAP (Debug Adapter Protocol) debugging bridge, a git workbench, terminal panes) and a supervision desk for AI agents run through nullclaw, a companion agent runtime from the same tool family (the Null ecosystem), speaking the Agent Client Protocol (ACP). It also doubles as a native host for extensions built for the Zed editor, implementing 21 extension-host operations in Zig.",
+		"why": "Agents that edit files and run shell commands unsupervised are hard to trust, and supervising them from a separate tool than the one you edit in is constant friction. NullDesk makes direct writes structurally impossible: the plugin capability schema rejects any manifest asking for a write permission at parse time, so agents can only propose_write diffs into a review queue, and the final apply is gated by a one-shot keystroke token that errors on second use. Shell commands pass risk-classified approval, and every decision lands in a Blake3 hash-chained audit log that cannot be silently edited after the fact.",
+		"when": "Reach for it when you want an AI agent working on a repo — fixing a bug, writing tests, drafting docs — but you want to read and accept every diff and command yourself, in the same window where you edit code, run git, and use the terminal. It fits solo developers reviewing one agent as well as sessions running several of the ten built-in agent roles in parallel under per-task autonomy limits. Expect pre-release rough edges: there are no published binaries yet, so you build from source with Zig 0.16.0."
+	},
+	"how": {
+		"intro": "One Zig binary, built once, does everything: editor, supervision desk, web server, even the Zed extension host. You point it at a workspace folder and pick a frontend; agents connect through the nullclaw agent runtime and plugins declared inside the workspace.",
+		"steps": [
+			{
+				"title": "Build the binary",
+				"body": "Clone the repo and build with Zig 0.16.0 or newer. There are no external Zig dependencies to fetch — build.zig.zon declares none — so the build is just the compiler and the source tree. Use -Doptimize=ReleaseSafe for a release build.",
+				"code": "git clone https://github.com/nullclaw/nulldesk && cd nulldesk && zig build"
+			},
+			{
+				"title": "Open a workspace",
+				"body": "Run the binary against a project folder with --workspace (or -w; the default is the current directory). Without a subcommand you get the platform default frontend: the native AppKit GUI on macOS, the terminal UI everywhere else.",
+				"code": "zig build run -- --workspace \"$PWD\""
+			},
+			{
+				"title": "Pick a frontend explicitly",
+				"body": "The subcommands gui, tui, and web select a frontend directly. The web frontend serves a SvelteKit single-page app plus about 36 JSON/HTML API routes on 127.0.0.1:8765 — loopback only unless you override --web-host and --web-port. Passing --web-out PATH writes a static HTML snapshot instead of serving.",
+				"code": "zig build web && zig build run -- web --workspace \"$PWD\""
+			},
+			{
+				"title": "Connect the agent side",
+				"body": "NullDesk launches agents through the nullclaw binary (override the path with --nullclaw-bin) and, on startup, discovers process plugins from <workspace>/.nulldesk/plugins/*/plugin.json. Every plugin manifest is checked against the capability schema — one that requests write is rejected at parse time; proposing diffs through the review queue is the only path to changing files.",
+				"code": "zig build run -- --nullclaw-bin /path/to/nullclaw --workspace \"$PWD\""
+			},
+			{
+				"title": "Make it feel like your editor",
+				"body": "Pick one of five keybinding presets with --keymap (vscode is the default; vim and helix get a full modal engine via --editing-style modal). Persistent settings live in .nulldesk/settings.json and .nulldesk/keybindings.json in the workspace, layered over your user settings — 21 keys covering theme, font size, terminal profile, LSP warmup, and an ai.local_only switch.",
+				"code": "zig build run -- tui --keymap vim --editing-style modal"
+			}
+		]
+	},
+	"inside": [
+		{
+			"title": "14 built-in languages, 7 LSP servers wired",
+			"items": [
+				"Zig (zls + nullclaw-zig-analysis)",
+				"TypeScript (typescript-language-server)",
+				"Python (pyright)",
+				"Rust (rust-analyzer)",
+				"Go (gopls)",
+				"C and C++ (clangd)",
+				"Markdown",
+				"JSON",
+				"YAML",
+				"TOML",
+				"Web",
+				"Shell",
+				"Text"
+			],
+			"note": "Rename, go-to-definition, hover, references, and semantic tokens round-trip through a native Zig LSP client, with Tree-sitter for outline and folding."
+		},
+		{
+			"title": "10 default agent profiles",
+			"items": [
+				"Researcher",
+				"Architect",
+				"Coder",
+				"Reviewer",
+				"Tester",
+				"Docs-writer",
+				"Release-manager",
+				"Security-reviewer",
+				"Benchmark-agent",
+				"Inline-chat"
+			],
+			"note": "Each role routes to its own model with per-role budgets, and profiles can run as parallel agents and subagents in an agent graph."
+		},
+		{
+			"title": "5 autonomy modes, 4 plugin kinds",
+			"items": [
+				"Ask-only through autonomous-within-limits (scoped by default to src/ and tests/)",
+				"WASM/WASI plugins",
+				"Process plugins",
+				"ACP agents",
+				"MCP (Model Context Protocol) servers"
+			],
+			"note": "The capability manifest constitutionally forbids write — only propose_write into the review queue exists — and tasks move through a ten-state status enum from draft to done, failed, or canceled."
+		},
+		{
+			"title": "21 Zed extension-host operations",
+			"items": [
+				"Language server command",
+				"Run slash command",
+				"Get DAP binary",
+				"Index docs",
+				"17 more zed:extension operations with 20 host imports"
+			],
+			"note": "The binary itself parses core-module and component-model WASM; the Rust Wasmtime host survives only as an opt-in -Drust-runtimes build."
+		},
+		{
+			"title": "5 keybinding presets, 4 themes, 3 frontends",
+			"items": [
+				"VSCode",
+				"Emacs",
+				"Vim (full modal engine)",
+				"Helix",
+				"JetBrains",
+				"Dark / Light / Dim / High-contrast themes",
+				"macOS AppKit GUI",
+				"Cross-platform TUI",
+				"Loopback web SPA"
+			],
+			"note": "The web frontend's project search runs in the browser as Zig compiled to WASM."
+		}
+	],
+	"useCases": [
+		{
+			"title": "An agent fixes a bug; you approve every byte",
+			"body": "You hand a coder-profile agent a bug in a Zig or TypeScript repo. It works through nullclaw, but nothing touches disk: each edit arrives in the review queue as a side-by-side diff you accept or reject, whole files or single hunks, and the apply step consumes a one-shot keystroke token that only the review flow can mint. Afterwards the Blake3 hash-chained audit log holds every proposal, approval, and command — optionally Ed25519-signed — so you can show exactly what the agent did and what you allowed.",
+			"code": "zig build run -- --workspace \"$PWD\""
+		},
+		{
+			"title": "A test-writing session on a loose leash",
+			"body": "For rote work like backfilling tests, you set the task's autonomy to autonomous_within_limits — the highest of five modes, and still scoped by default to files under src/ and tests/. The tester profile proposes batches of test files while risk-classified command approval decides which shell commands (running the test suite, say) go through without you. You skim the queue instead of babysitting each keystroke, and the task packet tracks status from draft to done or failed."
+		},
+		{
+			"title": "Supervising over SSH from a terminal",
+			"body": "The GUI is macOS-only, but the TUI is the default everywhere else and runs fine in an SSH session on a Linux box — same review queue, git workbench, terminal panes, and modal Vim engine. If you prefer a browser, the web frontend binds strictly to 127.0.0.1:8765, so you forward the port over SSH rather than exposing it; --web-out can also export a static HTML snapshot of the workspace state.",
+			"code": "zig build run -- tui --workspace \"$PWD\" --keymap vim --editing-style modal"
+		},
+		{
+			"title": "Reusing Zed's extension ecosystem",
+			"body": "Instead of inventing a plugin API, NullDesk natively implements the Zed editor's extension-host protocol — 21 operations, from language_server_command to index_docs — and parses Zed's component-model WASM itself. Extensions written for Zed bring language servers and slash commands into NullDesk, and marketplace packages are Ed25519-signed and verified against a publisher keyring with explicit consent prompts before anything installs."
+		}
+	],
+	"faq": [
+		{
+			"q": "Is this released software?",
+			"a": "Not yet. The code carries version 2026.5.7 internally, but there are no published releases, tags, or prebuilt binaries — building from source with Zig 0.16.0 is the only install path, and interfaces can change without notice. The test story is unusually deep for pre-release (1,533 in-source test blocks plus 420 integration shell scripts), but treat it as pre-1.0 software."
+		},
+		{
+			"q": "Does NullDesk sandbox agent commands at the OS level?",
+			"a": "No — be clear-eyed about this. The architecture declares four sandbox backends (Linux landlock+seccomp-bpf, macOS sandbox-exec, FreeBSD capsicum, Windows AppContainer), but every one is currently a stub that returns Unsupported. Today's safety model is the capability schema (no grantable write, ever), the risk-classified approval queue, and the audit chain — policy enforcement inside NullDesk, not kernel isolation around commands you approve."
+		},
+		{
+			"q": "Can an agent ever write a file directly?",
+			"a": "No. The capability parser rejects any plugin manifest requesting a write permission — it is a parse-time error, not a setting you could loosen. The only path is propose_write into the review queue, and the final apply is gated by a non-forgeable one-shot token that errors if consumed twice. Even the most autonomous of the five task modes only auto-accepts within src/ and tests/ by default."
+		},
+		{
+			"q": "Does the GUI run on Linux or Windows?",
+			"a": "The native AppKit GUI is macOS-only. On Linux and Windows the default frontend silently falls back to the terminal UI, which carries the same editor and supervision features; the loopback web UI is the third option on every platform. So \"three frontends\" is true per binary, but you get at most two on any non-Mac machine."
+		},
+		{
+			"q": "What do I need besides NullDesk to actually run agents?",
+			"a": "An agent runtime. NullDesk launches nullclaw — the companion agent runtime in the Null ecosystem — by default, and you can point --nullclaw-bin at any compatible binary. It speaks the Agent Client Protocol (ACP) v1 with streaming responses, and workspace plugins can also be MCP (Model Context Protocol) servers, ACP agents, process plugins, or WASM/WASI modules. Without an agent connected it still works as a plain editor with git, LSP, and terminals."
+		},
+		{
+			"q": "Is the web UI safe to leave running?",
+			"a": "It binds to 127.0.0.1:8765 by default, so nothing off your machine can reach it unless you explicitly override --web-host. There is no authentication layer, so keep it loopback-only and use SSH port forwarding for remote access. An ai.local_only setting additionally keeps AI features off the network, with a visible banner while it is on."
+		}
+	]
 }

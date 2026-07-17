@@ -70,8 +70,156 @@
 	],
 	"note": "Pre-1.0 with one release (v2026.6.1). Binary sizes are those of that release's published assets; the line count is measured by the project. Config and CLI may change between releases.",
 	"plain": {
-		"what": "A command-line AI assistant that ships as a single standalone Zig binary — 842 KiB to 1.23 MB depending on platform — with chat, local memory, file tools, web search, scheduling, Telegram, and a WebSocket API built in.",
-		"why": "Most AI assistants require a Node or Python runtime and bury their logic in a plugin platform; nllclw fits the whole assistant — provider calls, streaming, tools, memory, six channels — into 20,903 lines of dependency-free Zig you can actually read, with hardening (URL validation, path jails, a tool loop that goes read-only after untrusted web output) unusual for its size.",
-		"when": "Reach for it when you want an AI helper on a machine where you won't install Node or Python — a bare server, a container, your laptop — or when you want a complete agent implementation small enough to read end to end and fork into your own."
-	}
+		"what": "A command-line AI assistant that ships as a single standalone Zig binary — 842 KiB to 1.23 MB depending on platform — that you download, mark executable, and run. Behind that one file are six channels (one-shot answers, an interactive terminal chat, a Telegram bot, a token-guarded WebSocket server, a heartbeat pass over a markdown TODO, and a scheduler daemon), 17 switchable tools, and two layers of plain-JSONL memory on your own disk. It talks to OpenAI, OpenRouter, or any OpenAI-compatible server, including a local Ollama.",
+		"why": "Most AI assistants stand on a Node or Python runtime and scatter their behavior across a plugin platform; this one fits the entire assistant — provider calls, streaming, the tool loop, memory, all six channels — into 20,903 lines of dependency-free Zig that one person can read end to end. The small size buys unusual auditability, and the code spends it on hardening: base-URL validation, file tools jailed to the working directory, and a tool loop that drops to read-only the moment untrusted web output enters the conversation. Every capability sits behind an on/off switch, so what it cannot do is a config fact, not a hope.",
+		"when": "Reach for it when you want an AI helper on a machine where installing Node or Python is off the table — a bare VPS, a container, a Raspberry Pi — or when you want scheduled tasks and a Telegram channel from something that idles in under a megabyte. It is also the codebase to pick when you want a complete, tested agent implementation small enough to read in a sitting and fork into your own; skip it if you need Anthropic's API natively, shell execution out of the box, or a plugin ecosystem."
+	},
+	"how": {
+		"intro": "nllclw is one file with no runtime underneath it, so the whole flow is: get the binary, answer the wizard once, talk. Everything after that — Telegram, scheduling, the WebSocket server — is the same binary invoked with a different subcommand.",
+		"steps": [
+			{
+				"title": "Get the binary",
+				"body": "Download the asset for your OS and CPU from the latest release (twelve platform builds, from 842 KiB on linux-aarch64 to 1.23 MB on Windows) and make it executable. There is nothing else to install — no Node, no Python, no shared libraries. Building from source needs exactly one thing, Zig 0.16.0: zig build --release=small.",
+				"code": "chmod +x nllclw && ./nllclw --help"
+			},
+			{
+				"title": "Run the setup wizard",
+				"body": "init asks for your provider (openai, openrouter, or compatible — any OpenAI-style server, including a local Ollama), your API key, a reply persona, and which capability groups to switch on. It writes ~/.config/nllclw/config.json; any NLLCLW_* environment variable overrides the file, and a .env next to it is the fallback. Undoing everything later is one command: nllclw uninstall.",
+				"code": "./nllclw init"
+			},
+			{
+				"title": "Talk to it",
+				"body": "Bare on a terminal it opens an interactive chat; given an argument or piped stdin it answers once and exits (prompts capped at 64 KiB). Replies stream token by token by default. Inside any chat channel, slash commands work: /persona switches between four reply styles, /diag runs diagnostics, /settings shows the active config.",
+				"code": "./nllclw \"summarize this\" < notes.txt"
+			},
+			{
+				"title": "Verify the setup",
+				"body": "status prints a one-line health check; doctor prints the full diagnostic report across every scope — active provider and model, which capability switches are on, memory paths and message counts, rate limits, and time settings, with secrets redacted. It reports configuration state rather than probing the network, so when the first real question fails, doctor is the fastest way to see which switch is off, which provider is selected, or which path never resolved.",
+				"code": "./nllclw doctor"
+			},
+			{
+				"title": "Open more channels",
+				"body": "The same assistant, config, and memory serve every channel. nllclw telegram long-polls a bot with a chat allowlist and a per-minute rate limit; nllclw websocket serves a token-authenticated JSON chat protocol on 127.0.0.1:8765/ws; nllclw daemon loops over due schedules and passes over HEARTBEAT.md — a markdown task list the assistant works through on an interval — delivering results locally or to a Telegram chat.",
+				"code": "./nllclw daemon"
+			}
+		]
+	},
+	"inside": [
+		{
+			"title": "6 channels",
+			"items": [
+				"One-shot CLI",
+				"Interactive REPL",
+				"Telegram bot",
+				"WebSocket server",
+				"Heartbeat",
+				"Scheduler daemon"
+			],
+			"note": "One binary, one config, one memory — a channel is just a different front door into the same runtime."
+		},
+		{
+			"title": "17 built-in tools, each behind a config switch",
+			"items": [
+				"list_dir",
+				"read_file",
+				"write_file",
+				"edit_file",
+				"memory_store",
+				"memory_recall",
+				"memory_list",
+				"memory_forget",
+				"get_time",
+				"web_search",
+				"cron_set",
+				"cron_list",
+				"cron_delete",
+				"create_tool",
+				"list_user_tools",
+				"delete_user_tool",
+				"get_diagnostics"
+			],
+			"note": "Plus up to 16 macro tools the model defines for itself, and shell_exec as an opt-in 18th that only exists in a -Dshell-tool=true build with NLLCLW_SHELL=on."
+		},
+		{
+			"title": "5 search providers",
+			"items": [
+				"Tavily",
+				"Brave",
+				"Exa",
+				"Firecrawl",
+				"DuckDuckGo (no key needed)"
+			],
+			"note": "An auto selector picks whichever one you have a key for; DuckDuckGo is the keyless fallback."
+		},
+		{
+			"title": "3 provider kinds, streaming by default",
+			"items": [
+				"OpenAI",
+				"OpenRouter",
+				"Compatible (any OpenAI-style /chat/completions endpoint, including local Ollama)"
+			],
+			"note": "Base URLs are validated before use — https only, no embedded credentials, plain http reserved for loopback."
+		},
+		{
+			"title": "6 workspace files + a skills folder",
+			"items": [
+				"IDENTITY.md",
+				"SOUL.md",
+				"AGENTS.md",
+				"MEMORY.md",
+				"TOOLS.md",
+				"HEARTBEAT.md",
+				"skills/*.md"
+			],
+			"note": "Whatever of these exist in the current directory is folded into the system prompt, so each project folder shapes its own assistant."
+		}
+	],
+	"useCases": [
+		{
+			"title": "A Telegram assistant on a Raspberry Pi",
+			"body": "The linux-aarch64 build is 842 KiB and needs no runtime, so a Pi that would choke on a Node install runs it comfortably. Set a bot token and a chat allowlist, start the long-poller, and you have a personal assistant in Telegram with memory, file tools, and web search — rate-limited to 20 messages a minute, with a file lock guaranteeing only one poller per host.",
+			"code": "NLLCLW_TELEGRAM_TOKEN=... NLLCLW_TELEGRAM_CHAT_ID=... ./nllclw telegram"
+		},
+		{
+			"title": "Fully local: point it at Ollama, no cloud key",
+			"body": "The compatible provider kind accepts any OpenAI-style endpoint, and plain http is permitted for loopback addresses specifically so a local model server works out of the box. Combined with keyless DuckDuckGo search and JSONL memory on your own disk, nothing in the loop has to leave the machine.",
+			"code": "NLLCLW_PROVIDER=compatible NLLCLW_BASE_URL=http://127.0.0.1:11434/v1 NLLCLW_MODEL=llama3 ./nllclw"
+		},
+		{
+			"title": "Standing tasks that report to your chat",
+			"body": "Ask it in conversation to check something every morning; it calls cron_set, and the schedule lands in schedule.jsonl as one of three kinds — periodic, once, or daily. The daemon claims due entries with a 15-minute lease, runs them, and can deliver output straight to a Telegram chat. You inspect and prune from the CLI, not a web dashboard.",
+			"code": "./nllclw daemon\n./nllclw schedule list"
+		},
+		{
+			"title": "A per-project assistant defined by markdown",
+			"body": "Drop AGENTS.md with project conventions and a skills/ folder of markdown how-tos into a repo, and every nllclw invocation from that directory absorbs them into its system prompt. File tools are jailed to that working directory — absolute paths and .. are rejected — so the assistant can edit the project but cannot wander out of it.",
+			"code": "cd ~/code/myproject && ./nllclw \"apply our changelog format to CHANGES.md\""
+		}
+	],
+	"faq": [
+		{
+			"q": "Does it really have zero dependencies?",
+			"a": "Yes, in the verifiable sense: build.zig.zon declares no dependencies, and HTTP with TLS, the WebSocket server, and JSON parsing all come from Zig's standard library. The executable is single-threaded. The trade-off is that everything is hand-rolled, so it supports exactly what it implements — no plugin ecosystem to fill gaps."
+		},
+		{
+			"q": "Can it run shell commands?",
+			"a": "Not in the released binaries. shell_exec is compiled out by default; it only exists if you build from source with -Dshell-tool=true, and even then it stays inert until NLLCLW_SHELL=on. This is a deliberate ceiling: the default binary physically cannot execute shell commands, whatever the model asks for."
+		},
+		{
+			"q": "What happens if a web page tries to prompt-inject the agent?",
+			"a": "Every tool is tagged by whether it mutates state and whether its output is trusted. The moment untrusted output — web search results, say — enters the conversation, all state-changing tools are stripped from the handler set for the rest of that answer. A hostile page can still bias what the model says, but it cannot make it write files, store facts, or set schedules. This behavior has dedicated tests."
+		},
+		{
+			"q": "Can I use Claude or Gemini with it?",
+			"a": "Not directly — the provider layer speaks only the OpenAI chat-completions shape, with three kinds: openai, openrouter, and compatible. To reach Anthropic or Google models you go through OpenRouter or any proxy that exposes an OpenAI-style endpoint. There is no native Anthropic or Gemini client."
+		},
+		{
+			"q": "Is the WebSocket server safe to expose?",
+			"a": "It is designed not to be exposed: it binds 127.0.0.1:8765 and refuses any non-loopback address unless you explicitly set NLLCLW_WS_ALLOW_REMOTE=on. Every connection must present NLLCLW_WS_TOKEN via query or Bearer header, and a per-minute rate limit applies. If you need remote access, tunnel to the loopback port rather than flipping the override."
+		},
+		{
+			"q": "How stable is it?",
+			"a": "Pre-1.0, with a single release so far (v2026.6.1) shipping twelve platform binaries. The CLI and config keys may change between releases, and hard caps are part of the design: 20 transcript messages, 64 memory facts, 16 macro tools, 4 tool rounds per answer, 7-day maximum for periodic schedules. The 'under 1 MB' framing holds for the mainstream 64-bit builds — x86-64 and ARM64 Linux, both macOS builds, ARM64 Android; the Windows, 32-bit ARM, RISC-V, and x86-64 Android builds run 1.01–1.23 MB."
+		}
+	]
 }

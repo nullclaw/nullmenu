@@ -73,8 +73,143 @@
 	],
 	"note": "Not an end-user tool — the repo contains no build.zig and ships no binary of its own. No releases or tags yet: `v1` is a branch, so callers track moving code and workflow inputs may change.",
 	"plain": {
-		"what": "A set of reusable GitHub Actions workflows (referenced with `uses: nullclaw/nullbuilder/...@v1`) that give a Zig repo on GitHub its CI, nightly-build, and release pipelines.",
-		"why": "Every Zig repo in the NullClaw GitHub org needs the same pipeline — run tests, cross-compile small size-optimized binaries for a dozen platforms, publish GitHub releases — and copy-pasting that YAML into each repo means fixing every bug in every copy; this keeps it in one place that all repos reference.",
-		"when": "You maintain a Zig project on GitHub and want tests plus cross-compiled release binaries for Linux, Android, macOS, and Windows without writing your own matrix workflows — you add a ten-line job block per pipeline instead."
-	}
+		"what": "A set of reusable GitHub Actions workflows and composite actions that give any Zig repo on GitHub its CI, nightly-build, and release pipelines. Your repo calls them with a `uses: nullclaw/nullbuilder/...@v1` line instead of copying workflow YAML; there is no binary to install and nothing runs outside GitHub Actions. The three pipelines cover per-push tests with cross-compiled artifacts, deduplicating scheduled nightlies, and tag-driven releases for 12 targets across Linux, Android, macOS, and Windows.",
+		"why": "Every Zig repo in the NullClaw GitHub org (the ecosystem this site belongs to) needs the same pipeline: run the tests, cross-compile small ReleaseSmall binaries for a dozen platforms, publish a GitHub release with checksums. Copy-pasting that YAML into each repo means every bug fix and every Zig version bump has to be repeated in every copy. Keeping the pipelines in one repo that all others reference means one fix propagates everywhere, and the tricky parts — Android NDK setup without Gradle, nightly dedupe against the GitHub API — are solved once, with unit tests.",
+		"when": "You maintain a Zig project on GitHub and want tests plus cross-compiled release binaries for Linux, Android, macOS, and Windows without writing your own matrix workflows — you add a ten-line job block per pipeline and override inputs only where your build is unusual. It is not for you if you are not on GitHub Actions, or if your build steps go beyond what the setup/pre-test/pre-build hook inputs can express."
+	},
+	"how": {
+		"intro": "nullbuilder is not something you install — it is a set of reusable GitHub Actions workflows that your Zig repo calls with a `uses:` line. Adoption is three small workflow files in your own repo; everything runs on GitHub's runners.",
+		"steps": [
+			{
+				"title": "Add the CI job block",
+				"body": "Create .github/workflows/ci.yml in your Zig repo with push and pull_request triggers and a single job that calls the shared pipeline, passing your binary's name (the file under zig-out/bin). Each run executes `zig build test --summary all`, then cross-compiles size-optimized ReleaseSmall binaries for three default targets: x86_64 Linux (musl), aarch64 macOS, and x86_64 Windows.",
+				"code": "uses: nullclaw/nullbuilder/.github/workflows/zig-ci.yml@v1"
+			},
+			{
+				"title": "Push and read the job summary",
+				"body": "Every CI run appends a summary table to the Actions page: parsed test counts, peak test memory (MaxRSS), and the exact ReleaseSmall binary size per target. Cross-compiled binaries are uploaded as workflow artifacts, so you can download and try a Windows build from a Linux laptop without owning either.",
+				"code": "git push"
+			},
+			{
+				"title": "Wire the nightly pipeline",
+				"body": "A second workflow file on a schedule calls zig-nightly.yml. Before building, a small unit-tested Zig program (nightly-decide) queries the GitHub workflow-runs API and skips the build if the current commit already has a successful nightly. Each built binary ships with a .sha256 checksum and a JSON provenance manifest; artifacts are kept 14 days, and an optional rolling prerelease replaces its assets on every build.",
+				"code": "uses: nullclaw/nullbuilder/.github/workflows/zig-nightly.yml@v1"
+			},
+			{
+				"title": "Tag a release",
+				"body": "A third workflow file triggered on v* tags calls zig-release.yml. Pushing a tag builds all 12 default targets across Linux, Android, macOS, and Windows and publishes a GitHub release: raw .bin files for unix targets, .exe plus a zip archive for Windows, optionally a source tarball and a multi-arch Docker image on ghcr.io. Re-running the workflow updates the existing release's assets instead of failing.",
+				"code": "git tag v0.3.0 && git push origin v0.3.0"
+			},
+			{
+				"title": "Override defaults only where needed",
+				"body": "If you do nothing beyond binary_name, you get Zig 0.16.0, the default target matrices, and `zig build test` — sensible defaults for a plain Zig project. Nonstandard repos override workflow inputs instead of forking: targets_json for a custom matrix, setup/pre-test/pre-build hook commands, node_version for repos that build UI assets first, publish_docker for a ghcr.io image.",
+				"code": "with:\n  binary_name: myproject\n  zig_version: \"0.16.0\""
+			}
+		]
+	},
+	"inside": [
+		{
+			"title": "3 reusable workflows",
+			"items": [
+				"Zig CI (zig-ci.yml)",
+				"Zig Release (zig-release.yml)",
+				"Zig Nightly (zig-nightly.yml)"
+			],
+			"note": "All three are `on: workflow_call` — callers reference them with `uses: nullclaw/nullbuilder/...@v1` and never copy the YAML."
+		},
+		{
+			"title": "3 composite actions",
+			"items": [
+				"Setup Zig",
+				"Nightly Decide",
+				"Package Artifact"
+			],
+			"note": "Nightly Decide and Package Artifact are small Zig 0.16 programs run via `zig run` — the dedupe decision and the checksum/manifest writer are unit-tested code, not shell one-liners."
+		},
+		{
+			"title": "12 default release targets",
+			"items": [
+				"Linux x86_64",
+				"Linux aarch64",
+				"Linux arm32 (gnu)",
+				"Linux arm32 (musl)",
+				"Linux riscv64",
+				"Android aarch64",
+				"Android armv7",
+				"Android x86_64",
+				"macOS aarch64",
+				"macOS x86_64",
+				"Windows x86_64",
+				"Windows aarch64"
+			],
+			"note": "Four OS families from one tag push; Android is cross-compiled with plain Zig plus an NDK sysroot libc file — no Gradle."
+		},
+		{
+			"title": "3 default CI targets",
+			"items": [
+				"Linux x86_64 (musl)",
+				"macOS aarch64",
+				"Windows x86_64"
+			],
+			"note": "A faster per-push subset of the release matrix, overridable via the targets_json input."
+		},
+		{
+			"title": "4 release asset shapes",
+			"items": [
+				"Raw .bin (unix targets)",
+				".exe plus zip archive (Windows targets)",
+				"Source tar.gz (optional)",
+				"Multi-arch Docker image on ghcr.io (optional)"
+			],
+			"note": "Nightly binaries additionally get a .sha256 checksum file and a per-target JSON build manifest."
+		}
+	],
+	"useCases": [
+		{
+			"title": "Ship a Zig CLI for 12 platforms from one tag push",
+			"body": "You maintain a Zig command-line tool and users keep asking for an ARM Linux build, then a Windows one, then macOS. You add one release workflow file that calls zig-release.yml on v* tags. Every tag push now publishes a GitHub release with binaries for Linux (including riscv64 and two arm32 flavors), Android, macOS, and Windows — and if the release job is re-run, it updates the assets on the existing release rather than erroring out.",
+			"code": "git tag v1.2.0\ngit push origin v1.2.0"
+		},
+		{
+			"title": "Nightly builds that skip themselves when nothing changed",
+			"body": "You want fresh binaries every night without burning runner minutes on quiet weeks. zig-nightly.yml runs a preflight where the nightly-decide program checks the GitHub workflow-runs API for a prior successful nightly of the same commit and prints should_build=false if it finds one. When a build does happen, each binary ships with a SHA-256 checksum file and a manifest-<target>.json recording the commit, run URL, target, and build time — enough provenance to answer 'which commit is this binary from' months later.",
+			"code": "uses: nullclaw/nullbuilder/.github/workflows/zig-nightly.yml@v1\nwith:\n  retention_days: 14"
+		},
+		{
+			"title": "Android binaries without touching Gradle",
+			"body": "Your tool should run on an Android device over adb, but you do not want a Java build system in a Zig repo. The release workflow installs the NDK via sdkmanager, generates a Zig --libc file pointing at the NDK sysroot, and cross-compiles aarch64, armv7, and x86_64 Android binaries with the target suffixed by API level (aarch64-linux-android.24 by default, configurable via android_api_level).",
+			"code": "with:\n  android_api_level: \"24\""
+		},
+		{
+			"title": "A Zig binary that embeds a web UI",
+			"body": "Your project builds frontend assets with npm before `zig build` can embed them. Instead of forking the workflow, you pass inputs: node_version to get Node.js with npm caching, setup_command to install dependencies, and pre_build_command to compile the assets — with BUILD_VERSION exported so the UI can display it. Hook commands reach bash through environment variables with `bash -euo pipefail`, never templated into the workflow YAML.",
+			"code": "with:\n  node_version: \"22\"\n  pre_build_command: npm run build"
+		}
+	],
+	"faq": [
+		{
+			"q": "Can I download and run nullbuilder itself?",
+			"a": "No — the repo contains no build.zig and no src/ directory, so there is nothing to compile or install. It exists to be referenced: your repo's workflow files call it with `uses: nullclaw/nullbuilder/.github/workflows/zig-ci.yml@v1` and everything executes inside your own repo's GitHub Actions runs."
+		},
+		{
+			"q": "How stable is the @v1 reference?",
+			"a": "Less stable than it looks: v1 is a branch, not a tag — the repo currently has zero releases and zero tags. Callers therefore track moving code, and workflow input names or defaults may change underneath them. Pinning to a specific commit SHA instead of @v1 is the cautious option until real version tags exist."
+		},
+		{
+			"q": "Are all third-party actions really pinned to commit SHAs?",
+			"a": "Almost. General-purpose actions in the workflows are pinned to full 40-character SHAs with version comments and updated by weekly Dependabot, but the setup-zig composite action delegates to mlugg/setup-zig@v2 — a mutable tag — and that runs in every job of all three workflows. The repo even contains its own checksum-verifying Zig installer script (install-zig.sh), but it is currently dead code and not wired into the action."
+		},
+		{
+			"q": "My project doesn't build with a plain `zig build` — can I still use it?",
+			"a": "Usually, yes, through workflow inputs rather than forking: setup_command, pre_test_command, a replaceable test_command, pre_build_command, custom build_args, and an e2e_command pinned to a target of your choice (linux-x86_64 by default). If your build needs something the hooks cannot express, you are outside what the shared workflows cover."
+		},
+		{
+			"q": "Does this work outside GitHub?",
+			"a": "No. All three pipelines are GitHub Actions `workflow_call` workflows, releases are GitHub releases, the nightly dedupe queries the GitHub API, and the optional Docker publish targets ghcr.io. On GitLab or a self-hosted CI system, none of it applies."
+		},
+		{
+			"q": "What provenance do the built binaries carry?",
+			"a": "Nightly binaries each get a .sha256 checksum file and a manifest-<target>.json recording the commit, run ID, run URL, target triple, version, and build timestamp — written by a small unit-tested Zig program. It is checksum-and-manifest provenance, not a signed attestation: there is no Sigstore or SLSA machinery involved."
+		}
+	]
 }
