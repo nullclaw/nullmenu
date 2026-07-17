@@ -2,20 +2,20 @@
 	"hero": {
 		"kicker": "THE LARDER — KNOWLEDGE SERVICE",
 		"title": "Knowledge, memory and citation-backed RAG behind one API",
-		"sub": "An HTTP server that stores documents, decisions, and your agents' long-term memory, then answers questions over them — every result filtered by the caller's permissions and backed by citations. It has no UI of its own: NullClaw agents and the NullHub and NullDesk apps consume it over plain HTTP, with records stored in SQLite by default or in Postgres."
+		"sub": "An HTTP server that stores documents, decisions, and your agents' long-term memory, then answers questions over them — every result filtered by the caller's permissions and backed by citations. It has no UI of its own: agents built on NullClaw (the ecosystem's agent runtime), the NullHub web console and the NullDesk supervision app consume its 197-route /v1 API over plain HTTP, while a background worker keeps summaries, hygiene and vector indexes current. Records live in vendored SQLite by default or in Postgres via a runtime-loaded libpq."
 	},
 	"metrics": [
 		{
-			"value": "14+",
+			"value": "197",
+			"label": "API routes under /v1"
+		},
+		{
+			"value": "17",
 			"label": "agent-memory backends"
 		},
 		{
-			"value": "8",
-			"label": "vector store families"
-		},
-		{
-			"value": "7",
-			"label": "per-token capabilities"
+			"value": "1290",
+			"label": "test blocks in-tree"
 		},
 		{
 			"value": "0",
@@ -41,28 +41,28 @@
 	"quickstart": "Build, run, and ask the server to describe itself:\n\n```bash\n# default local NullClaw-compatible profile\nzig build\n\n# run with local SQLite records (vendored, no system dependency)\n# server listens on http://127.0.0.1:8765 by default\nzig build run -- --db .nullpantry/nullpantry.db\n\n# full runtime flag list\nzig build run -- --help\n\n# the running service publishes its own API manifest\ncurl -sS http://127.0.0.1:8765/v1/openapi.json\n```",
 	"features": [
 		{
+			"title": "One catalog, 197 routes",
+			"body": "Request dispatch, the OpenAPI document at /v1/openapi.json, and the SDK manifest are all generated from a single route catalog — 197 paths, 279 method-operation pairs — with tests asserting that every declared operation actually dispatches. The published API description cannot drift from the server."
+		},
+		{
 			"title": "One retrieval path",
-			"body": "Search (/v1/search), question answering (/v1/ask), and context packs — pre-assembled bundles of relevant material for an agent's prompt (/v1/context-packs) — all run one pipeline: filter by the caller's permissions, gather keyword and vector matches, expand through the knowledge graph, rerank, and return results with citations."
-		},
-		{
-			"title": "Permission-aware by invariant",
-			"body": "An answer is only valid if every source, atom, relation, chunk and citation is visible to the requesting actor. Retrieval never leaks across scopes."
-		},
-		{
-			"title": "Backends chosen at compile time",
-			"body": "Build flags decide what the binary contains. Records go to SQLite or Postgres; agent memory to Redis, ClickHouse, Markdown files, or hosted services like Mem0 and Zep; vectors to pgvector, Qdrant, LanceDB, Weaviate, Chroma, or OpenSearch. Pick a profile — nullclaw, minimal, full, or custom — and unused adapters are never compiled in."
+			"body": "Search (/v1/search), question answering (/v1/ask), and context packs — pre-assembled bundles of relevant material for an agent's prompt (/v1/context-packs) — run one pipeline: filter candidates by the caller's permissions, choose keyword-only, vector-only or hybrid per query, fuse the ranked lists with reciprocal-rank fusion, optionally rerank with an LLM, and return results with citations. An answer is only valid if every cited source, atom, relation and chunk is visible to the requesting actor."
 		},
 		{
 			"title": "NullClaw-compatible memory API",
-			"body": "Point a NullClaw agent's memory backend at NullPantry and it works unchanged. The /v1/agent, /v1/memory, and /v1/agent-sessions routes cover create/read/update/delete, search, session history, and the feed/checkpoint/apply flow agents use to sync shared memory."
+			"body": "Point a NullClaw agent's memory backend at NullPantry and it works unchanged: the /v1/agent/* routes plus bare /v1/memories, /v1/sessions and /v1/history aliases are compiled in by default, alongside the native /v1/agent-memory and /v1/agent-sessions API. An existing NullClaw brain.db — the runtime's on-disk memory database — imports directly via /v1/lifecycle/import-brain-db."
+		},
+		{
+			"title": "Backends chosen at compile time",
+			"body": "Build flags decide what the binary contains: 2 record stores (vendored SQLite with FTS5 full-text search, or Postgres through a libpq loaded at runtime — no compile-time dependency), 17 agent-memory backends from Markdown files and Redis to Mem0 and Zep, 8 vector backends (a local SQLite index, pgvector, Qdrant, LanceDB, Weaviate, Chroma, OpenSearch), plus graph projection to Neo4j or FalkorDB and ClickHouse analytics. Pick a profile — nullclaw, minimal, full, or custom — and unselected adapters are truly absent from the binary."
+		},
+		{
+			"title": "Refuses unsafe defaults",
+			"body": "Binding a non-loopback address without an auth token is a startup error unless explicitly overridden. Outbound provider URLs must be HTTPS unless the host is local or insecure HTTP is explicitly allowed. Per-provider circuit breakers, a 2 MB request-body cap, 64 KB header cap, 128-connection limit and 30-second socket timeouts are on by default, and unknown config keys or malformed CLI flags are hard errors."
 		},
 		{
 			"title": "Works fully offline",
-			"body": "Without provider config it uses deterministic local embeddings and extractive, citation-backed answers. SQLite is vendored; no external service is required."
-		},
-		{
-			"title": "Knowledge with a lifecycle",
-			"body": "Proposed, verified, accepted, stale, deprecated, superseded — plus freshness, expiry and conflict detection. Decisions are superseded, not deleted."
+			"body": "Without provider config it uses deterministic local embeddings and extractive, citation-backed answers. SQLite with FTS5 full-text search is vendored into the binary; no external service is required."
 		}
 	],
 	"pairs": [
@@ -70,9 +70,9 @@
 		"hub",
 		"desk"
 	],
-	"note": "Early: one tagged release (v2026.06.09) and no license file yet. Pre-1.0: config and CLI may change between releases.",
+	"note": "Early: one tagged release (v2026.06.09) and no license file yet. Pre-1.0: config and CLI may change between releases. A plain zig build from source stamps the older default version string (2026.5.26); release binaries are built with -Dversion.",
 	"plain": {
-		"what": "A single-binary HTTP service, written in Zig, that stores knowledge records (docs, specs, decisions, notes) and agents' long-term memory, and serves search, Q&A, and memory APIs on port 8765 by default.",
+		"what": "A single-binary HTTP service, written in Zig, that stores knowledge records (docs, specs, decisions, notes) and agents' long-term memory, and serves search, Q&A, and memory APIs on port 8765 by default. Release binaries are 4.1–4.9 MB across 7 platforms: Linux (x86_64, aarch64, riscv64), macOS (x86_64, aarch64) and Windows (x86_64, aarch64).",
 		"why": "It exists so shared knowledge and agent memory live in one governed place instead of scattered per-agent files — with permissions enforced on every read and answers that always cite their sources.",
 		"when": "Reach for it when more than one agent or app needs the same searchable docs and shared memory — say, several NullClaw agents that should remember the same things — and you'd rather point them all at one URL than sync files between them."
 	}

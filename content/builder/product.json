@@ -10,7 +10,7 @@
 			"label": "default release targets"
 		},
 		{
-			"value": "5",
+			"value": "4",
 			"label": "OS families"
 		},
 		{
@@ -42,15 +42,19 @@
 	"features": [
 		{
 			"title": "One CI block",
-			"body": "zig-ci.yml runs your test suite, then cross-compiles size-optimized (ReleaseSmall) binaries for a configurable target matrix — x86_64 Linux (musl), aarch64 macOS, and x86_64 Windows by default. Zig build caching and artifact upload are included."
+			"body": "zig-ci.yml runs your test suite, then cross-compiles size-optimized (ReleaseSmall) binaries for a configurable target matrix — x86_64 Linux (musl), aarch64 macOS, and x86_64 Windows by default. Every job appends a summary table: tests passed, peak test memory, and the exact binary size per target."
 		},
 		{
 			"title": "Twelve-target releases",
-			"body": "Push a v* tag and zig-release.yml builds Linux, Android, macOS and Windows binaries, injects the version, and publishes a GitHub release with generated notes."
+			"body": "Push a v* tag and zig-release.yml builds binaries for 12 targets across Linux, Android, macOS, and Windows, then publishes a GitHub release: raw .bin files for unix targets, .exe plus a zip for Windows, an optional source tarball, and an optional multi-arch Docker image on ghcr.io. Re-running updates the release's assets instead of failing."
 		},
 		{
 			"title": "Nightlies that dedupe",
-			"body": "zig-nightly.yml skips commits that already have a successful nightly, keeps artifacts 14 days, and can maintain a rolling prerelease."
+			"body": "zig-nightly.yml asks the GitHub API whether the current commit already has a successful nightly and skips the build if so — the decision is made by a small unit-tested Zig program, not a shell one-liner. Artifacts are kept 14 days, and an optional rolling prerelease gets its assets replaced on every build."
+		},
+		{
+			"title": "Checksums and manifests",
+			"body": "Every nightly binary ships with a .sha256 checksum file and a JSON manifest recording the commit, run URL, target, and build time. Third-party actions in the workflows are pinned to full commit SHAs with weekly Dependabot updates — the one tag reference is the Zig installer, mlugg/setup-zig@v2."
 		},
 		{
 			"title": "Android without Gradle",
@@ -58,11 +62,7 @@
 		},
 		{
 			"title": "Hooks for odd builds",
-			"body": "Nonstandard build? Pass your commands as workflow inputs: setup, pre-test, and pre-build hooks, a custom test command and build flags, one end-to-end test pinned to a target of your choice, and optional Node.js with npm caching for repos that build UI assets before the Zig build."
-		},
-		{
-			"title": "SHA-pinned supply chain",
-			"body": "Every third-party action is pinned to a full commit SHA, with Dependabot updates. The helper actions are written in Zig and unit-tested with zig test."
+			"body": "Nonstandard build? Pass your commands as workflow inputs: setup, pre-test, and pre-build hooks, a custom test command and build flags, one end-to-end test pinned to a target of your choice, and optional Node.js with npm caching for repos that build UI assets first. Hook commands reach bash through environment variables, never templated into the workflow YAML."
 		}
 	],
 	"pairs": [
@@ -71,7 +71,7 @@
 		"tickets",
 		"boiler"
 	],
-	"note": "Not an end-user tool, and no releases, tags or license file yet — callers pin to the v1 branch, and workflow inputs may change.",
+	"note": "Not an end-user tool — the repo contains no build.zig and ships no binary of its own. No releases or tags yet: `v1` is a branch, so callers track moving code and workflow inputs may change.",
 	"plain": {
 		"what": "A set of reusable GitHub Actions workflows (referenced with `uses: nullclaw/nullbuilder/...@v1`) that give a Zig repo on GitHub its CI, nightly-build, and release pipelines.",
 		"why": "Every Zig repo in the NullClaw GitHub org needs the same pipeline — run tests, cross-compile small size-optimized binaries for a dozen platforms, publish GitHub releases — and copy-pasting that YAML into each repo means fixing every bug in every copy; this keeps it in one place that all repos reference.",

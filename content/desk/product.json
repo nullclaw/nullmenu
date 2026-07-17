@@ -1,25 +1,25 @@
 {
 	"hero": {
 		"kicker": "THE PASS — OPERATIONS DESK",
-		"title": "Agents propose. You approve. Every change on record.",
-		"sub": "NullDesk is a local app for running AI agents under human control: you assign structured tasks, review each proposed file change as a side-by-side diff, and approve or block shell commands before they run. Unless you explicitly put a task in its bounded autonomous mode, nothing touches disk until you accept, and every decision lands in an append-only log inside your workspace."
+		"title": "Agents propose. You approve. Inside a full code editor.",
+		"sub": "NullDesk is a single Zig binary that opens a workspace folder as both an agent-supervision desk and a working code editor. Agents cannot write files — the plugin capability schema forbids a write permission outright — so every change arrives as a diff you accept or reject, every shell command passes risk-classified approval, and every decision lands in a Blake3 hash-chained audit log. Around that sits a real editor: an LSP client for 14 languages, a git workbench, terminal panes, and native support for extensions built for the Zed editor."
 	},
 	"metrics": [
 		{
 			"value": "3",
-			"label": "frontends — GUI, TUI, web"
+			"label": "frontends — macOS GUI, TUI, local web"
 		},
 		{
-			"value": "9",
-			"label": "task statuses, Draft to Done"
+			"value": "14",
+			"label": "built-in languages, 7 LSP servers wired"
 		},
 		{
-			"value": "5",
-			"label": "autonomy modes per task"
+			"value": "21",
+			"label": "Zed extension-host operations supported"
 		},
 		{
-			"value": "127.0.0.1",
-			"label": "web UI binds loopback only"
+			"value": "1,533",
+			"label": "test blocks, plus 420 integration scripts"
 		}
 	],
 	"install": {
@@ -41,28 +41,28 @@
 	"quickstart": "Build once, then point NullDesk at a workspace. Every frontend runs from the same binary.\n\n```bash\n# build the debug binary\nzig build\n\n# run the default frontend against the current directory\nzig build run -- --workspace \"$PWD\"\n\n# or pick a frontend explicitly\nzig build run -- tui --workspace \"$PWD\"\n\n# local web UI on 127.0.0.1:8765\nzig build web\nzig build run -- web --workspace \"$PWD\"\n```",
 	"features": [
 		{
-			"title": "Review Center write boundary",
-			"body": "Agents never write files directly. Every proposed change appears as a side-by-side diff you accept or reject — whole files or individual hunks. If the file changed on disk after the diff was made, accepting is refused instead of silently overwriting your work."
+			"title": "Writes agents cannot make",
+			"body": "The plugin capability schema has no grantable write permission — a manifest requesting one is rejected at parse time. Agents may only propose_write into the review queue, where each change appears as a side-by-side diff you accept or reject, whole files or single hunks. The final apply step is gated by a one-shot keystroke token that only the review flow can mint and that errors on any second use."
 		},
 		{
 			"title": "Risk-classified command approval",
-			"body": "Shell commands an agent wants to run are classified low, medium, or high risk. High-risk patterns like curl|sh and rm -rf are shown but blocked from approval entirely."
+			"body": "Shell commands an agent wants to run go through an approval queue with risk classification. Each task also sets an autonomy mode — five levels from ask_only up to autonomous_within_limits, and even the most autonomous mode is scoped to files under src/ and tests/. Tasks themselves are structured packets with nine named statuses from draft to done, failed, or canceled."
 		},
 		{
-			"title": "Structured task packets",
-			"body": "Tasks are JSON files under .nulldesk/tasks/ with goal, constraints, done criteria, budget, and timeout. Nine statuses track each one from Draft to Done or Failed."
+			"title": "A working code editor underneath",
+			"body": "Not a dashboard bolted onto a chat window: an LSP client (rename, go-to-definition, hover, references, semantic tokens) wired to 7 servers across 14 built-in languages, Tree-sitter parsing, a DAP debugging bridge, multibuffers and split panes, project search, terminal panes, and a full git workbench — staging, hunks, stashes, branches, worktrees, history, conflicts. Five keybinding presets (vscode, emacs, vim, helix, jetbrains) include a real modal Vim engine, and a markdown knowledge vault adds wiki links, note transclusion, and a canvas board."
 		},
 		{
-			"title": "Five autonomy modes",
-			"body": "Each task sets how much its agent may do on its own, from ask_only (read and answer, nothing else) up to autonomous_within_limits — capped by default at 20 actions, $2.00 in cost (or the task budget, if lower), files under src/ and tests/ only, and no network or destructive commands."
+			"title": "Zed extensions and a signed marketplace",
+			"body": "The binary implements the Zed extension-host protocol in native Zig — 21 operations, 18 host imports — and parses both core-module and component-model WASM itself; the Rust Wasmtime host remains as an opt-in build. Marketplace plugin packages are Ed25519-signed and verified against a publisher keyring, with explicit consent prompts before anything installs."
 		},
 		{
-			"title": "Append-only audit timeline",
-			"body": "Every task change, agent run, file read, review, approval, command, and commit lands in .nulldesk/events.jsonl. Decision history stays in the workspace, as plain files."
+			"title": "A hash-chained audit log",
+			"body": "Every decision is appended to a Blake3 hash chain: each entry commits to the one before it, so history cannot be silently edited after the fact. Entries can optionally be Ed25519-signed, and a built-in corruption check verifies the chain. Everything stays as plain local files in your workspace."
 		},
 		{
-			"title": "Three frontends, one core",
-			"body": "A native macOS AppKit GUI, a cross-platform TUI, and a loopback-only web UI (SvelteKit SPA on 127.0.0.1:8765) compile from one shared Zig core into one binary."
+			"title": "Three frontends, one binary",
+			"body": "A native macOS AppKit GUI (the default on macOS), a cross-platform TUI (the default everywhere else), and a web UI served only on 127.0.0.1:8765 all compile from one Zig core with zero external Zig dependencies. The web frontend is a SvelteKit app whose search runs in the browser as Zig compiled to WASM, and --web-out exports a static HTML snapshot instead of serving."
 		}
 	],
 	"pairs": [
@@ -70,10 +70,10 @@
 		"hub",
 		"watch"
 	],
-	"note": "Pre-release: no published releases, tags, or license file yet — build from source and expect change.",
+	"note": "Pre-release: the code carries version 2026.5.7, but there are no published releases, tags, or license file yet — build from source and expect change.",
 	"plain": {
-		"what": "A single Zig binary that opens a local project folder and gives you three frontends — a native macOS GUI, a cross-platform terminal UI, and a web UI served on 127.0.0.1 by default — for assigning work to AI agents (run through nullclaw, a small local agent runtime) and approving what they produce.",
-		"why": "Agents that edit files and run shell commands unsupervised are hard to trust, so NullDesk turns proposed file changes into reviewable diffs, requested commands into risk-classified approvals, and each decision into a line in an append-only audit log.",
-		"when": "When you want an AI agent to work on a repo or docs folder — fix a bug, write tests, draft docs — but you want to see and accept each diff and command yourself before anything lands on disk."
+		"what": "A single Zig binary — 332 files, zero external Zig dependencies — that opens a local project folder and runs one of three frontends: a native macOS GUI, a cross-platform terminal UI (the default outside macOS), or a web UI bound to 127.0.0.1. Inside is both a code editor (LSP, Tree-sitter, debugging, git, terminal) and a supervision desk for AI agents run through nullclaw, the companion agent runtime, over the Agent Client Protocol.",
+		"why": "Agents that edit files and run shell commands unsupervised are hard to trust, and supervising them in a separate tool from your editor is constant friction. NullDesk makes direct writes impossible for agents — they can only propose diffs into a review queue — puts commands behind risk-classified approval, records every decision in a Blake3 hash-chained log, and keeps the editor, git workbench, and terminal in the same window.",
+		"when": "When you want an AI agent working on a repo — fixing a bug, writing tests, drafting docs — but you want to read and accept every diff and command yourself, in the same place you edit the code."
 	}
 }

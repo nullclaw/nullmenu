@@ -8,10 +8,10 @@
 	let { data } = $props();
 
 	const heroStats = [
-		{ k: 'agent runtime', v: '678 KB' },
-		{ k: 'peak memory', v: '~1 MB' },
-		{ k: 'model providers', v: '50+' },
-		{ k: 'chat channels', v: '19' }
+		{ k: 'agent runtime', v: '4.4–6.5 MB' },
+		{ k: 'model providers', v: '~60' },
+		{ k: 'chat channels', v: '26' },
+		{ k: 'built-in tools', v: '39' }
 	];
 
 	const stack = [
@@ -72,7 +72,7 @@
 					<dd class="mono">{s.v}</dd>
 				</div>
 			{/each}
-			<p class="fine mono">figures measured by the project · everything pre-1.0</p>
+			<p class="fine mono">counted in the source at v2026.5.29 · everything pre-1.0</p>
 		</dl>
 	</div>
 </section>

@@ -17,7 +17,7 @@ NullBoiler dispatches to anything that speaks one of its worker protocols:
 | `openai_chat` | Your worker is any OpenAI-compatible gateway (set `model` in the worker config) |
 | `api_chat` | Your worker exposes a chat-style API (ZeroClaw does) |
 | `a2a` | Your worker speaks Google's A2A JSON-RPC (NullClaw does) |
-| MQTT / Redis Streams | You want async dispatch through a broker you already run |
+| MQTT / Redis Streams | Declared in NullBoiler but stubbed as of v2026.5.29 — not yet functional |
 
 A bundled bridge (`tools/picoclaw_webhook_bridge.py`) shows the webhook pattern for adapting a runtime that doesn't natively fit. Workers declare tags and capacity; the engine handles selection, retries, backoff and health checks.
 

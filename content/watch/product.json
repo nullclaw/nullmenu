@@ -2,7 +2,7 @@
 	"hero": {
 		"kicker": "THE THERMOMETER — OBSERVABILITY",
 		"title": "Every span, verdict and dollar, kept on your machine",
-		"sub": "A single sub-megabyte binary that records what your agent runs actually did — every model call, tool invocation, retry and eval verdict — as plain JSONL files on your own disk. Query latency, errors, token usage and cost per run over a JSON HTTP API or the CLI; a companion dashboard, NullHub, renders the UI on top."
+		"sub": "A single sub-megabyte binary that records what your agent runs actually did — every model call, tool invocation, retry and eval verdict — as append-only JSONL files on your own disk. Query latency, errors, token usage and cost over a JSON HTTP API or an offline CLI, lock the API with a bearer token, and let NullHub, the companion dashboard, render the UI on top."
 	},
 	"metrics": [
 		{
@@ -15,11 +15,11 @@
 		},
 		{
 			"value": "0",
-			"label": "external services or databases"
+			"label": "dependencies in build.zig.zon"
 		},
 		{
-			"value": "OTLP/HTTP",
-			"label": "standard JSON trace ingest"
+			"value": "13",
+			"label": "HTTP endpoints, OTLP included"
 		}
 	],
 	"install": {
@@ -46,36 +46,38 @@
 	"features": [
 		{
 			"title": "Span ingest for agents",
-			"body": "Records each timed unit inside a run — model calls, tool invocations, memory lookups, retries — with tokens, cost and status attached."
+			"body": "Records each timed unit inside a run — model calls, tool invocations, memory lookups, retries — with tokens, cost and status attached. Eleven filters (run_id, trace_id, source, operation, status, model, tool_name, task_id, session_id, agent_id, limit) narrow the list over HTTP or the CLI."
 		},
 		{
 			"title": "Evals as first-class data",
-			"body": "An eval is a scored quality check attached to a run — scorer name, score, pass/fail verdict, dataset. Send them over /v1/evals or the CLI and they are stored and queried right next to the trace they judged."
+			"body": "An eval is a scored quality check attached to a run — scorer name, score, pass/fail verdict, dataset. Send one over POST /v1/evals, a batch over /v1/evals/bulk, or use the ingest-eval CLI command, and it is stored and queried right next to the trace it judged."
 		},
 		{
-			"title": "Run-level summaries",
-			"body": "Each run gets computed totals: duration, error count, token usage, cost, pass/fail counts and an overall verdict."
+			"title": "Run rollups, computed not stored",
+			"body": "Each run's totals — duration, error count, token usage, cost, pass/fail counts and an overall verdict — are derived on the fly from the stored spans and evals, so a rollup can never drift out of sync with its raw records."
 		},
 		{
-			"title": "A tiny OTLP sink",
-			"body": "Accepts standard OpenTelemetry traces (OTLP/HTTP JSON) on /v1/traces. Point any tool that emits OpenTelemetry traces at it — including NullClaw, the companion agent runtime — and incoming spans are mapped into runs automatically."
+			"title": "An OTLP sink in ~400 lines",
+			"body": "Accepts standard OpenTelemetry traces (OTLP/HTTP JSON) on /v1/traces and the canonical /otlp/v1/traces, in both the modern scopeSpans and the legacy instrumentationLibrarySpans shapes. Attribute mapping understands key prefixes from four ecosystems — nullwatch, nullclaw, nulltickets and openclaw — so existing trace emitters land as runs without renaming anything."
 		},
 		{
-			"title": "Local JSONL storage",
-			"body": "Everything lands under ~/.nullwatch/data as plain JSONL. Storage is designed to swap for SQLite later without changing the API contract."
+			"title": "Bearer-token auth, wired end to end",
+			"body": "Set api_token in the config or pass --token, and every route except GET /health answers 401 without the matching Authorization header. The end-to-end test suite exercises both the refusal and the success path."
 		},
 		{
-			"title": "Demo data built in",
-			"body": "Run demo-seed to get a realistic sample dataset — a passing code-review run, a failed tool call, a handoff with retries — with no API keys, no hosted service and no agent running. Re-running it is safe: it always produces the same data."
+			"title": "One JSONL store, two ways in",
+			"body": "Everything lands as append-only JSONL under ~/.nullwatch/data and is reloaded fully into memory on start. The summary, runs, run, spans and evals subcommands read the same files directly, so every query also works offline with no server running."
 		}
 	],
 	"pairs": [
 		"claw",
-		"hub"
+		"hub",
+		"tickets",
+		"boiler"
 	],
-	"note": "Pre-1.0 with one release so far; the README calls it a bootstrap implementation, and the repo has no license file yet.",
+	"note": "Pre-1.0, and the repo has no license file yet. Sized for one developer's machine: the whole JSONL store is reloaded into memory at startup (8 MiB per file), HTTP requests cap at 256 KiB, and the server handles one connection at a time.",
 	"plain": {
-		"what": "NullWatch is an observability service in a single sub-megabyte Zig binary: it serves a JSON HTTP API on 127.0.0.1:7710 and stores AI-agent execution traces and eval results as JSONL files under ~/.nullwatch/data.",
+		"what": "NullWatch is an observability service in a single sub-megabyte Zig binary: it serves a JSON HTTP API on 127.0.0.1:7710, answers the same queries offline through CLI subcommands, and stores AI-agent execution traces and eval results as append-only JSONL files under ~/.nullwatch/data.",
 		"why": "When an agent run fails or burns money, you need a record of every model call, tool invocation and eval verdict to see what happened — NullWatch keeps that record on your own machine instead of a hosted observability platform.",
 		"when": "Reach for it when an agent run misbehaves and you want to list its spans, find the failed tool call and total up tokens and cost — or when you need a local OpenTelemetry (OTLP/HTTP JSON) endpoint to point an agent's trace output at."
 	}

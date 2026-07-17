@@ -36,7 +36,7 @@ Swap the asset name for your platform from the table above.
 
 ## Build from source
 
-You need Zig `0.16.0` exactly — the repo pins it. SQLite is vendored; the MQTT (libmosquitto) and Redis Streams (hiredis) clients are vendored C too, so there are no system dependencies to hunt down.
+You need Zig `0.16.0` exactly — the repo pins it. SQLite is vendored, so there are no system dependencies to hunt down. (The vendored MQTT and Redis client stubs compile but those transports are not functional yet.)
 
 ```bash
 git clone https://github.com/nullclaw/nullboiler

@@ -28,6 +28,7 @@ nullboiler validate-workflows [PATH]
 nullboiler --export-manifest
 nullboiler --from-json '<wizard answers json>'
 nullboiler --version
+nullboiler help
 ```
 
 | Flag / command | Purpose |
@@ -40,6 +41,7 @@ nullboiler --version
 | `--export-manifest` | Export the tool manifest (used by NullHub) |
 | `--from-json` | Import config from wizard-answer JSON |
 | `--version` | Print version |
+| `help`, `--help`, `-h` | Print usage |
 
 ## Top-level fields
 
@@ -83,6 +85,9 @@ nullboiler --version
 | `tags` | `[]` | Selection labels |
 | `max_concurrent` | 1 | Per-worker in-flight cap |
 
+> [!NOTE]
+> `mqtt` and `redis_stream` parse as valid protocols, but their transports are stubs in the current release — nothing is sent over the wire. Use the four HTTP protocols: `webhook`, `api_chat`, `openai_chat`, `a2a`.
+
 ## `tracker` — pull mode against NullTickets
 
 Setting this section turns on pull mode: NullBoiler polls [NullTickets](https://tickets.nullmenu.ai/), claims tasks by role, heartbeats leases and runs each task in a managed workspace.
@@ -120,17 +125,17 @@ Pull mode can spawn a local agent per task instead of calling a remote worker:
 | Field | Default | Purpose |
 | --- | --- | --- |
 | `command` | `nullclaw` | Binary to spawn |
-| `args` | `[]` | Extra arguments |
 | `base_port` | 9200 | First port assigned to spawned agents |
 | `health_check_retries` | 10 | Startup probes before giving up |
 | `max_turns` | 20 | Turn cap per task |
 | `turn_timeout_ms` | 600000 | Per-turn timeout |
+| `continuation_prompt` | — | Prompt sent on follow-up turns of a task |
 
 ## Environment variables
 
 | Variable | Purpose |
 | --- | --- |
-| `NULLBOILER_HOME` | Instance home directory; `config.json` and relative paths resolve from here |
+| `NULLBOILER_HOME` | Instance home directory; `config.json` and relative paths resolve from here. Unset, it falls back to `HOME` (`USERPROFILE` on Windows) plus `.nullboiler` |
 | `NULLBOILER_TOKEN` | Exported before `docker compose up` to align the API token across the repo's compose stack — see the compose guide (`docs/docker-compose-nulltickets-nullclaw.md`) |
 
 ## Preflight

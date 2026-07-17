@@ -11,8 +11,10 @@ The complete REST surface. The server also documents itself: `GET /openapi.json`
 
 - Content type: `application/json`
 - Time values: Unix milliseconds
-- Writes accept an optional `Idempotency-Key` header for safe retries
+- Writes accept an optional `Idempotency-Key` header: replaying the same key and body returns the cached response; the same key with a different body returns `409 idempotency_conflict`
 - Lease-protected endpoints (marked below) require `Authorization: Bearer <lease_token>`
+- With `api_token` configured, every other endpoint except `/health` and the two OpenAPI paths requires `Authorization: Bearer <api_token>`
+- Request bodies are capped at 64 KB; the server handles one connection at a time and closes it after each response
 
 ## Discovery and health
 
@@ -68,7 +70,7 @@ The complete REST surface. The server also documents itself: `GET /openapi.json`
 | `POST` | `/leases/claim` | Claim next task by role |
 | `POST` | `/leases/{id}/heartbeat` | Extend lease (Bearer) |
 
-`POST /leases/claim` takes `{ agent_id, agent_role, lease_ttl_ms? }`. It returns `200` with `{ task, run, lease_id, lease_token, expires_at_ms }`, or `204` when no work is claimable.
+`POST /leases/claim` takes `{ agent_id, agent_role, lease_ttl_ms? }`. It returns `200` with `{ task, run, lease_id, lease_token, expires_at_ms }`, or `204` when no work is claimable. `lease_ttl_ms` defaults to `300000` (5 minutes) on both claim and heartbeat.
 
 ## Runs
 

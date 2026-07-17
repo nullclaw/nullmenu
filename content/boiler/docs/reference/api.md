@@ -19,6 +19,7 @@ NullBoiler exposes 36 HTTP operations, specified in OpenAPI 3.1 at `docs/openapi
 ```
 
 - **Idempotency** — `POST /runs` honors an `Idempotency-Key` header (preferred) or an `idempotency_key` body field. Replays return the stored run with `idempotent_replay: true`. `POST /workflows/{id}/run` does not currently implement idempotency.
+- **Body size** — request bodies are capped at 8 MiB.
 
 ## Health and metrics
 
@@ -50,7 +51,7 @@ NullBoiler exposes 36 HTTP operations, specified in OpenAPI 3.1 at `docs/openapi
 | GET | `/runs/{id}/events` | Persisted events |
 | GET | `/runs/{id}/stream` | Stream snapshot: status, state, buffered events |
 
-`/stream` takes `mode` (comma-separated: `values`, `updates`, `tasks`, `debug`, `custom`; defaults to all) and `after_seq` to page through buffered events without shared cursor state.
+`/stream` takes `mode` (comma-separated: `values`, `updates`, `debug`) and `after_seq` to page through buffered events without shared cursor state.
 
 ## Checkpoints
 

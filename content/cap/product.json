@@ -2,24 +2,24 @@
 	"hero": {
 		"kicker": "THE CLOCHE — CALL OVERLAY",
 		"title": "Live cue cards, routed only through your NullHub",
-		"sub": "NullCap is a desktop overlay that shows short answer cards on your screen during interviews, meetings, sales calls and demos. It captures screen and audio locally and sends every AI request to exactly one service: NullHub, a gateway running on your own machine at 127.0.0.1:19800 by default."
+		"sub": "NullCap is a native desktop overlay for macOS, Windows and Linux that shows short answer cards on your screen during interviews, meetings, sales calls and demos. It captures screen and audio and transcribes speech locally, then sends every AI request to exactly one service: NullHub, a gateway running on your own machine at 127.0.0.1:19800 by default."
 	},
 	"metrics": [
 		{
-			"value": "7",
-			"label": "session modes"
+			"value": "0",
+			"label": "provider API keys stored"
 		},
 		{
 			"value": "127.0.0.1",
 			"label": "only host it calls"
 		},
 		{
-			"value": "0",
-			"label": "provider keys stored"
+			"value": "15",
+			"label": "local speech-to-text models"
 		},
 		{
 			"value": "3",
-			"label": "desktop platforms"
+			"label": "native desktop overlays"
 		}
 	],
 	"install": {
@@ -45,28 +45,28 @@
 	"quickstart": "NullCap expects a running NullHub at `http://127.0.0.1:19800`. From the repo root:\n\n```bash\n# check environment, permissions and NullHub reachability\nzig build run -- doctor\n\n# first-run bootstrap: privacy preset, seed workflow profiles\nzig build run -- onboarding apply\n\n# pick a session mode\nzig build run -- mode meeting\n\n# start the native overlay with global hotkeys\nzig build run -- run\n```",
 	"features": [
 		{
-			"title": "Live cue cards",
-			"body": "Short on-screen answers, structures and follow-ups while a call is running. Seven session modes: interview, meeting, demo, sales, debug, system-design, general."
+			"title": "One gateway, zero keys",
+			"body": "Every request — text, image or audio — goes to exactly one address: your local NullHub gateway, 127.0.0.1:19800 by default. NullCap stores no provider API keys and never contacts a model or speech-to-text provider itself. Four cloud providers — Gemini, Groq, OpenAI and Claude — sit behind the gateway, which decides which one answers; their keys stay in NullHub, never in the app."
 		},
 		{
-			"title": "NullHub-only routing",
-			"body": "Every request — text, image or audio — goes to exactly one address: your local NullHub gateway, 127.0.0.1:19800 by default. NullCap stores no provider API keys and never contacts a model or speech-to-text provider itself; which model actually answers is decided behind the gateway, not in the app."
+			"title": "Live cue cards, seven modes",
+			"body": "Short on-screen answers, structures, follow-ups and code hints while a call runs, drawn from screen captures and transcribed audio. Seven session modes — interview, meeting, demo, sales, debug, system-design, general — reshape every cue and post-call artifact, and the cue/ask command exposes 21 prompt modes for finer control. Text captured from your screen is treated as untrusted evidence, never as instructions to the model."
 		},
 		{
-			"title": "Me / other transcript",
-			"body": "Your microphone is transcribed as \"me\"; system audio — the other side of the call — as \"other\". With voice-activity detection enabled, clearly silent chunks are dropped locally before anything is transcribed, and long calls are compacted into rolling local summaries so the context never grows without bound."
+			"title": "Local speech-to-text",
+			"body": "Speech is transcribed on your machine with local ONNX models — 15 in the catalog, from the Moonshine and Whisper/distil-whisper families. Your microphone is labelled \"me\", system audio — the other side of the call — is labelled \"other\". Voice-activity detection drops clearly silent chunks before anything is transcribed, and long calls compact into rolling local summaries."
 		},
 		{
-			"title": "Screen capture as evidence",
-			"body": "Full-screen, selected-region and fixed-area capture with prompt-injection guards: text on your screen is treated as evidence, never as instructions."
+			"title": "Hidden from screen shares",
+			"body": "The overlay asks the OS to exclude it from capture — NSWindowSharingNone on macOS, SetWindowDisplayAffinity WDA_EXCLUDEFROMCAPTURE on Windows — so it does not appear in Zoom, Meet, Teams or OBS shares. This is a presentation convenience, not a proctoring bypass: it does not defeat proctoring software, kernel capture drivers or HDMI capture cards."
 		},
 		{
-			"title": "Post-call artifacts",
-			"body": "Local summaries, action items, follow-up email drafts and mode-specific scorecards. Tasks export as text, JSON, Jira, Linear or Asana."
+			"title": "Phone mirror and a second operator",
+			"body": "An optional HTTP server (default port 4123) mirrors live status and controls to your phone, gated by a 24-byte pairing token compared in constant time; it binds to 127.0.0.1 unless you pass --lan. A separate duo mode lets an invited helper send live tips during a call through a consent gate."
 		},
 		{
-			"title": "Local-first stores",
-			"body": "Sessions, chats, transcripts and knowledge live under ~/.nullcap with opt-in persistence, retention windows and purge commands. No provider API keys are stored, ever."
+			"title": "Post-call artifacts, local-first",
+			"body": "Local summaries, action items, follow-up email drafts and mode-specific scorecards. Tasks export as text, JSON, Jira, Linear or Asana. Sessions, chats, transcripts and notes live under ~/.nullcap with opt-in persistence, retention windows and purge commands. No provider API keys are stored, ever."
 		}
 	],
 	"pairs": [
@@ -76,8 +76,8 @@
 	],
 	"note": "Experimental: no tagged releases and no license file yet — build from source and expect change.",
 	"plain": {
-		"what": "A native desktop overlay app, written in Zig for macOS, Windows and Linux, that floats above your call window showing short AI-generated cue cards, while keeping a live in-memory transcript and generating post-call summaries on demand.",
-		"why": "Switching to a chatbot mid-call is too slow and hands your conversation to whichever cloud service that chatbot uses; NullCap puts answers on screen in real time and sends every AI request to one place only — your local NullHub gateway, never a model provider directly.",
+		"what": "A native desktop overlay app, written in Zig with hand-written windowing for macOS, Windows and Linux, that floats above your call showing short AI cue cards. It captures screen, microphone and system audio locally, transcribes speech with on-device ONNX models, keeps a live in-memory transcript, and generates post-call summaries on demand. A large batch-mode CLI covers setup, diagnostics and post-call artifacts.",
+		"why": "Switching to a chatbot mid-call is slow and hands your conversation to whichever cloud service that chatbot uses. NullCap puts answers on screen in real time and sends every AI request to one place only — your local NullHub gateway, never a model provider directly — so no provider API keys ever live in the app.",
 		"when": "Before a job interview, customer demo or sales call: run `nullcap run`, pick one of seven session modes, and get on-screen hints during the call plus a summary, action items and a follow-up email draft after it ends."
 	}
 }

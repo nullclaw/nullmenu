@@ -10,7 +10,7 @@ The starter recipe: a single NullClaw instance that answers you on the chat apps
 ## Ingredients
 
 - NullClaw ([installed directly](/docs/start/install-nullclaw-directly/) or [via NullHub](/docs/start/run-your-first-agent/))
-- An API key for one of 50+ providers (OpenRouter is the quick default)
+- An API key for one of ~60 supported providers (OpenRouter is the quick default)
 - A chat channel — NullClaw supports 19, including Telegram, Discord, Signal, Slack, WhatsApp, Matrix, IRC and Email
 
 ## 1. Onboard

@@ -30,7 +30,7 @@ NullClaw uses `zig build test --summary all`; NullTickets adds `bash tests/test_
 
 ## Test culture
 
-Tests are the family's main quality gate, and the numbers are taken seriously: NullClaw runs 5,300+ tests, NullBoiler 355 unit tests plus an e2e suite with mock workers, nllclw passes 385/385 (390 with the shell tool compiled in), and NullHub runs backend integration tests against a real hub process in a temporary home directory. A PR without tests for its change will be asked for them.
+Tests are the family's main quality gate, and the numbers are taken seriously: NullClaw carries 7,400+ in-tree tests, NullBoiler 355 unit tests plus an e2e suite with mock workers, nllclw ~330 test blocks (more with the shell tool compiled in), and NullHub runs backend integration tests against a real hub process in a temporary home directory. A PR without tests for its change will be asked for them.
 
 ## Shared CI: NullBuilder
 

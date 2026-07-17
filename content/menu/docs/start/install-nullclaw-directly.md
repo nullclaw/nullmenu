@@ -5,7 +5,7 @@ order: 5
 verified: v2026.5.29
 ---
 
-You don't need NullHub to run an agent. NullClaw is a standalone 678 KB static binary and has the easiest install in the family. This is the à la carte order.
+You don't need NullHub to run an agent. NullClaw is a standalone static binary (4.4–6.5 MB depending on platform) and has the easiest install in the family. This is the à la carte order.
 
 ## Homebrew
 
@@ -39,7 +39,7 @@ zig build -Doptimize=ReleaseSmall
 zig build test --summary all
 ```
 
-`ReleaseSmall` is what produces the 678 KB binary (size measured by the project).
+`ReleaseSmall` is the size-optimized build the releases ship. A minimal `-Dchannels=none` build gets far smaller than the full-featured default.
 
 ## First run
 
@@ -50,7 +50,7 @@ nullclaw onboard --api-key sk-... --provider openrouter
 nullclaw agent -m "Hello, nullclaw!"
 ```
 
-`onboard` writes a single JSON config to `~/.nullclaw/config.json`. Prefer a guided setup? `nullclaw onboard --interactive` walks providers, channels and memory step by step. NullClaw speaks to 50+ providers — OpenRouter, Anthropic, OpenAI, Gemini, Ollama, Groq, Mistral, DeepSeek and others, plus any OpenAI-compatible endpoint.
+`onboard` writes a single JSON config to `~/.nullclaw/config.json`. Prefer a guided setup? `nullclaw onboard --interactive` walks providers, channels and memory step by step. NullClaw speaks to ~60 providers — OpenRouter, Anthropic, OpenAI, Gemini, Ollama, Groq, Mistral, DeepSeek and others, plus any OpenAI-compatible endpoint.
 
 For a long-running assistant, start the gateway — HTTP API, chat channels, heartbeat and scheduler in one process:
 

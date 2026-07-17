@@ -1,25 +1,25 @@
 {
 	"hero": {
 		"kicker": "THE CHEF — AGENT RUNTIME",
-		"title": "A fully autonomous AI agent in 678 KB",
-		"sub": "One static binary that connects 50+ model providers (OpenAI, Anthropic, Ollama and more) to Telegram, Discord, Slack, Signal and 15 more chat channels — memory, tool use, cron scheduling and sandboxing built in. No Node, no Python, nothing but libc: it runs in about 1 MB of RAM, small enough for a $5 ARM board."
+		"title": "An always-on AI agent in one static binary",
+		"sub": "One static Zig binary that connects roughly 60 model providers (OpenRouter, Anthropic, OpenAI, Ollama, Groq and more) to 26 channels — Telegram, Discord, Slack, Signal, WhatsApp, iMessage and Nostr among them — with 39 built-in tools, hybrid memory, cron scheduling and sandboxing compiled in. No Node, no Python: release binaries are 4.4–6.5 MB and ship for 15 platforms, from x86 servers to Android phones and RISC-V boards."
 	},
 	"metrics": [
 		{
-			"value": "678 KB",
+			"value": "4.4–6.5 MB",
 			"label": "static binary"
 		},
 		{
-			"value": "50+",
+			"value": "~60",
 			"label": "model providers"
 		},
 		{
-			"value": "19",
-			"label": "messaging channels"
+			"value": "26",
+			"label": "channels"
 		},
 		{
-			"value": "5,300+",
-			"label": "tests"
+			"value": "7,470",
+			"label": "tests in-tree"
 		}
 	],
 	"install": {
@@ -41,28 +41,28 @@
 	"quickstart": "Onboard once, then talk to it.\n\n```bash\n# quick setup with a provider key\nnullclaw onboard --api-key sk-... --provider openrouter\n\n# send a single message\nnullclaw agent -m \"Hello, nullclaw!\"\n\n# start the long-running runtime on 127.0.0.1:3000\nnullclaw gateway\n\n# health checks\nnullclaw status && nullclaw doctor\n```",
 	"features": [
 		{
-			"title": "50+ providers, one config",
-			"body": "OpenRouter, Anthropic, OpenAI, Gemini, Ollama, Groq, Bedrock and more — plus any OpenAI-compatible endpoint via a custom base URL."
+			"title": "26 channels, allowlists everywhere",
+			"body": "Telegram, Discord, Slack, Signal, WhatsApp, iMessage, Matrix, Teams, WeChat, IRC, email, Nostr and more — 26 channel integrations in the catalog, 23 of them selectable at build time. Every channel sits behind its own allowlist, and the Nostr channel speaks NIP-17 gift-wrapped DMs."
 		},
 		{
-			"title": "19 messaging channels",
-			"body": "Telegram, Discord, Signal, Slack, WhatsApp, Matrix, IRC, Email, Nostr and others. Each channel sits behind its own allowlist; empty means deny."
+			"title": "Memory with a real retrieval pipeline",
+			"body": "Conversations and facts land in SQLite, found again with FTS5 keyword search plus embedding similarity — fused with reciprocal-rank fusion, diversified with MMR, decayed by age and reranked by an LLM. Twelve engines total, from plain Markdown files to Redis, Postgres, ClickHouse and LanceDB, when SQLite isn't the right fit."
 		},
 		{
-			"title": "Memory with hybrid search",
-			"body": "The agent remembers past conversations and facts in SQLite, and finds them again with keyword search (FTS5) and embedding similarity combined. Nine other backends — from plain Markdown files to PostgreSQL and Redis — when you need them."
+			"title": "~60 providers, one config",
+			"body": "Eleven core implementations (Anthropic, OpenAI, Azure, Gemini, Vertex, OpenRouter, Ollama and CLI bridges) plus an OpenAI-compatible table covering 49 more services — Groq, Mistral, DeepSeek, xAI, Bedrock, Moonshot, LM Studio, llama.cpp — under 98 accepted names. Any other endpoint works via a custom base URL."
 		},
 		{
-			"title": "Sandboxed by default",
-			"body": "Commands the agent runs are isolated in a sandbox: NullClaw auto-picks the best backend available on your system (Landlock, Firejail, Bubblewrap or Docker). File access is limited to the agent's workspace, and API keys are encrypted at rest with ChaCha20-Poly1305."
+			"title": "Sandboxed and encrypted by default",
+			"body": "Commands the agent runs are isolated in a sandbox auto-picked from what your system has: Landlock, Firejail, Bubblewrap or Docker. File access stays inside the agent's workspace, secrets are encrypted at rest with ChaCha20-Poly1305 with time-based key rotation, and the gateway binds to 127.0.0.1 with pairing tokens and per-minute rate limits."
 		},
 		{
 			"title": "Speaks A2A, MCP and ACP",
-			"body": "Other agents can discover and call it over Google's A2A protocol (v0.3.0, JSON-RPC). It can use tools from any MCP (Model Context Protocol) server over stdio or HTTP, and an adapter lets code editors that speak the Agent Client Protocol (ACP) drive it directly."
+			"body": "Other agents can discover and call it over Google's A2A protocol (v0.3.0, JSON-RPC with SSE streaming and a public agent card). It can use tools from any MCP (Model Context Protocol) server over stdio or SSE, and an ACP v1 stdio adapter lets code editors drive it directly."
 		},
 		{
-			"title": "OpenClaw-compatible",
-			"body": "Uses the same config format as OpenClaw, the TypeScript AI assistant — same structure, same snake_case keys. `nullclaw migrate openclaw` imports your existing config and memory in one command."
+			"title": "Runs where Node.js can't",
+			"body": "The v2026.5.29 release ships 15 static builds: Linux on x86_64, aarch64, arm32 and RISC-V, macOS, Windows and Android. A wasm3 WebAssembly runtime is compiled in by default, and early hardware tooling — board scan, I2C and SPI tools, a MaixCam camera-board channel — points the same binary at embedded boards."
 		}
 	],
 	"pairs": [
@@ -71,10 +71,10 @@
 		"tickets",
 		"watch"
 	],
-	"note": "Pre-1.0: config and CLI may change between releases. Size and memory figures are measured by the project.",
+	"note": "Pre-1.0: config and CLI may change between releases. Binary sizes are taken from the v2026.5.29 release assets; channel, provider and test counts are counted from the source tree at that version.",
 	"plain": {
-		"what": "NullClaw is an AI assistant runtime: a single 678 KB static binary, written in Zig, that runs an LLM-backed agent you can message from Telegram, Discord, Slack, Signal and 15 other channels, backed by any of 50+ model providers.",
-		"why": "Comparable agent stacks run on Node.js or Python and need 100 MB to over 1 GB of RAM; NullClaw compiles to one small native binary that does the same job in about 1 MB, so an always-on assistant fits on a $5 ARM board or in a corner of any server.",
-		"when": "Reach for it when you want your own always-on AI bot — say, a Telegram or Discord assistant with persistent memory — running 24/7 on a Raspberry Pi, a VPS or an edge device, without maintaining a heavy runtime."
+		"what": "NullClaw is an AI agent runtime: a single static binary, written in Zig, that runs an always-on LLM agent you can message from Telegram, Discord, Slack, Signal and some twenty other channels, backed by roughly 60 model providers.",
+		"why": "Comparable agent stacks run on Node.js or Python and pull in hundreds of dependencies; NullClaw compiles to one 4.4–6.5 MB native binary whose only bundled dependencies are a vendored SQLite and two pinned libraries — the build even fails if the vendored SQLite's checksum doesn't match — so an always-on assistant fits on a Raspberry Pi, an Android phone or a RISC-V board.",
+		"when": "Reach for it when you want your own always-on AI bot — say, a Telegram or Discord assistant with persistent memory — running 24/7 on a Raspberry Pi, a VPS or an edge device, without maintaining a heavy runtime. Coming from OpenClaw, the TypeScript agent runtime NullClaw is config-compatible with? `nullclaw migrate openclaw` imports your config and memory in one command."
 	}
 }

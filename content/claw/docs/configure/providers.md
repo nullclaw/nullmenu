@@ -1,11 +1,11 @@
 ---
 title: Providers
-description: Connect 50+ model providers, set the default route, and add fallbacks and auto-routing.
+description: Connect ~60 model providers, set the default route, and add fallbacks and auto-routing.
 order: 2
 verified: v2026.5.29
 ---
 
-NullClaw talks to 50+ AI providers through one vtable interface — OpenRouter, Anthropic, OpenAI, Azure OpenAI, Gemini, Vertex AI, Ollama, Groq, Mistral, xAI, DeepSeek, Bedrock and more — plus any OpenAI-compatible endpoint you point it at.
+NullClaw talks to ~60 AI providers through one vtable interface — OpenRouter, Anthropic, OpenAI, Azure OpenAI, Gemini, Vertex AI, Ollama, Groq, Mistral, xAI, DeepSeek, Bedrock and more — plus any OpenAI-compatible endpoint you point it at.
 
 ## Credentials
 

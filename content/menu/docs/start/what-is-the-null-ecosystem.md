@@ -26,7 +26,7 @@ Every component is a static binary. No Node, no Python, no external database —
 
 ## How the pieces relate
 
-NullClaw is the chef: it connects 50+ model providers to 19 chat channels and runs the agent loop in a 678 KB binary using about 1 MB of RAM (measured by the project). Around it, the rest of the family handles what a single runtime shouldn't: NullTickets holds the backlog, NullBoiler applies scheduling policy, NullWatch records what happened, NullPantry remembers what the team knows, and NullDesk puts a human between agent output and your disk.
+NullClaw is the chef: it connects ~60 model providers to 26 chat channels and runs the agent loop in a single 4.4–6.5 MB static binary (sizes from the v2026.5.29 release assets). Around it, the rest of the family handles what a single runtime shouldn't: NullTickets holds the backlog, NullBoiler applies scheduling policy, NullWatch records what happened, NullPantry remembers what the team knows, and NullDesk puts a human between agent output and your disk.
 
 NullHub ties it together. It is a manifest-driven install engine with an embedded dashboard: `nullhub install nullclaw` runs a wizard, and the same binary supervises processes, checks health, streams logs, and applies updates. Today it manages four components — NullClaw, NullBoiler, NullTickets and NullWatch. The others install separately.
 

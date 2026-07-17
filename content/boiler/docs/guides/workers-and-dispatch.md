@@ -55,7 +55,7 @@ Workers can also be registered at runtime: `POST /workers`, `GET /workers`, `DEL
 | `api_chat` | HTTP POST | JSON `{message, session_id}` |
 | `openai_chat` | HTTP POST | OpenAI-compatible `/chat/completions`; `model` required |
 | `a2a` | HTTP | Google Agent-to-Agent protocol |
-| `mqtt` | MQTT broker | Async pub/sub dispatch |
+| `mqtt` | MQTT broker | Declared, currently a stub — not functional |
 | `redis_stream` | Redis Streams | Async dispatch |
 
 Which protocol for which agent, from the repo's compatibility matrix:

@@ -42,7 +42,7 @@ To run the test suite:
 zig build test --summary all
 ```
 
-385/385 tests pass on the default build; 390/390 with `-Dshell-tool=true`.
+The full test suite passes on the default build; a few extra tests compile in with `-Dshell-tool=true`.
 
 > [!WARNING]
 > The optional `shell_exec` tool does not exist in the default binary. If you want it, you must build it in explicitly with `zig build -Dshell-tool=true`. See [Tools and memory](/docs/guides/tools-and-memory/) before you do.
@@ -72,4 +72,4 @@ This removes the nllclw user config and state directories. Delete the binary its
 
 ## Next
 
-Run the setup wizard — see the [quickstart](/docs/start/quickstart/). If you outgrow the paring knife and want 50+ providers and 19 chat channels, the bigger sibling is [NullClaw](https://claw.nullmenu.ai/).
+Run the setup wizard — see the [quickstart](/docs/start/quickstart/). If you outgrow the paring knife and want ~60 providers and 26 chat channels, the bigger sibling is [NullClaw](https://claw.nullmenu.ai/).

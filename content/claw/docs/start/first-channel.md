@@ -1,6 +1,6 @@
 ---
 title: Your first channel
-description: Connect NullClaw to Telegram (or any of the 19 channels) and lock it down with allowlists.
+description: Connect NullClaw to Telegram (or any of the 26 channels) and lock it down with allowlists.
 order: 3
 verified: v2026.5.29
 ---

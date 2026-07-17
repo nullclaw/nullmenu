@@ -4,7 +4,7 @@ description: Inputs, permissions and behavior of the three reusable workflows.
 order: 1
 ---
 
-All configuration happens through `with:` inputs on the three `workflow_call` workflows. There are no config files and no environment variables of NullBuilder's own. `binary_name` is required everywhere; every other input has a default.
+All configuration happens through `with:` inputs on the three `workflow_call` workflows. There are no config files, and the only environment contract for callers is `BUILD_VERSION`, exported to pre-build and source-prepare hooks. `binary_name` is required everywhere; every other input has a default.
 
 ## zig-ci.yml
 
@@ -27,7 +27,7 @@ Runs tests, then a ReleaseSmall cross-build per matrix target. Requires `permiss
 | `e2e_target` | `"linux-x86_64"` | Matrix `target` name that runs `e2e_command` |
 | `upload_artifacts` | `true` | Upload host binaries as CI artifacts |
 
-Hook order within each matrix job: `setup_command` → `pre_test_command` → tests → `pre_build_command` → build → `e2e_command` (matching target only). Each hook runs under `bash -euo pipefail`. The build cache covers `.zig-cache` and `~/.cache/zig`, keyed on your Zig sources, `build.zig`, `build.zig.zon` and `vendor/`.
+Hook order within each matrix job: `setup_command` → `pre_test_command` → tests → `pre_build_command` → build → `e2e_command` (matching target only). Each hook command reaches `bash -euo pipefail` through an environment variable, so its text is never templated into the workflow YAML. The build cache covers `.zig-cache` and `~/.cache/zig`, keyed on your Zig sources, `build.zig`, `build.zig.zon` and `vendor/`.
 
 Every job appends a summary table: tests passed, test MaxRSS, and ReleaseSmall binary size in MB and bytes.
 
@@ -53,7 +53,9 @@ Builds the full 12-target matrix on a schedule. Requires `permissions: actions: 
 | `release_tag` | `"nightly"` | Tag of the rolling prerelease |
 | `release_title` | `"Nightly"` | Title prefix of the rolling prerelease |
 
-A preflight job checks previous successful runs for the same commit and skips the build unless `force` is set. Nightly versions look like `nightly-YYYYMMDD-<short-sha>` and are injected via `-Dversion`. With `publish_release: true`, the workflow replaces the assets of the rolling prerelease on each run.
+A preflight job fetches the repository's workflow runs from the GitHub API and hands them to a small Zig program that looks for a previous successful run of the same workflow (scheduled or manually dispatched) on the same commit; on a match the build is skipped unless `force` is set. Nightly versions look like `nightly-YYYYMMDD-<short-sha>` and are injected via `-Dversion`.
+
+Each nightly binary is packaged with a `.sha256` checksum file and a `manifest-<target>.json` recording `built_at`, `commit`, `run_id`, `run_url`, `target`, `zig_target` and `version`. With `publish_release: true`, the workflow replaces the assets of the rolling prerelease on each run and retargets its tag.
 
 ## zig-release.yml
 
@@ -86,11 +88,11 @@ Three helpers under `.github/actions/`, referenced with the same `@v1`:
 
 | Action | Purpose |
 | --- | --- |
-| `setup-zig` | Wraps `mlugg/setup-zig@v2`; default version 0.16.0 |
-| `nightly-decide` | Decides whether a nightly build is needed for this commit |
-| `package-artifact` | Copies the binary and writes artifact metadata |
+| `setup-zig` | Wraps `mlugg/setup-zig@v2` (referenced by tag, not commit SHA); default version 0.16.0 |
+| `nightly-decide` | Runs a Zig program over a workflow-runs API dump (`--runs-json`, `--current-run-id`, `--head-sha`, `--workflow-name`, `--force`) and prints `should_build=`, `reason=`, `matched_run_id=`, `matched_run_url=` |
+| `package-artifact` | Runs a Zig program (`--binary`, `--target`, `--zig-target`, `--version`, `--repository`, `--commit`, `--run-id`, `--server-url`, `--built-at`) that writes `<binary>.sha256` and `manifest-<target>.json` |
 
-`nightly-decide` and `package-artifact` are written in Zig and unit-tested with `zig test` in NullBuilder's own CI.
+`nightly-decide` and `package-artifact` are written in Zig — seven `zig test` blocks between them — and tested in NullBuilder's own CI on every push and pull request.
 
 > [!NOTE]
 > Pre-1.0: inputs and defaults above may change on the `v1` branch. The workflow files' own input descriptions are the source of truth.

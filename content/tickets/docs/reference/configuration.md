@@ -5,15 +5,19 @@ order: 2
 verified: v2026.5.29
 ---
 
-NullTickets keeps configuration deliberately small: three CLI flags, one JSON file, one environment variable. Missing config file means defaults — the server starts with nothing but the binary.
+NullTickets keeps configuration deliberately small: a handful of CLI flags, one JSON file, one environment variable. Missing config file means defaults — the server starts with nothing but the binary.
 
 ## CLI flags
 
 | Flag | Default | Meaning |
 | --- | --- | --- |
-| `--port` | `7700` | HTTP listen port |
-| `--db` | `nulltickets.db` | Path to the SQLite database file |
-| `--config` | `~/.nulltickets/config.json` | Path to the JSON config file |
+| `--port <u16>` | `7700` | HTTP listen port |
+| `--db <path>` | `nulltickets.db` | Path to the SQLite database file |
+| `--token <token>` | unset | Require `Authorization: Bearer <token>` on the API (same effect as `api_token` in the config file) |
+| `--config <path>` | `~/.nulltickets/config.json` | Path to the JSON config file |
+| `--version` | — | Print the version and exit |
+| `--export-manifest` | — | Print the NullHub install manifest as JSON and exit |
+| `--from-json '<json>'` | — | Write `config.json` from setup-wizard JSON and exit |
 
 ```bash
 zig build run -- --port 7700 --db tracker.db
@@ -21,7 +25,10 @@ zig build run -- --port 7700 --db tracker.db
 zig build run -- --config /path/to/config.json
 ```
 
-These are the only documented flags. NullTickets is a headless HTTP service, not a multi-command CLI.
+Flags only — there are no subcommands, and unknown arguments are silently ignored. NullTickets is a headless HTTP service, not a multi-command CLI.
+
+> [!NOTE]
+> Known quirk in v2026.5.29: `--version` (and the version field in `GET /health`) still prints the stale string `2026.3.2`. The release tag is authoritative.
 
 ## Config file
 
@@ -51,6 +58,18 @@ Resolution order for the config path:
 2. `$NULLTICKETS_HOME/config.json` if the variable is set
 3. `~/.nulltickets/config.json`
 
+`~` resolves via `HOME` (`USERPROFILE` on Windows).
+
+## Fixed behavior
+
+Some things are hard-coded and have no config knob:
+
+- The server binds `127.0.0.1` only. The listen address is not configurable — put a reverse proxy (with TLS) in front if remote agents need access.
+- One connection at a time: a sequential accept loop with `Connection: close` per request. Fine for a local coordinator; it is not a high-concurrency server.
+- Request bodies are capped at 64 KB (65,536 bytes).
+- Default lease TTL is 300,000 ms (5 minutes) for claim and heartbeat when `lease_ttl_ms` is omitted.
+- SQLite runs in WAL mode with `synchronous=NORMAL`, `foreign_keys=ON` and `busy_timeout=5000`.
+
 ## API token auth
 
 By default the API is open — appropriate for a loopback-only service. Setting `api_token` in the config turns on authentication:
@@ -62,11 +81,14 @@ By default the API is open — appropriate for a loopback-only service. Setting 
 Requests without a valid token get `401 unauthorized`.
 
 > [!WARNING]
-> Lease tokens are stored server-side as SHA-256 hashes, but the API token comparison and transport are plaintext HTTP/1.1. If the tracker must be reachable beyond localhost, put it behind TLS termination you control.
+> Lease tokens are stored server-side as SHA-256 hashes, but transport is plaintext HTTP/1.1 and the API token check is a plain byte comparison (not constant-time). If the tracker must be reachable beyond localhost, put it behind TLS termination you control.
 
 ## NullHub integration
 
-The repo exports a NullHub manifest (`src/export_manifest.zig`) and supports JSON config bootstrap (`src/from_json.zig`). This is what lets [NullHub](https://hub.nullmenu.ai/) install, configure and supervise a NullTickets instance without hand-editing files.
+Two flags exist for [NullHub](https://hub.nullmenu.ai/) to install, configure and supervise a NullTickets instance without hand-editing files:
+
+- `--export-manifest` prints the install manifest as JSON and exits.
+- `--from-json '<json>'` writes `config.json` from the setup wizard's answers and exits. Accepted keys: `port`, `db_path`, `api_token`, `home` (note `db_path` here vs `db` in the config file itself).
 
 > [!NOTE]
 > Pre-1.0: config and CLI may change between releases. Re-check this page after upgrading; releases are CalVer (`v2026.x.y`).

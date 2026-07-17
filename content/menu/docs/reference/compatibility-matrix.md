@@ -76,4 +76,4 @@ NullClaw additionally documents Android via Termux. The shared release pipeline 
 | NullDesk → NullClaw over ACP | pre-release |
 | NullCap → NullHub-routed model work | experimental |
 
-Binary sizes quoted around the family (678 KB NullClaw, 313–653 KB NullWatch, 795 KB nllclw stripped) and the ~1 MB RAM figure are measured by the projects themselves.
+Binary sizes quoted around the family (4.4–6.5 MB NullClaw, 313–653 KB NullWatch, 842 KiB–1.23 MB nllclw) come from the release assets on GitHub; runtime memory figures are self-reported by the projects.

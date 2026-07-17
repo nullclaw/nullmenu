@@ -4,7 +4,7 @@ description: Default target matrices, custom matrices, and how Android builds wo
 order: 2
 ---
 
-NullBuilder cross-compiles ReleaseSmall binaries from a JSON target matrix. CI defaults to three targets; nightly and release default to twelve across five OS families.
+NullBuilder cross-compiles ReleaseSmall binaries from a JSON target matrix. CI defaults to three targets; nightly and release default to twelve across four OS families — Linux, Android, macOS and Windows.
 
 ## Default CI matrix (zig-ci.yml)
 
@@ -35,7 +35,7 @@ Linux binaries are musl-linked static builds except the arm32 `gnu` flavor. Ever
 
 ## Custom matrices
 
-Pass `targets_json` to override the matrix. Each entry needs `os` (runner label), `target` (your artifact name suffix) and `zig_target` (the Zig triple); `zig_cpu` and `ext` are optional. From the README — NullHub trims CI to four targets and adds Node for its UI build:
+Pass `targets_json` to override the matrix. Each entry needs `os` (runner label), `target` (your artifact name suffix) and `zig_target` (the Zig triple); `zig_cpu` and `ext` are optional. From the README — [NullHub](https://hub.nullmenu.ai/) (an agent-stack web console) trims CI to four targets and adds Node for its UI build:
 
 ```yaml
 jobs:
@@ -81,7 +81,7 @@ The API level (default `24`) is appended to the triple — e.g. `aarch64-linux-a
 | Context | Name |
 | --- | --- |
 | CI artifact | `<prefix>-<target>` (contains the raw binary) |
-| Nightly artifact | `<prefix>-nightly-<short-sha>-<target>`, binary named `<prefix>-<target>` plus metadata |
+| Nightly artifact | `<prefix>-nightly-<short-sha>-<target>`, binary named `<prefix>-<target>` plus a `.sha256` checksum and `manifest-<target>.json` |
 | Release asset | `<prefix>-<target>.bin`, or `<prefix>-<target>.exe` + `.zip` on Windows |
 | Source archive | `<prefix>-source-<tag>.tar.gz` (when `source_archive: true`) |
 

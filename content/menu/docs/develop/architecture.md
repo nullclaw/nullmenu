@@ -46,7 +46,7 @@ This is why the managed set is exactly NullClaw, NullBoiler, NullTickets and Nul
 | ACP over stdio | Editor/desk integration (`nullclaw acp`, NullDesk) |
 | MCP | External tool servers (NullClaw client, stdio + HTTP) |
 
-No message broker is required anywhere in the core; MQTT and Redis Streams are optional NullBoiler dispatch paths.
+No message broker is required anywhere in the core. NullBoiler declares MQTT and Redis Streams dispatch paths, but as of v2026.5.29 those transports are stubs — the four HTTP protocols are what actually moves work.
 
 ## Design rules
 

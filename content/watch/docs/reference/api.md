@@ -20,6 +20,7 @@ NullWatch exposes one JSON HTTP API for both ingestion and querying, on `127.0.0
 | POST | `/v1/spans` | Ingest one span |
 | POST | `/v1/spans/bulk` | Ingest multiple spans (`{"items": [...]}`) |
 | POST | `/v1/evals` | Ingest one eval result |
+| POST | `/v1/evals/bulk` | Ingest multiple evals (`{"items": [...]}`) |
 | POST | `/v1/traces` | OTLP/HTTP JSON trace ingest |
 | POST | `/otlp/v1/traces` | Same as `/v1/traces`, at the standard OTLP path |
 | GET | `/v1/spans` | List spans with filters |
@@ -31,9 +32,9 @@ NullWatch exposes one JSON HTTP API for both ingestion and querying, on `127.0.0
 
 | Endpoint | Parameters |
 | --- | --- |
-| `GET /v1/spans` | `source`, `status`, `limit` |
-| `GET /v1/evals` | `verdict`, `dataset`, `limit` |
-| `GET /v1/runs` | `verdict`, `limit` |
+| `GET /v1/spans` | `run_id`, `trace_id`, `source`, `operation`, `status`, `model`, `tool_name`, `task_id`, `session_id`, `agent_id`, `limit` |
+| `GET /v1/evals` | `run_id`, `verdict`, `eval_key`, `scorer`, `dataset`, `limit` |
+| `GET /v1/runs` | `run_id`, `source`, `operation`, `status`, `model`, `tool_name`, `verdict`, `dataset`, `limit` |
 
 ```bash
 curl 'http://127.0.0.1:7710/v1/spans?source=nullclaw&status=error&limit=50'
@@ -106,11 +107,11 @@ Computed, not stored: span count, eval count, error count, total duration, total
 
 ## OTLP trace ingest
 
-`/v1/traces` and `/otlp/v1/traces` accept standard OTLP/HTTP JSON (`resourceSpans` → `scopeSpans` → `spans`). Attributes map into the span model: a `nullwatch.run_id` attribute assigns the span to a run, `tool` becomes the tool name, and the OTLP `status.code` maps to span status. Point NullClaw's diagnostics OTLP endpoint at `http://127.0.0.1:7710` and its telemetry lands here; the response reports `accepted_spans`.
+`/v1/traces` and `/otlp/v1/traces` accept standard OTLP/HTTP JSON (`resourceSpans` → `scopeSpans` → `spans`); the legacy `instrumentationLibrarySpans` shape is accepted too. Non-JSON content types get `415`. Attributes map into the span model: a `nullwatch.run_id` attribute assigns the span to a run, `tool` becomes the tool name, and the OTLP `status.code` maps to span status. The mapper recognises attribute keys under four prefixes — `nullwatch.*`, `nullclaw.*`, `nulltickets.*` and `openclaw.*` — plus bare keys for run id, session, task, agent, model, tokens and cost. Point NullClaw's diagnostics OTLP endpoint at `http://127.0.0.1:7710` and its telemetry lands here; the response reports `accepted_spans`.
 
 ## Authentication
 
-By default the API is open on loopback. Set `api_token` in `~/.nullwatch/config.json` to require a bearer token:
+By default the API is open on loopback. Set `api_token` in `~/.nullwatch/config.json` (or pass `--token` to `serve`) to require a bearer token:
 
 ```json
 {
@@ -121,16 +122,30 @@ By default the API is open on loopback. Set `api_token` in `~/.nullwatch/config.
 }
 ```
 
-With a token set, requests without credentials get `401`; authenticated requests pass the token as a header:
+With a token set, requests without credentials get `401` — except `GET /health`, which stays open so liveness checks keep working. Authenticated requests pass the token as a header:
 
 ```bash
 curl -H 'Authorization: Bearer your-token' http://127.0.0.1:7710/v1/runs
 ```
 
+`data_dir` in the config is resolved relative to the config file's directory, so the default `"data"` means `~/.nullwatch/data`; `--data-dir` on any command overrides it with an explicit path.
+
 The E2E suite (`tests/test_e2e.sh`) exercises exactly this flow — 401 without the header, success with it — along with ingest, OTLP mapping and CLI queries.
 
 > [!WARNING]
 > `serve --host 0.0.0.0` binds all interfaces. If you do that, set `api_token` first.
+
+## Limits
+
+Numbers to plan around, as of `v2026.5.29`:
+
+| Limit | Value |
+| --- | --- |
+| Max HTTP request body | 256 KiB |
+| JSONL read-back cap on startup | 8 MiB per file |
+| Connection handling | One request per connection (`Connection: close`), single-threaded |
+
+The whole JSONL store is reloaded into memory every time the process starts, so the store is sized for one developer's machine, not a fleet.
 
 ## Community SDKs
 

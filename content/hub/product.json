@@ -1,25 +1,25 @@
 {
 	"hero": {
 		"kicker": "THE SOUS-CHEF — CONTROL PLANE",
-		"title": "One console for your whole local agent stack",
-		"sub": "A management console for the Null stack: one binary with a built-in web dashboard and CLI that installs NullClaw agents, NullBoiler workflows, NullTickets task queues and NullWatch tracing, keeps them running, and updates them with rollback. Everything stays on your machine — all state lives in ~/.nullhub, nothing goes to a hosted service."
+		"title": "One console and API for your whole local agent stack",
+		"sub": "A management console for the Null stack: one binary with a built-in web dashboard and CLI that installs NullClaw agents, NullBoiler workflows, NullTickets task queues and NullWatch tracing, keeps them running with health checks and restart backoff, and updates them with rollback. The same HTTP API also fronts the agents themselves — chat, memory, cron jobs and logs all go through the hub. Everything stays on your machine — all state lives in ~/.nullhub, nothing goes to a hosted service."
 	},
 	"metrics": [
 		{
-			"value": "1",
-			"label": "binary, UI embedded"
+			"value": "108",
+			"label": "API routes, self-described"
 		},
 		{
-			"value": "7",
-			"label": "platform targets"
+			"value": "2.4–2.9 MB",
+			"label": "binary, web UI embedded"
 		},
 		{
-			"value": "4",
-			"label": "managed components"
+			"value": "0",
+			"label": "external dependencies"
 		},
 		{
-			"value": ":19800",
-			"label": "local dashboard"
+			"value": "726",
+			"label": "test blocks in the source tree"
 		}
 	],
 	"install": {
@@ -38,31 +38,31 @@
 			}
 		]
 	},
-	"quickstart": "Start the server, then add components from the same binary — the terminal wizard and the web UI run the same manifest-driven flow.\n\n```bash\n# start the server and open the dashboard\nnullhub\n# → http://nullhub.localhost:19800\n\n# add components (terminal wizard)\nnullhub install nullclaw\nnullhub install nullwatch\n\n# run and inspect\nnullhub start-all\nnullhub status\n```",
+	"quickstart": "Start the server, then add components from the same binary. Every command other than `serve` is an HTTP client to the running server, and the terminal wizard and the web UI run the same manifest-driven flow.\n\n```bash\n# start the server and open the dashboard\nnullhub\n# → http://nullhub.localhost:19800\n\n# add components (terminal wizard)\nnullhub install nullclaw\nnullhub install nullwatch\n\n# run and inspect\nnullhub start-all\nnullhub status\n```",
 	"features": [
 		{
-			"title": "Manifest-driven install wizard",
-			"body": "Add a component through a guided setup flow — in the terminal or in the browser. Each component ships a nullhub-manifest.json that tells NullHub how to install, configure, launch and health-check it, so NullHub stays a generic engine and new components need no changes to it."
+			"title": "One API behind everything",
+			"body": "The web dashboard and the CLI drive the same HTTP API — every subcommand except serve is a thin client to the running server. All 108 routes describe themselves at /api/meta/routes: list them with `nullhub routes --json`, call any of them with `nullhub api`. Proxies for NullBoiler, NullTickets and NullWatch make the hub a single API front door for the whole stack."
 		},
 		{
-			"title": "Process supervision",
-			"body": "Start, stop, restart, crash recovery with backoff. Periodic HTTP health checks feed the dashboard status cards."
+			"title": "Agent gateway proxy",
+			"body": "Talk to managed NullClaw instances through the hub: chat and streaming chat, agent-to-agent (A2A) calls, audio transcription, memory read/write and reindex, cron jobs with pause/resume/run-now, and skill installs — all per instance, all on one port."
 		},
 		{
-			"title": "Updates with rollback",
-			"body": "check-updates, update, update-all: download the new version, migrate config, roll back on failure."
+			"title": "Provider and channel vaults",
+			"body": "Store LLM provider keys (17 providers, from Anthropic and OpenAI to Ollama and OpenRouter) and messaging channel credentials (18 channel types, from Telegram to Signal) once, hub-wide. NullHub validates them live and syncs them into instance configs."
 		},
 		{
-			"title": "Live logs over SSE",
-			"body": "Tail or follow logs per instance: `nullhub logs nullclaw/main -f` in the terminal, live streaming over SSE (server-sent events) in the browser."
+			"title": "Manifest wizard, verified installs",
+			"body": "Add a component through a guided setup flow — in the terminal or in the browser. Each component ships a nullhub-manifest.json that tells NullHub how to install, configure, launch and health-check it. Release downloads are SHA256-checked and deleted on mismatch."
 		},
 		{
-			"title": "Multi-instance",
-			"body": "Run several instances of the same component side by side. Everything is addressed as component/instance-name."
+			"title": "Supervision, updates, rollback",
+			"body": "A supervisor thread health-checks instances over HTTP every 15 seconds, restarts crashes with capped backoff, and re-adopts running instances after a hub restart. `nullhub update` migrates config and restarts the previous binary if the new one fails. Mission Control in the dashboard records operational state and can save, replay and recover incident scenarios."
 		},
 		{
-			"title": "Web UI, CLI and raw API",
-			"body": "Browser dashboard for humans, CLI for automation, and nullhub api for raw JSON access to every endpoint."
+			"title": "Agents that run the hub",
+			"body": "A bundled skill, nullhub-admin, installs into managed NullClaw workspaces and teaches the agent to administer NullHub itself: discover the API with `nullhub routes --json`, then act with `nullhub api`."
 		}
 	],
 	"pairs": [
@@ -71,10 +71,10 @@
 		"tickets",
 		"watch"
 	],
-	"note": "Pre-1.0 and calendar-versioned (v2026.x.y): config and CLI may change between releases.",
+	"note": "Pre-1.0 and calendar-versioned (v2026.x.y): config and CLI may change between releases. OS service install covers macOS (launchd) and Linux (systemd); Windows binaries ship, but `nullhub service` is not supported there yet.",
 	"plain": {
-		"what": "A management console for locally run Null services — a single Zig binary with an embedded web dashboard and a CLI, serving at http://nullhub.localhost:19800.",
-		"why": "Running NullClaw (agents), NullBoiler (workflows), NullTickets (task queues) and NullWatch (tracing) by hand means four separate daemons to install, configure, restart and update — NullHub replaces that with one supervisor, one dashboard and one CLI.",
-		"when": "You are setting up the Null stack on a machine and want to add components through a guided wizard, watch their health and logs in a browser, and run `nullhub update-all` instead of updating each daemon by hand."
+		"what": "A management console and API front door for locally run Null services — a single Zig binary with an embedded web dashboard and a CLI, serving at http://nullhub.localhost:19800 and published as nullhub.local over mDNS.",
+		"why": "Running NullClaw (agents), NullBoiler (workflows), NullTickets (task queues) and NullWatch (tracing) by hand means four separate daemons to install, configure, restart and update, plus API keys scattered across four configs — NullHub replaces that with one supervisor, one dashboard, one credential vault and one API.",
+		"when": "You are setting up the Null stack on a machine and want to add components through a guided wizard, watch their health and logs in a browser, and run `nullhub update-all` instead of updating each daemon by hand — or you want to script the whole stack, agent chat and cron included, through one HTTP port. Remote access from other machines works via --allowed-origin (over a tailnet such as Tailscale)."
 	}
 }

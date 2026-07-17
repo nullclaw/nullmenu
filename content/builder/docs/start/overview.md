@@ -8,7 +8,7 @@ NullBuilder is a repository of reusable GitHub Actions workflows shared by every
 
 ## Who this is for
 
-If you maintain a Zig repository in the [nullclaw org](https://github.com/nullclaw) — or a Zig project of your own with the same shape — NullBuilder gives you drop-in CI, nightly builds, and tag-driven releases from a single `uses:` line. Consumers include [NullClaw](https://claw.nullmenu.ai/), [NullHub](https://hub.nullmenu.ai/), [NullTickets](https://tickets.nullmenu.ai/) and [NullBoiler](https://boiler.nullmenu.ai/).
+If you maintain a Zig repository in the [nullclaw org](https://github.com/nullclaw) — or a Zig project of your own with the same shape — NullBuilder gives you drop-in CI, nightly builds, and tag-driven releases from a single `uses:` line. Consumers include [NullClaw](https://claw.nullmenu.ai/) (an AI agent runtime), [NullHub](https://hub.nullmenu.ai/) (a local agent-stack console), [NullTickets](https://tickets.nullmenu.ai/) (a task tracker for AI agents) and [NullBoiler](https://boiler.nullmenu.ai/) (an agent workflow engine).
 
 If you just want to *use* those tools, you never touch NullBuilder. Its output is the release binaries you download.
 
