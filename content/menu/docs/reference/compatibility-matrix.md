@@ -5,7 +5,7 @@ order: 4
 verified: v2026.5.29
 ---
 
-The honest state of the family as of July 2026. All components are pre-1.0, versioned with CalVer (`v2026.x.y` — a date, not a maturity score), and built with Zig 0.16.0 exactly.
+The state of the family as of July 2026. All components are pre-1.0, versioned with CalVer (`v2026.x.y` — a date, not a maturity score), and built with Zig 0.16.0 exactly.
 
 ## Components
 

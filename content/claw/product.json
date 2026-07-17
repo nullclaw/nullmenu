@@ -75,7 +75,8 @@
 	"plain": {
 		"what": "NullClaw is an AI agent runtime: one static binary, written in Zig, that runs an always-on LLM agent you can message from Telegram, Discord, Slack, Signal, iMessage and some twenty other channels. The same binary is the agent loop, the webhook gateway, the cron scheduler, the memory store and the OS service — there is no separate database server or plugin runtime to install. It talks to roughly 60 model providers, from Anthropic and OpenAI to a local Ollama.",
 		"why": "Comparable agent stacks run on Node.js or Python and pull in hundreds of dependencies; NullClaw compiles to one 4.4-6.5 MB native binary whose only bundled dependencies are a vendored SQLite and two pinned libraries — the build even fails if the vendored SQLite's checksum doesn't match. That means an always-on assistant fits on a Raspberry Pi, an Android phone or a RISC-V board, and the defaults are cautious: sandboxed shell, workspace-confined file access, encrypted secrets, and a gateway that only listens on localhost until you pair with it.",
-		"when": "Reach for it when you want your own always-on AI bot — say, a Telegram or Discord assistant with persistent memory and scheduled jobs — running 24/7 on a Raspberry Pi, a VPS or an edge device, without maintaining a heavy runtime. It also fits when you need an agent other software can call: editors over ACP, other agents over A2A, tool servers over MCP. Coming from OpenClaw, the TypeScript agent runtime it is config-compatible with, `nullclaw migrate openclaw` imports your config and memory in one command."
+		"when": "Reach for it when you want your own always-on AI bot — say, a Telegram or Discord assistant with persistent memory and scheduled jobs — running 24/7 on a Raspberry Pi, a VPS or an edge device, without maintaining a heavy runtime. It also fits when you need an agent other software can call: editors over ACP, other agents over A2A, tool servers over MCP. Coming from OpenClaw, the TypeScript agent runtime it is config-compatible with, `nullclaw migrate openclaw` imports your config and memory in one command.",
+		"fit": "The chef of the family — the full-power runtime you graduate to when you want every channel, tool and provider in one always-on binary."
 	},
 	"how": {
 		"intro": "Everything below is one binary and one config file (~/.nullclaw/config.json). The path from download to an always-on agent is: onboard once, test in the terminal, open the gateway, install it as a service.",
@@ -273,7 +274,7 @@
 		},
 		{
 			"q": "How big is the binary, really?",
-			"a": "The shipped release binaries are 4.4-6.5 MB — that's the default build with all 23 selectable channels and the embedded wasm3 WebAssembly runtime compiled in. You can go much smaller with a stripped -Dchannels=none build, but the honest number for what you download is single-digit megabytes, not hundreds of kilobytes."
+			"a": "The shipped release binaries are 4.4-6.5 MB — that's the default build with all 23 selectable channels and the embedded wasm3 WebAssembly runtime compiled in. You can go much smaller with a stripped -Dchannels=none build, but what you actually download is single-digit megabytes, not hundreds of kilobytes."
 		},
 		{
 			"q": "Do all 26 channels work on every OS?",

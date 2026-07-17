@@ -75,7 +75,8 @@
 	"plain": {
 		"what": "A management console and API front door for locally run Null services, shipped as a single Zig binary of about 2.5 MB with the web dashboard compiled in. It serves at http://nullhub.localhost:19800, announces itself as nullhub.local over mDNS, and exposes the same 108 HTTP routes to the dashboard, the CLI, and anything you script. It installs, supervises, and updates NullClaw (agents), NullBoiler (workflows), NullTickets (task queues), and NullWatch (tracing), and proxies their APIs so one port fronts the whole stack.",
 		"why": "Running four separate daemons by hand means four install procedures, four configs with the same API keys pasted into each, four things to restart when they crash, and four update paths. NullHub collapses that into one supervisor with 15-second health checks and capped restart backoff, one guided install wizard with SHA256-verified downloads, one credential vault for 17 LLM providers and 18 messaging channels, and one `update-all` that rolls back to the previous binary if an update fails. Everything stays in ~/.nullhub on your machine — there is no hosted service in the loop.",
-		"when": "You are setting up the Null stack on a laptop, a home server, or a spare mini-PC and want components added through a wizard, watched in a browser, and updated with one command instead of four. Or you want to script the stack — agent chat, memory, cron jobs, logs, and the sub-product APIs — through a single HTTP port, discovered with `nullhub routes --json`. Remote access from other machines works over a tailnet such as Tailscale via explicit --allowed-origin allowlisting."
+		"when": "You are setting up the Null stack on a laptop, a home server, or a spare mini-PC and want components added through a wizard, watched in a browser, and updated with one command instead of four. Or you want to script the stack — agent chat, memory, cron jobs, logs, and the sub-product APIs — through a single HTTP port, discovered with `nullhub routes --json`. Remote access from other machines works over a tailnet such as Tailscale via explicit --allowed-origin allowlisting.",
+		"fit": "The control plane — add it once you run more than one Null service and want install, health, logs and updates behind one dashboard and one API."
 	},
 	"how": {
 		"intro": "NullHub is the installer, supervisor, and API front door for the Null stack — a family of self-hosted services for running AI agents (NullClaw), workflows (NullBoiler), task queues (NullTickets), and tracing (NullWatch). It ships as one binary with two faces: run it bare and it becomes the server with an embedded web dashboard; run it with any subcommand and it becomes an HTTP client to that server. Everything below is the same API whether you type it, click it, or script it.",
@@ -240,7 +241,7 @@
 		},
 		{
 			"q": "Is `nullhub logs -f` real live streaming?",
-			"a": "Not yet, honestly. The /logs/stream endpoint returns a snapshot of the current log tail over SSE rather than a continuous stream, and `logs -f` itself tells you it is 'not stream-backed yet'. You get the recent tail on demand; true follow-mode streaming is still to come."
+			"a": "Not yet. The /logs/stream endpoint returns a snapshot of the current log tail over SSE rather than a continuous stream, and `logs -f` itself tells you it is 'not stream-backed yet'. You get the recent tail on demand; true follow-mode streaming is still to come."
 		},
 		{
 			"q": "Does it run on Windows?",

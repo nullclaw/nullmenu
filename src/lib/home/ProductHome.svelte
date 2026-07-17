@@ -110,6 +110,14 @@
 							<dd>{p.plain.when}</dd>
 						</div>
 					</Reveal>
+					{#if p.plain.fit}
+						<Reveal delay={210}>
+							<div class="plain-row">
+								<dt class="serif-i">Where it fits</dt>
+								<dd>{p.plain.fit}</dd>
+							</div>
+						</Reveal>
+					{/if}
 				</dl>
 			</div>
 		</section>
@@ -264,13 +272,13 @@
 		</div>
 	</section>
 
-	<!-- ———— honest questions ———— -->
+	<!-- ———— before you order ———— -->
 	{#if p.faq?.length}
 		<section class="section">
 			<div class="container faq-wrap">
 				<Reveal>
-					<p class="label label--accent">Honest questions</p>
-					<h2 class="serif">Asked before you order.</h2>
+					<p class="label label--accent">Before you order</p>
+					<h2 class="serif">Questions, answered.</h2>
 				</Reveal>
 				<div class="faq">
 					{#each p.faq as f, i}
@@ -585,7 +593,7 @@
 		flex: 1;
 	}
 
-	/* honest questions */
+	/* before you order */
 	.faq {
 		margin-top: 2.5rem;
 		border-top: 1px solid var(--line);

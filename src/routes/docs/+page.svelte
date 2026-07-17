@@ -14,7 +14,7 @@
 	<p class="label label--accent">{site.display} docs</p>
 	<h1><span class="serif">The</span> <span class="serif-i">cookbook.</span></h1>
 	<p class="sub">
-		Task-oriented and honest: real commands, verified versions, no seasoning you don't need.
+		Task-oriented: real commands, verified versions, no seasoning you don't need.
 		Machine-readable too — <a href="/llms.txt" class="mono">llms.txt</a>,
 		<a href="/llms-full.txt" class="mono">llms-full.txt</a>, and a
 		<span class="mono">.md</span> twin for every page.

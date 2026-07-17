@@ -35,8 +35,8 @@
 			body: 'Components compose over plain JSON and HTTP, and every one works alone. Take one dish or the full tasting menu.'
 		},
 		{
-			title: 'Honest',
-			body: 'Pre-1.0, CalVer-versioned, benchmarks self-reported and reproducible. No crypto tokens, ever.'
+			title: 'As counted',
+			body: 'Pre-1.0, CalVer-versioned; the numbers on these pages come from the source tree and the release assets. No crypto tokens, ever.'
 		}
 	];
 
@@ -245,7 +245,7 @@
 			<div class="cookbook-inner">
 				<div>
 					<p class="label label--accent">05 · The cookbook</p>
-					<h2 class="serif">Recipes, references,<br />and honest run-books.</h2>
+					<h2 class="serif">Recipes, references,<br />and run-books.</h2>
 					<p class="cookbook-sub">
 						Task-oriented guides for real setups — a personal assistant, a durable backlog, an
 						observable multi-agent stack. Markdown-first: every page has a <span class="mono"

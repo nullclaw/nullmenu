@@ -218,7 +218,7 @@ export const sites = {
 		status: 'early',
 		license: 'MIT',
 		version: 'v2026.6.1',
-		line: 'A terminal AI assistant in a single ~1 MB Zig binary — chat, memory, file tools, Telegram.',
+		line: 'A complete AI agent in ~1 MB of readable Zig — small enough to learn from, easy to fork.',
 		stat: 'from 842 KiB · 0 deps',
 		docsSections: [
 			{ slug: 'start', title: 'Start' },
