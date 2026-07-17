@@ -369,7 +369,7 @@
 			device.queue.writeBuffer(
 				simUniform,
 				0,
-				new Float32Array([simW, simH, dyeW, dyeH, 0.016, 0.999, 0.998, 36.0])
+				new Float32Array([simW, simH, dyeW, dyeH, 0.016, 0.9992, 0.9988, 24.0])
 			);
 		}
 
@@ -421,41 +421,69 @@
 		let running = false;
 		let last = 0;
 		let time = 0;
-		let nextDrop = 0.6;
 		const pointer = { x: 0.5, y: 0.5, dx: 0, dy: 0, active: false };
 
-		// dye palette: accent, deeper accent, cream — layered ink feels dimensional
+		// dye palette: accent leads, cream is the garnish
 		const palette = [
-			[tr, tg, tb],
 			[tr, tg, tb],
 			[tr * 0.6, tg * 0.5, tb * 0.45],
 			[0.93, 0.9, 0.85]
 		];
 
-		function drop(enc, x, y, sizeMul = 1) {
-			const col = palette[(Math.random() * palette.length) | 0];
-			const s = (0.5 + Math.random() * 0.8) * sizeMul * intensity;
-			doSplat(enc, [x, y], [col[0] * 0.44 * s, col[1] * 0.44 * s, col[2] * 0.44 * s], 0.042 * s, true);
-			// vortex ring — six tangential impulses shear the ink into tendrils
-			const spin = Math.random() < 0.5 ? 1 : -1;
-			for (let k = 0; k < 6; k++) {
-				const a = (k / 6) * Math.PI * 2 + Math.random() * 0.5;
-				const rx = x + Math.cos(a) * 0.026 * s;
-				const ry = y + Math.sin(a) * 0.026 * s;
+		/**
+		 * The single gesture: a thin stream poured from above — like sauce
+		 * finished tableside — that lands, blooms into one slow vortex and
+		 * marbles for the better part of a minute. One pour at a time,
+		 * the next one only after the plate has gone quiet.
+		 */
+		let pour = null;
+		let pourCount = 0;
+		let nextPour = 0.4;
+		const easeOut = (k) => 1 - Math.pow(1 - k, 3);
+
+		function beginPour() {
+			const first = pourCount === 0;
+			pour = {
+				x: first ? 0.72 : 0.58 + Math.random() * 0.28,
+				yTo: first ? 0.4 : 0.3 + Math.random() * 0.2,
+				t0: time,
+				dur: 1.15,
+				col: palette[pourCount % palette.length],
+				s: (first ? 1.5 : 0.9 + Math.random() * 0.5) * intensity,
+				spin: pourCount % 2 ? 1 : -1
+			};
+			pourCount++;
+		}
+
+		function stepPour(enc) {
+			const k = (time - pour.t0) / pour.dur;
+			if (k < 1) {
+				// the falling stream — dye laid down along an easing path
+				const y = 0.02 + (pour.yTo - 0.02) * easeOut(k);
+				const c = pour.col;
+				const w = 0.014 * pour.s * (1 + 0.3 * Math.sin(k * 9)); // living stream width
+				doSplat(enc, [pour.x, y], [c[0] * 1.1, c[1] * 1.1, c[2] * 1.1], w, true);
+				doSplat(enc, [pour.x, y], [0, 34 * pour.s], 0.016 * pour.s, false);
+				return;
+			}
+			// landing: the pool receives the pour, then one slow vortex bloom
+			const { x, yTo: y, s, spin, col } = pour;
+			doSplat(enc, [x, y], [col[0] * 0.55, col[1] * 0.55, col[2] * 0.55], 0.05 * s, true);
+			for (let i = 0; i < 6; i++) {
+				const a = (i / 6) * Math.PI * 2;
+				const rx = x + Math.cos(a) * 0.024 * s;
+				const ry = y + Math.sin(a) * 0.024 * s;
 				const tx = -Math.sin(a) * spin;
 				const ty = Math.cos(a) * spin;
-				doSplat(enc, [rx, ry], [(Math.cos(a) * 0.5 + tx) * 130 * s, (Math.sin(a) * 0.5 + ty) * 130 * s], 0.018 * s, false);
+				doSplat(enc, [rx, ry], [(Math.cos(a) * 0.4 + tx) * 52 * s, (Math.sin(a) * 0.4 + ty) * 52 * s], 0.02 * s, false);
 			}
-			// satellite droplets — vortex pairs make the marbling
-			for (let k = 0; k < 2; k++) {
-				const a = Math.random() * Math.PI * 2;
-				const d = 0.05 + Math.random() * 0.04;
-				const sx = x + Math.cos(a) * d;
-				const sy = y + Math.sin(a) * d;
-				const sc = palette[(Math.random() * palette.length) | 0];
-				doSplat(enc, [sx, sy], [sc[0] * 0.28 * s, sc[1] * 0.28 * s, sc[2] * 0.28 * s], 0.02 * s, true);
-				doSplat(enc, [sx, sy], [Math.cos(a + 2) * 90 * s, Math.sin(a + 2) * 90 * s], 0.02 * s, false);
+			// three dots of sauce, set just so — the chef's signature
+			for (let i = 0; i < 3; i++) {
+				const c = palette[i % palette.length];
+				doSplat(enc, [x - 0.1 - i * 0.05, y + 0.16], [c[0] * 0.55, c[1] * 0.55, c[2] * 0.55], 0.01, true);
 			}
+			pour = null;
+			nextPour = time + 38 + Math.random() * 22;
 		}
 
 		function frame(ts) {
@@ -466,19 +494,16 @@
 
 			const enc = device.createCommandEncoder();
 
-			// autonomous droplets — unhurried, biased right so the type breathes
-			if (time > nextDrop) {
-				nextDrop = time + 3.2 + Math.random() * 3.2;
-				drop(enc, 0.55 + Math.random() * 0.38, 0.12 + Math.random() * 0.5, 1.5);
-			}
+			if (pour) stepPour(enc);
+			else if (time > nextPour) beginPour();
 
-			// pointer stirring
+			// pointer stirring — gentle, never painting
 			if (pointer.active && (Math.abs(pointer.dx) + Math.abs(pointer.dy)) > 0.0005) {
 				doSplat(
 					enc,
 					[pointer.x, pointer.y],
-					[pointer.dx * 1600, pointer.dy * 1600],
-					0.022,
+					[pointer.dx * 900, pointer.dy * 900],
+					0.025,
 					false
 				);
 				pointer.dx = 0;
@@ -568,15 +593,6 @@
 
 		resize();
 
-		// opening pour — the hero comes alive immediately
-		{
-			const enc = device.createCommandEncoder();
-			drop(enc, 0.72, 0.36, 2.4);
-			drop(enc, 0.55, 0.68, 1.6);
-			drop(enc, 0.86, 0.6, 1.2);
-			device.queue.submit([enc.finish()]);
-			splatsThisEncoder = 0;
-		}
 
 		const ro = new ResizeObserver(() => resize());
 		ro.observe(canvas.parentElement);

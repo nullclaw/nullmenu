@@ -11,7 +11,7 @@
 		inset: 0;
 		z-index: 2000;
 		pointer-events: none;
-		opacity: 0.05;
+		opacity: 0.038;
 		mix-blend-mode: overlay;
 	}
 </style>

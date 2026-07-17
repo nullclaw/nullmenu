@@ -325,6 +325,7 @@
 	.stat dd {
 		color: var(--ink);
 		font-weight: 500;
+		font-variant-numeric: tabular-nums;
 	}
 
 	.fine {
@@ -542,14 +543,13 @@
 		display: flex;
 		align-items: baseline;
 		gap: 1.1rem;
-		padding: 1.35rem 0.5rem;
+		padding: 1.35rem 0.75rem;
 		border-bottom: 1px solid var(--line);
-		transition: background 0.25s var(--ease-out), padding 0.25s var(--ease-out);
+		transition: background 0.45s var(--ease-out);
 	}
 
 	.menu-row:hover {
 		background: var(--bg-2);
-		padding-inline: 1rem;
 	}
 
 	.menu-row .mark {

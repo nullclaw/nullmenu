@@ -300,6 +300,7 @@
 		font-size: clamp(2.2rem, 4.5vw, 3.4rem);
 		color: var(--accent);
 		line-height: 1.05;
+		font-variant-numeric: tabular-nums;
 	}
 
 	.metric dt {
@@ -367,14 +368,13 @@
 		grid-template-columns: auto 14rem 1fr auto;
 		align-items: center;
 		gap: 1.5rem;
-		padding: 1.3rem 0.5rem;
+		padding: 1.3rem 0.75rem;
 		border-bottom: 1px solid var(--line);
-		transition: background 0.25s var(--ease-out), padding 0.25s var(--ease-out);
+		transition: background 0.45s var(--ease-out);
 	}
 
 	.pair:hover {
 		background: var(--bg-2);
-		padding-inline: 1rem;
 	}
 
 	.pair .mark {
