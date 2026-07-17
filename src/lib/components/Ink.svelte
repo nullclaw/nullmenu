@@ -10,8 +10,18 @@
 	 * Fallback chain: no WebGPU or reduced motion → FlowField (canvas 2D).
 	 */
 	import FlowField from './FlowField.svelte';
+	import { themeState } from '$lib/theme.svelte.js';
 
 	let { tint = '#e8ddc9', intensity = 1, class: className = '' } = $props();
+
+	// on parchment the ink is pigment (darker than paper), not light
+	const isLight = $derived(themeState.current === 'light');
+	const pigmentHex = $derived.by(() => {
+		const t = hexToRgb(tint);
+		const ink = [0x26 / 255, 0x21 / 255, 0x1a / 255];
+		const mix = t.map((c, i) => Math.round((c * 0.4 + ink[i] * 0.6) * 255));
+		return '#' + mix.map((c) => c.toString(16).padStart(2, '0')).join('');
+	});
 
 	let canvas = $state();
 	let webgpuFailed = $state(false);
@@ -23,6 +33,7 @@
 	}
 
 	$effect(() => {
+		const light = themeState.current === 'light';
 		reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 		if (reduced || !navigator.gpu) {
 			webgpuFailed = true;
@@ -30,7 +41,7 @@
 		}
 		let dead = false;
 		let cleanup = () => {};
-		boot()
+		boot(light)
 			.then((c) => {
 				if (dead) c?.();
 				else cleanup = c ?? (() => {});
@@ -45,7 +56,7 @@
 		};
 	});
 
-	async function boot() {
+	async function boot(light) {
 		const adapter = await navigator.gpu.requestAdapter();
 		if (!adapter) throw new Error('no adapter');
 		const device = await adapter.requestDevice();
@@ -248,10 +259,14 @@
 				let lum = dot(d, vec3f(0.299, 0.587, 0.114));
 				let t = lum / (0.55 + lum); // soft rolloff, hue preserved
 				let hue = d / max(lum, 0.001);
-				var col = hue * (0.32 + 0.75 * t);
+				${light
+					? `// pigment soaking into paper: deepens with density
+				var col = hue * (0.78 - 0.34 * t);
+				let a = clamp(pow(t, 0.9) * 1.45, 0.0, 0.85);`
+					: `var col = hue * (0.32 + 0.75 * t);
 				// dense cores settle slightly deeper, like pooled ink
 				col = col * (1.0 - 0.22 * smoothstep(0.55, 1.0, t));
-				let a = clamp(pow(t, 0.9) * 1.6, 0.0, 0.92);
+				let a = clamp(pow(t, 0.9) * 1.6, 0.0, 0.92);`}
 				// premultiplied output over transparent canvas
 				return vec4f(col * a, a);
 			}
@@ -423,12 +438,17 @@
 		let time = 0;
 		const pointer = { x: 0.5, y: 0.5, dx: 0, dy: 0, active: false };
 
-		// dye palette: accent leads, cream is the garnish
-		const palette = [
-			[tr, tg, tb],
-			[tr * 0.6, tg * 0.5, tb * 0.45],
-			[0.93, 0.9, 0.85]
-		];
+		// dye palette: accent leads; garnish is cream at night, sepia by day.
+		// very light spices (the menu's cream) become sepia ink on paper.
+		const tooLight = 0.299 * tr + 0.587 * tg + 0.114 * tb > 0.68;
+		const base = light && tooLight ? [0.42, 0.33, 0.2] : [tr, tg, tb];
+		const palette = light
+			? [base, [base[0] * 0.55, base[1] * 0.5, base[2] * 0.45], [0.3, 0.24, 0.16]]
+			: [
+					[tr, tg, tb],
+					[tr * 0.6, tg * 0.5, tb * 0.45],
+					[0.93, 0.9, 0.85]
+				];
 
 		/**
 		 * The single gesture: a thin stream poured from above — like sauce
@@ -618,7 +638,7 @@
 </script>
 
 {#if webgpuFailed}
-	<FlowField {tint} class={className} />
+	<FlowField tint={isLight ? pigmentHex : tint} light={isLight} class={className} />
 {:else}
 	<canvas bind:this={canvas} class={className} aria-hidden="true"></canvas>
 {/if}

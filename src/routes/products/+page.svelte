@@ -171,6 +171,10 @@
 		color: color-mix(in srgb, var(--spice) 70%, var(--ink-3));
 	}
 
+	:global([data-theme='light']) .row:hover .mark {
+		color: color-mix(in srgb, var(--spice) 45%, var(--ink));
+	}
+
 	.line {
 		color: var(--ink-2);
 		font-size: var(--text-sm);
@@ -211,6 +215,10 @@
 	.tag--status {
 		color: var(--spice);
 		border-color: color-mix(in srgb, var(--spice) 40%, transparent);
+	}
+
+	:global([data-theme='light']) .tag--status {
+		color: color-mix(in srgb, var(--spice) 40%, var(--ink));
 	}
 
 	.fine {

@@ -4,6 +4,23 @@
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="theme-color" content="#0c0a08" />
+		<script>
+			// set the theme before first paint: stored choice, else system
+			(function () {
+				try {
+					var t = localStorage.getItem('nullmenu-theme');
+					if (t !== 'light' && t !== 'dark') {
+						t = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+					}
+					document.documentElement.dataset.theme = t;
+					if (t === 'light') {
+						document.querySelector('meta[name="theme-color"]').content = '#f2ead8';
+					}
+				} catch (e) {
+					document.documentElement.dataset.theme = 'dark';
+				}
+			})();
+		</script>
 		<link rel="icon" href="%sveltekit.assets%/favicon.svg" type="image/svg+xml" />
 		<link
 			rel="preload"

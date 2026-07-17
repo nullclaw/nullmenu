@@ -1,6 +1,7 @@
 <script>
 	import { page } from '$app/state';
 	import { site } from '$lib/site';
+	import { themeState, toggleTheme } from '$lib/theme.svelte.js';
 	import Logo from './Logo.svelte';
 
 	let scrolled = $state(false);
@@ -54,6 +55,20 @@
 					{l.label}{#if l.external}<span class="ext">&nearr;</span>{/if}
 				</a>
 			{/each}
+
+			<button
+				class="theme-toggle"
+				onclick={toggleTheme}
+				aria-label={themeState.current === 'dark'
+					? 'Switch to day service (light theme)'
+					: 'Switch to evening service (dark theme)'}
+				title={themeState.current === 'dark' ? 'day service' : 'evening service'}
+			>
+				<svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+					<circle cx="9" cy="9" r="6.75" fill="none" stroke="currentColor" stroke-width="1.5" />
+					<path class="half" d="M9 2.25 a6.75 6.75 0 0 1 0 13.5 Z" fill="currentColor" />
+				</svg>
+			</button>
 		</nav>
 
 		<button
@@ -79,6 +94,9 @@
 					rel={l.external ? 'noopener' : undefined}>{l.label}{#if l.external}&nbsp;&nearr;{/if}</a
 				>
 			{/each}
+			<button class="mobile-theme mono" onclick={toggleTheme}>
+				{themeState.current === 'dark' ? 'day service' : 'evening service'}
+			</button>
 		</nav>
 	{/if}
 </header>
@@ -173,6 +191,35 @@
 		margin-left: 0.3em;
 		font-size: 0.85em;
 		opacity: 0.7;
+	}
+
+	.theme-toggle {
+		display: grid;
+		place-items: center;
+		padding: 0.4rem;
+		margin: -0.4rem -0.4rem -0.4rem -0.5rem;
+		color: var(--ink-2);
+		transition: color 0.3s var(--ease-out);
+	}
+
+	.theme-toggle:hover {
+		color: var(--accent);
+	}
+
+	.theme-toggle svg {
+		transition: transform 0.6s var(--ease-swift);
+	}
+
+	:global([data-theme='light']) .theme-toggle svg {
+		transform: rotate(180deg);
+	}
+
+	.mobile-theme {
+		font-size: 1.05rem;
+		padding: 0.9rem 0;
+		border-top: 1px solid var(--line);
+		color: var(--ink-2);
+		text-align: left;
 	}
 
 	.burger {

@@ -6,26 +6,28 @@
    ———————————————————————————————————————————————— */
 
 :root {
-	/* surfaces — warm charcoal, never pure black */
+	/* the raw spice — injected per site by the layout */
+	--spice: #e8ddc9;
+	--spice-dim: #8f8574;
+
+	/* ———— evening service (default): cast iron, warm paper ———— */
 	--bg: #0c0a08;
 	--bg-2: #121009;
 	--bg-3: #181410;
 	--bg-glass: rgba(12, 10, 8, 0.72);
 
-	/* ink — warm paper whites */
 	--ink: #ece5d8;
 	--ink-2: #b0a695;
 	--ink-3: #8a8173;
 
-	/* hairlines */
 	--line: rgba(236, 229, 216, 0.1);
 	--line-2: rgba(236, 229, 216, 0.18);
 
-	/* accent (the spice) — overridden per site */
-	--accent: #e8ddc9;
-	--accent-dim: #8f8574;
+	--accent: var(--spice);
+	--accent-dim: var(--spice-dim);
 	--accent-ink: #0c0a08; /* text on accent */
-	--accent-glow: color-mix(in srgb, var(--accent) 14%, transparent);
+	--accent-glow: color-mix(in srgb, var(--spice) 14%, transparent);
+	--halo: rgba(12, 10, 8, 0.7); /* soft scrim behind hero text */
 
 	/* type */
 	--font-serif: 'Instrument Serif', 'Iowan Old Style', Georgia, serif;
@@ -48,6 +50,43 @@
 	--ease-swift: cubic-bezier(0.55, 0, 0.1, 1);
 
 	color-scheme: dark;
+}
+
+/* ———— day service: aged parchment, printed pigment ———— */
+
+:root[data-theme='light'] {
+	--bg: #f2ead8;
+	--bg-2: #ece2cb;
+	--bg-3: #e4d8bd;
+	--bg-glass: rgba(242, 234, 216, 0.78);
+
+	--ink: #26211a;
+	--ink-2: #52483a;
+	--ink-3: #665c4a;
+
+	--line: rgba(38, 33, 26, 0.13);
+	--line-2: rgba(38, 33, 26, 0.22);
+
+	/* pigment: the spice pressed into paper — always ink-dark enough to read */
+	--accent: color-mix(in srgb, var(--spice) 32%, #26211a);
+	--accent-dim: color-mix(in srgb, var(--spice) 30%, #8a7f6a);
+	--accent-ink: #f2ead8;
+	--accent-glow: color-mix(in srgb, var(--spice) 22%, transparent);
+	--halo: rgba(242, 234, 216, 0.75);
+
+	color-scheme: light;
+}
+
+/* faint foxing stains, like an old plate */
+:root[data-theme='light'] body {
+	background:
+		radial-gradient(55rem 38rem at 6% 10%, rgba(158, 126, 74, 0.055), transparent 62%),
+		radial-gradient(48rem 34rem at 94% 88%, rgba(158, 126, 74, 0.045), transparent 62%),
+		var(--bg);
+}
+
+:root[data-theme='light'] .grain {
+	opacity: 0.055;
 }
 
 /* ———— reset ———— */

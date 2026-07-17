@@ -296,7 +296,7 @@
 		margin-top: 1.75rem;
 		font-size: var(--text-lg);
 		color: var(--ink-2);
-		text-shadow: 0 1px 22px rgba(12, 10, 8, 0.7);
+		text-shadow: 0 1px 22px var(--halo);
 	}
 
 	.cta {
@@ -461,7 +461,13 @@
 	}
 
 	.hub-band:hover .mark {
-		color: #e3a93c;
+		color: var(--spice-hub, #e3a93c);
+	}
+
+	:global([data-theme='light']) .hub-band:hover .mark,
+	:global([data-theme='light']) .pantry-band:hover .mark,
+	:global([data-theme='light']) .menu-row:hover .mark {
+		color: color-mix(in srgb, currentColor 55%, var(--ink));
 	}
 
 	.pantry-band:hover .mark {
@@ -514,6 +520,10 @@
 	.station .mark {
 		color: var(--spice);
 		margin-bottom: 0.4rem;
+	}
+
+	:global([data-theme='light']) .station .mark {
+		color: color-mix(in srgb, var(--spice) 45%, var(--ink));
 	}
 
 	.station .role {

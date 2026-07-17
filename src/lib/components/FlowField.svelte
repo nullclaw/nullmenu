@@ -12,6 +12,7 @@
 		density = 1,
 		speed = 1,
 		opacity = 0.5,
+		light = false,
 		class: className = ''
 	} = $props();
 
@@ -89,7 +90,7 @@
 
 		function drawStillFrame() {
 			// long faint streamlines instead of animation
-			ctx.globalCompositeOperation = 'lighter';
+			ctx.globalCompositeOperation = light ? 'source-over' : 'lighter';
 			for (const p of particles.slice(0, 260)) {
 				let { x, y } = p;
 				ctx.strokeStyle = `rgba(${tr},${tg},${tb},${0.05 * opacity})`;
@@ -147,7 +148,7 @@
 			ctx.globalCompositeOperation = 'destination-out';
 			ctx.fillStyle = `rgba(0,0,0,${reduced ? 1 : 0.055})`;
 			ctx.fillRect(0, 0, w, h);
-			ctx.globalCompositeOperation = 'lighter';
+			ctx.globalCompositeOperation = light ? 'source-over' : 'lighter';
 			ctx.lineCap = 'round';
 
 			for (const p of particles) {

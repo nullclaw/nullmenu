@@ -1,6 +1,7 @@
 <script>
 	import '../app.css';
 	import { onNavigate } from '$app/navigation';
+	import { syncTheme } from '$lib/theme.svelte.js';
 	import { site } from '$lib/site';
 	import Header from '$lib/components/Header.svelte';
 	import Footer from '$lib/components/Footer.svelte';
@@ -19,14 +20,20 @@
 		});
 	});
 
-	// per-site theme + favicon (∅ plate in the site's accent).
-	// :root:root beats the app.css defaults regardless of stylesheet order.
-	const themeCss = `:root:root{--accent:${site.accent};--accent-dim:${site.accentDim};}`;
+	// per-site spice + favicon (∅ plate in the site's accent).
+	// :root:root beats the app.css defaults regardless of stylesheet order;
+	// light/dark themes derive their working tokens from the raw spice.
+	const themeCss = `:root:root{--spice:${site.accent};--spice-dim:${site.accentDim};}`;
 	const favicon =
 		'data:image/svg+xml,' +
 		encodeURIComponent(
 			`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><circle cx="16" cy="16" r="10.5" stroke="#ece5d8" stroke-width="2.4" fill="none"/><line x1="7" y1="27" x2="25" y2="5" stroke="${site.accent}" stroke-width="2.4" stroke-linecap="round"/></svg>`
 		);
+
+	// mirror the pre-paint theme choice into reactive state
+	$effect(() => {
+		syncTheme();
+	});
 
 	// copy buttons in rendered markdown (event delegation, one listener)
 	$effect(() => {
