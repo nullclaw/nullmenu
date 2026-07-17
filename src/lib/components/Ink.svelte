@@ -69,8 +69,13 @@
 
 		const [tr, tg, tb] = hexToRgb(tint);
 
-		// ————— sizing —————
-		const dpr = Math.min(devicePixelRatio || 1, 2);
+		// ————— sizing (smaller pots on smaller stoves) —————
+		const lowTier =
+			matchMedia('(pointer: coarse)').matches || matchMedia('(max-width: 720px)').matches;
+		const dpr = Math.min(devicePixelRatio || 1, lowTier ? 1.5 : 2);
+		const SIM_CAP = lowTier ? 256 : 384;
+		const DYE_CAP = lowTier ? 768 : 1024;
+		const JACOBI = lowTier ? 12 : 22;
 		let W = 8;
 		let H = 8;
 		let simW = 8;
@@ -374,10 +379,10 @@
 			canvas.height = H;
 			canvas.style.width = `${rect.width}px`;
 			canvas.style.height = `${rect.height}px`;
-			const simScale = 384 / Math.max(W, H);
+			const simScale = SIM_CAP / Math.max(W, H);
 			simW = Math.max(8, Math.round(W * Math.min(1, simScale)));
 			simH = Math.max(8, Math.round(H * Math.min(1, simScale)));
-			const dyeScale = 1024 / Math.max(W, H);
+			const dyeScale = DYE_CAP / Math.max(W, H);
 			dyeW = Math.max(8, Math.round(W * Math.min(1, dyeScale)));
 			dyeH = Math.max(8, Math.round(H * Math.min(1, dyeScale)));
 			allocate();
@@ -542,7 +547,7 @@
 			tex.vel.reverse();
 			// pressure projection
 			computePass(enc, pDiv, [u, tex.vel[0].createView(), tex.div.createView()], gSim);
-			for (let i = 0; i < 22; i++) {
+			for (let i = 0; i < JACOBI; i++) {
 				computePass(enc, pJacobi, [u, tex.prs[0].createView(), tex.div.createView(), tex.prs[1].createView()], gSim);
 				tex.prs.reverse();
 			}

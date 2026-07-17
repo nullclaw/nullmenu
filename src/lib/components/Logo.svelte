@@ -16,6 +16,7 @@
 >
 	<circle cx="16" cy="16" r="10.5" stroke="currentColor" stroke-width="1.75" />
 	<line
+		class="slash"
 		x1="7"
 		y1="27"
 		x2="25"

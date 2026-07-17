@@ -10,6 +10,25 @@
 	);
 
 	let copied = $state(false);
+	let currentHeading = $state('');
+
+	// scroll-spy: the TOC follows the reader
+	$effect(() => {
+		doc; // re-run per page
+		currentHeading = '';
+		const headings = [...document.querySelectorAll('.prose h2[id], .prose h3[id]')];
+		if (!headings.length) return;
+		const io = new IntersectionObserver(
+			(entries) => {
+				for (const entry of entries) {
+					if (entry.isIntersecting) currentHeading = entry.target.id;
+				}
+			},
+			{ rootMargin: '-72px 0px -70% 0px' }
+		);
+		headings.forEach((h) => io.observe(h));
+		return () => io.disconnect();
+	});
 
 	async function copyMarkdown() {
 		const status = document.getElementById('sr-status');
@@ -27,11 +46,11 @@
 <Seo title="{doc.title} — {site.display} docs" description={doc.description} />
 
 <div class="page" class:has-toc={doc.toc.length > 1}>
-	<article>
-		<p class="label label--accent crumb">{data.sectionTitle}</p>
+	<article data-pagefind-body>
+		<p class="label label--accent crumb" data-pagefind-ignore>{data.sectionTitle}</p>
 		<h1 class="serif">{doc.title}</h1>
 
-		<div class="meta mono">
+		<div class="meta mono" data-pagefind-ignore>
 			{#if doc.verified}
 				<span class="chip" title="Last verified with this release">verified · {doc.verified}</span>
 			{/if}
@@ -46,7 +65,7 @@
 			{@html doc.html}
 		</div>
 
-		<nav class="pager" aria-label="Previous and next">
+		<nav class="pager" aria-label="Previous and next" data-pagefind-ignore>
 			{#if data.prev}
 				<a class="pager-link prev" href="/docs/{data.prev.section}/{data.prev.slug}/">
 					<span class="dir mono">&larr; previous</span>
@@ -70,7 +89,11 @@
 			<ul>
 				{#each doc.toc as t}
 					<li class="d{t.depth}">
-						<a href="#{t.id}">{t.text}</a>
+						<a
+							href="#{t.id}"
+							class:current={currentHeading === t.id}
+							aria-current={currentHeading === t.id ? 'true' : undefined}>{t.text}</a
+						>
 					</li>
 				{/each}
 			</ul>
@@ -209,6 +232,11 @@
 	}
 
 	.toc a:hover {
+		color: var(--accent);
+		border-left-color: var(--accent);
+	}
+
+	.toc a.current {
 		color: var(--accent);
 		border-left-color: var(--accent);
 	}

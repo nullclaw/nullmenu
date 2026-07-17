@@ -22,7 +22,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
         with:
           version: 10
 
@@ -83,7 +83,7 @@ jobs:
           path: build
 
       - name: Deploy ${{ matrix.site }} → ${{ matrix.repo }}:gh-pages
-        uses: peaceiris/actions-gh-pages@v4
+        uses: peaceiris/actions-gh-pages@329bcc8f12caed2cefe5a5b80781499a6f3b361b # v4
         with:
           personal_token: ${{ secrets.NULLMENU_DEPLOY_TOKEN }}
           external_repository: ${{ matrix.repo }}

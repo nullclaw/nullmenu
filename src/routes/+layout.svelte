@@ -6,6 +6,7 @@
 	import Header from '$lib/components/Header.svelte';
 	import Footer from '$lib/components/Footer.svelte';
 	import Grain from '$lib/components/Grain.svelte';
+	import Search from '$lib/components/Search.svelte';
 
 	let { children } = $props();
 
@@ -35,22 +36,28 @@
 		syncTheme();
 	});
 
-	// copy buttons in rendered markdown (event delegation, one listener)
+	// click-to-copy: the button, or anywhere on a code block (event delegation)
 	$effect(() => {
 		async function onClick(e) {
-			const btn = e.target.closest('[data-code]');
-			if (!btn) return;
-			const code = btn.closest('.code-figure')?.querySelector('pre')?.textContent ?? '';
+			const fig = e.target.closest('.code-figure');
+			if (!fig) return;
+			// don't hijack links or an in-progress text selection
+			if (e.target.closest('a')) return;
+			const btn = fig.querySelector('[data-code]');
+			if (!e.target.closest('[data-code]') && !window.getSelection()?.isCollapsed) return;
+			const code = fig.querySelector('pre')?.textContent ?? '';
 			const status = document.getElementById('sr-status');
 			try {
 				await navigator.clipboard.writeText(code.trim());
-				btn.textContent = 'copied';
-				btn.classList.add('done');
+				if (btn) {
+					btn.textContent = 'copied';
+					btn.classList.add('done');
+					setTimeout(() => {
+						btn.textContent = 'copy';
+						btn.classList.remove('done');
+					}, 1600);
+				}
 				if (status) status.textContent = 'Copied to clipboard';
-				setTimeout(() => {
-					btn.textContent = 'copy';
-					btn.classList.remove('done');
-				}, 1600);
 			} catch {
 				if (status) status.textContent = 'Copy failed';
 			}
@@ -68,6 +75,7 @@
 <a class="skip mono" href="#main">Skip to content</a>
 <span id="sr-status" class="sr-status" role="status" aria-live="polite"></span>
 <Header />
+<Search />
 <main id="main">
 	{@render children()}
 </main>

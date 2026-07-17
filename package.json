@@ -19,8 +19,18 @@
     "@sveltejs/vite-plugin-svelte": "^7.2.0",
     "gray-matter": "^4.0.3",
     "marked": "^18.0.6",
+    "pagefind": "^1.5.2",
     "shiki": "^4.3.1",
     "svelte": "^5.56.5",
     "vite": "^8.1.5"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nullclaw/nullmenu.git"
+  },
+  "homepage": "https://nullmenu.ai",
+  "engines": {
+    "node": ">=22"
   }
 }

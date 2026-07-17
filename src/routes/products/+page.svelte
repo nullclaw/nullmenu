@@ -13,6 +13,7 @@
 <Seo
 	title="The menu — every product in the Null ecosystem"
 	description="The full catalog: agent runtime, management console, orchestration, tasks, memory, observability. Single-binary Zig tools, each on its own subdomain."
+	canonical="https://nullmenu.ai/products/"
 />
 
 <section class="head">
@@ -171,8 +172,13 @@
 		color: color-mix(in srgb, var(--spice) 70%, var(--ink-3));
 	}
 
-	:global([data-theme='light']) .row:hover .mark {
+	:global([data-theme='light']) .row:hover .mark,
+	:global([data-theme='light']) .row:hover .course {
 		color: color-mix(in srgb, var(--spice) 45%, var(--ink));
+	}
+
+	:global([data-theme='light']) .row:hover .leaders {
+		border-color: color-mix(in srgb, var(--spice) 45%, var(--ink));
 	}
 
 	.line {

@@ -2,9 +2,9 @@
 	import { page } from '$app/state';
 	import { site } from '$lib/site';
 
-	let { title = site.title, description = site.description } = $props();
+	let { title = site.title, description = site.description, canonical = null } = $props();
 
-	const url = $derived(`https://${site.domain}${page.url.pathname}`);
+	const url = $derived(canonical ?? `https://${site.domain}${page.url.pathname}`);
 	const image = `https://${site.domain}/og/${site.id}.png`;
 </script>
 

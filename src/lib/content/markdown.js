@@ -12,10 +12,10 @@ export function slugify(text) {
 }
 
 const CALLOUTS = {
-	NOTE: { title: 'Note', color: 'var(--accent)' },
-	TIP: { title: 'Tip', color: '#8fb573' },
-	WARNING: { title: 'Warning', color: '#d9a441' },
-	DANGER: { title: 'Danger', color: '#ff4f30' }
+	NOTE: { title: 'Note', kind: 'note' },
+	TIP: { title: 'Tip', kind: 'tip' },
+	WARNING: { title: 'Warning', kind: 'warning' },
+	DANGER: { title: 'Danger', kind: 'danger' }
 };
 
 /**
@@ -64,7 +64,7 @@ export async function renderMarkdown(md, { accent = '#e8ddc9' } = {}) {
 				if (m) {
 					const kind = CALLOUTS[m[1]];
 					const rest = body.replace(m[0], '<p>').replace(/^<p>\s*<\/p>/, '');
-					return `<aside class="callout" style="--callout-color:${kind.color}"><div class="callout-title">${kind.title}</div>${rest}</aside>\n`;
+					return `<aside class="callout callout--${kind.kind}"><div class="callout-title">${kind.title}</div>${rest}</aside>\n`;
 				}
 				return `<blockquote>${body}</blockquote>\n`;
 			},

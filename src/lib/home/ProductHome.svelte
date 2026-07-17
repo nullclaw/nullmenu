@@ -11,6 +11,21 @@
 	const p = $derived(data.product);
 	let activeInstall = $state(0);
 
+	// remember the visitor's preferred install method
+	$effect(() => {
+		const saved = Number(localStorage.getItem(`install-${site.id}`));
+		if (saved > 0 && saved < installTabs.length) activeInstall = saved;
+	});
+
+	function pickInstall(i) {
+		activeInstall = i;
+		try {
+			localStorage.setItem(`install-${site.id}`, String(i));
+		} catch {
+			/* private mode */
+		}
+	}
+
 	const installTabs = $derived(
 		p
 			? [
@@ -58,7 +73,7 @@
 							class="tab mono"
 							aria-pressed={activeInstall === i}
 							class:active={activeInstall === i}
-							onclick={() => (activeInstall = i)}>{t.label}</button
+							onclick={() => pickInstall(i)}>{t.label}</button
 						>
 					{/each}
 				</div>
@@ -79,8 +94,8 @@
 				{#each p.metrics as m, i}
 					<Reveal delay={i * 60}>
 						<div class="metric">
-							<dd class="serif">{m.value}</dd>
 							<dt class="mono">{m.label}</dt>
+							<dd class="serif">{m.value}</dd>
 						</div>
 					</Reveal>
 				{/each}
@@ -294,6 +309,8 @@
 	.metric {
 		border-left: 1px solid var(--line-2);
 		padding-left: 1.5rem;
+		display: flex;
+		flex-direction: column-reverse; /* value above label; dt precedes dd in DOM */
 	}
 
 	.metric dd {
@@ -304,6 +321,7 @@
 	}
 
 	.metric dt {
+		margin-bottom: 0;
 		margin-top: 0.5rem;
 		font-size: var(--text-xs);
 		letter-spacing: 0.12em;
@@ -409,6 +427,15 @@
 	.pair:hover .go {
 		color: var(--spice);
 		transform: translateX(4px);
+	}
+
+	:global([data-theme='light']) .pair:hover .mark,
+	:global([data-theme='light']) .pair:hover .go {
+		color: color-mix(in srgb, var(--spice) 45%, var(--ink));
+	}
+
+	:global([data-theme='light']) .pair:hover .leaders {
+		border-color: color-mix(in srgb, var(--spice) 45%, var(--ink));
 	}
 
 	.notice {

@@ -144,7 +144,7 @@
 
 		<div class="brigade">
 			<Reveal>
-				<a class="hub-band" href="https://hub.nullmenu.ai">
+				<a class="hub-band" href="https://hub.nullmenu.ai" style:--spice="#e3a93c">
 					<span class="mark"><ProductMark id="hub" size={26} /></span>
 					<span class="mono name">nullhub</span>
 					<span class="serif-i role">the sous-chef</span>
@@ -165,7 +165,7 @@
 				{/each}
 			</div>
 			<Reveal>
-				<a class="pantry-band" href="https://pantry.nullmenu.ai">
+				<a class="pantry-band" href="https://pantry.nullmenu.ai" style:--spice="#8fb573">
 					<span class="mark"><ProductMark id="pantry" size={26} /></span>
 					<span class="mono name">nullpantry</span>
 					<span class="serif-i role">the larder</span>
@@ -461,17 +461,21 @@
 	}
 
 	.hub-band:hover .mark {
-		color: var(--spice-hub, #e3a93c);
+		color: var(--spice);
 	}
 
 	:global([data-theme='light']) .hub-band:hover .mark,
 	:global([data-theme='light']) .pantry-band:hover .mark,
 	:global([data-theme='light']) .menu-row:hover .mark {
-		color: color-mix(in srgb, currentColor 55%, var(--ink));
+		color: color-mix(in srgb, var(--spice) 50%, var(--ink));
+	}
+
+	:global([data-theme='light']) .menu-row:hover .leaders {
+		border-color: color-mix(in srgb, var(--spice) 45%, var(--ink));
 	}
 
 	.pantry-band:hover .mark {
-		color: #8fb573;
+		color: var(--spice);
 	}
 
 	.hub-band .name,

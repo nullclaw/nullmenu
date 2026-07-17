@@ -409,7 +409,7 @@ pre {
 }
 
 .prose li::marker {
-	color: var(--accent-dim);
+	color: var(--accent);
 }
 
 .prose strong {
@@ -459,6 +459,29 @@ pre {
 	vertical-align: top;
 }
 
+.callout--note {
+	--callout-color: var(--accent);
+}
+.callout--tip {
+	--callout-color: #8fb573;
+}
+.callout--warning {
+	--callout-color: #d9a441;
+}
+.callout--danger {
+	--callout-color: #ff4f30;
+}
+
+:root[data-theme='light'] .callout--tip {
+	--callout-color: #44622c;
+}
+:root[data-theme='light'] .callout--warning {
+	--callout-color: #7a5a10;
+}
+:root[data-theme='light'] .callout--danger {
+	--callout-color: #8c2410;
+}
+
 .prose .callout {
 	border: 1px solid var(--line);
 	border-left: 2px solid var(--callout-color, var(--accent));
@@ -499,6 +522,26 @@ pre {
 .code-figure {
 	position: relative;
 	margin: 1.4em 0;
+	cursor: copy;
+}
+
+/* language chip, set like a menu footnote */
+.code-figure[data-lang]:not([data-lang='text'])::before {
+	content: attr(data-lang);
+	position: absolute;
+	top: 0.5rem;
+	left: 0.8rem;
+	font-family: var(--font-mono);
+	font-size: 0.58rem;
+	letter-spacing: 0.14em;
+	text-transform: uppercase;
+	color: var(--ink-3);
+	opacity: 0.7;
+	pointer-events: none;
+}
+
+.code-figure pre.shiki {
+	padding-top: 1.7rem;
 }
 
 .code-figure pre.shiki {
@@ -576,6 +619,67 @@ pre {
 			animation-timeline: view();
 			animation-range: entry 0% cover 38%;
 		}
+	}
+}
+
+/* ———— eye-catchers: the plate is engraved, not loaded ———— */
+
+/* the ∅ slash draws itself once on arrival */
+.slash {
+	stroke-dasharray: 40;
+	animation: slash-draw 0.8s 0.25s var(--ease-swift) backwards;
+}
+
+@keyframes slash-draw {
+	from {
+		stroke-dashoffset: 40;
+	}
+	to {
+		stroke-dashoffset: 0;
+	}
+}
+
+@keyframes slash-redraw {
+	from {
+		stroke-dashoffset: 40;
+	}
+	to {
+		stroke-dashoffset: 0;
+	}
+}
+
+@media (prefers-reduced-motion: no-preference) {
+	@supports (animation-timeline: view()) {
+		/* product marks engrave themselves as they enter the page */
+		.mark svg :is(path, circle, line) {
+			stroke-dasharray: 140;
+			stroke-dashoffset: 140;
+			animation: engrave linear both;
+			animation-timeline: view();
+			animation-range: entry 0% cover 42%;
+		}
+
+		/* dotted leaders set themselves left to right */
+		.leaders {
+			animation: leaders-draw linear both;
+			animation-timeline: view();
+			animation-range: entry 0% cover 38%;
+		}
+	}
+}
+
+@keyframes engrave {
+	to {
+		stroke-dashoffset: 0;
+	}
+}
+
+@keyframes leaders-draw {
+	from {
+		clip-path: inset(0 100% 0 0);
+	}
+	to {
+		clip-path: inset(0 0 0 0);
 	}
 }
 

@@ -31,6 +31,11 @@ node scripts/build-all.js claw hub # just some
 Every site ships `llms.txt`, `llms-full.txt`, `sitemap.xml`, `robots.txt`,
 and a Markdown twin for every docs page (`/docs/x/y/` ⇄ `/docs/x/y.md`).
 
+Two themes — evening service (cast iron) and day service (aged parchment) —
+derived from each product's accent via `color-mix`, persisted, system-aware.
+The hero runs a WebGPU Navier–Stokes ink simulation (canvas fallback), and
+product pages bake platform-aware binary downloads from GitHub Releases.
+
 ## Add a product
 
 1. Add an entry to `src/lib/site/sites.js` (accent, course, docsSections, …).
@@ -43,3 +48,11 @@ and a Markdown twin for every docs page (`/docs/x/y/` ⇄ `/docs/x/y.md`).
 Push to `main` — `.github/workflows/deploy.yml` builds every site, deploys
 the apex to this repo's GitHub Pages and each `build/<site>` to the matching
 product repo's `gh-pages` branch, so docs live next to the code they document.
+A weekly cron rebuild keeps the baked-in release/download data fresh.
+Subdomain pushes need the `NULLMENU_DEPLOY_TOKEN` secret (a token with
+`contents: write` on the product repos).
+
+## License
+
+MIT — see [LICENSE](LICENSE). Bundled fonts are OFL-licensed
+([attribution](static/fonts/LICENSE.md)).

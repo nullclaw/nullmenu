@@ -21,6 +21,7 @@ for (const id of targets) {
 		stdio: 'inherit',
 		env: { ...process.env, PUBLIC_SITE: id }
 	});
+	execSync(`pnpm exec pagefind --site build/${id}`, { stdio: 'inherit' });
 }
 
 console.log(`\n∅ done — built: ${targets.join(', ')}`);

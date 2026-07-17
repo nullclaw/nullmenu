@@ -3,7 +3,12 @@
  * The initial value is set before paint by the inline script in app.html;
  * this module mirrors it reactively for components (the Ink pigments care).
  */
-export const themeState = $state({ current: 'dark' });
+export const themeState = $state({
+	current:
+		typeof document !== 'undefined' && document.documentElement.dataset.theme === 'light'
+			? 'light'
+			: 'dark'
+});
 
 export function syncTheme() {
 	themeState.current = document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';

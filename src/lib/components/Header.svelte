@@ -2,6 +2,7 @@
 	import { page } from '$app/state';
 	import { site } from '$lib/site';
 	import { themeState, toggleTheme } from '$lib/theme.svelte.js';
+	import { searchState } from '$lib/search.svelte.js';
 	import Logo from './Logo.svelte';
 
 	let scrolled = $state(false);
@@ -33,13 +34,21 @@
 
 <header class:scrolled class:open>
 	<div class="inner container">
-		<a class="brand" href="/" aria-label="{site.display} home">
-			<Logo size={24} />
-			<span class="word mono">null<span class="suffix serif-i">·{suffix}</span></span>
+		<div class="left">
+			<a class="brand" href="/" aria-label="{site.display} home">
+				<Logo size={24} />
+				<span class="word mono">null<span class="suffix serif-i">·{suffix}</span></span>
+			</a>
 			{#if site.version}
-				<span class="version mono">{site.version}</span>
+				<a
+					class="version mono"
+					href="{site.github}/releases"
+					target="_blank"
+					rel="noopener"
+					aria-label="Releases — latest {site.version}">{site.version}</a
+				>
 			{/if}
-		</a>
+		</div>
 
 		<nav class="desktop" aria-label="Main">
 			{#each links as l}
@@ -55,6 +64,11 @@
 					{l.label}{#if l.external}<span class="ext">&nearr;</span>{/if}
 				</a>
 			{/each}
+
+			<button class="search-btn mono" onclick={() => (searchState.open = true)} aria-label="Search docs">
+				<span aria-hidden="true">⌕</span>
+				<kbd>⌘K</kbd>
+			</button>
 
 			<button
 				class="theme-toggle"
@@ -94,7 +108,14 @@
 					rel={l.external ? 'noopener' : undefined}>{l.label}{#if l.external}&nbsp;&nearr;{/if}</a
 				>
 			{/each}
-			<button class="mobile-theme mono" onclick={toggleTheme}>
+			<button class="mobile-theme mono" onclick={() => (searchState.open = true)}>search ⌕</button>
+			<button
+				class="mobile-theme mono"
+				onclick={toggleTheme}
+				aria-label={themeState.current === 'dark'
+					? 'Switch to day service (light theme)'
+					: 'Switch to evening service (dark theme)'}
+			>
 				{themeState.current === 'dark' ? 'day service' : 'evening service'}
 			</button>
 		</nav>
@@ -128,11 +149,20 @@
 		gap: 2rem;
 	}
 
+	.left {
+		display: flex;
+		align-items: center;
+	}
+
 	.brand {
 		display: flex;
 		align-items: center;
 		gap: 0.65rem;
 		color: var(--ink);
+	}
+
+	.brand:hover :global(.slash) {
+		animation: slash-redraw 0.7s var(--ease-swift);
 	}
 
 	.word {
@@ -153,8 +183,14 @@
 		padding: 0.15em 0.5em;
 		border-radius: 99px;
 		letter-spacing: 0.05em;
-		margin-left: 0.25rem;
+		margin-left: 0.9rem;
 		transform: translateY(1px);
+		transition: color 0.2s var(--ease-out), border-color 0.2s var(--ease-out);
+	}
+
+	.version:hover {
+		color: var(--accent);
+		border-color: var(--accent-dim);
 	}
 
 	nav.desktop {
@@ -193,6 +229,30 @@
 		opacity: 0.7;
 	}
 
+	.search-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		color: var(--ink-2);
+		font-size: 0.95rem;
+		padding: 0.25rem 0.4rem;
+		transition: color 0.2s var(--ease-out);
+	}
+
+	.search-btn:hover {
+		color: var(--accent);
+	}
+
+	.search-btn kbd {
+		font-family: var(--font-mono);
+		font-size: 0.58rem;
+		letter-spacing: 0.08em;
+		color: var(--ink-3);
+		border: 1px solid var(--line);
+		border-radius: 4px;
+		padding: 0.15em 0.45em;
+	}
+
 	.theme-toggle {
 		display: grid;
 		place-items: center;
@@ -225,9 +285,12 @@
 	.burger {
 		display: none;
 		flex-direction: column;
+		justify-content: center;
+		align-items: center;
 		gap: 6px;
-		padding: 0.5rem;
-		margin-right: -0.5rem;
+		min-width: 44px;
+		min-height: 44px;
+		margin-right: -11px;
 	}
 
 	.burger span {

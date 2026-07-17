@@ -34,6 +34,21 @@
 			? `chmod +x ${detected.name} && ./${detected.name.replace(/\.bin$/, '')} --help`
 			: null
 	);
+
+	let copiedCurl = $state('');
+
+	async function copyCurl(b) {
+		const out = b.name.replace(/\.bin$/, '');
+		try {
+			await navigator.clipboard.writeText(`curl -fL ${b.url} -o ${out} && chmod +x ${out}`);
+			copiedCurl = b.name;
+			const status = document.getElementById('sr-status');
+			if (status) status.textContent = 'curl command copied';
+			setTimeout(() => (copiedCurl = ''), 1600);
+		} catch {
+			/* clipboard unavailable */
+		}
+	}
 </script>
 
 <section class="section" id="download">
@@ -68,13 +83,19 @@
 			</div>
 			<ul class="binaries">
 				{#each release.binaries as b}
-					<li>
-						<a href={b.url} download class:current={detected?.name === b.name}>
+					<li class:current={detected?.name === b.name}>
+						<a href={b.url} download>
 							<span class="os mono">{b.label}</span>
 							<span class="arch serif-i">{b.arch}</span>
 							<span class="leaders" aria-hidden="true"></span>
 							<span class="bsize mono">{b.size}</span>
 						</a>
+						<button
+							class="curl mono"
+							onclick={() => copyCurl(b)}
+							aria-label="Copy curl command for {b.label} {b.arch}"
+							>{copiedCurl === b.name ? 'copied' : 'curl'}</button
+						>
 					</li>
 				{/each}
 			</ul>
@@ -152,23 +173,43 @@
 
 	.binaries li {
 		break-inside: avoid;
+		display: flex;
+		align-items: stretch;
+		border-bottom: 1px solid var(--line);
 	}
 
 	.binaries a {
+		flex: 1;
 		display: flex;
 		align-items: baseline;
 		gap: 0.9rem;
 		padding: 0.7rem 0.4rem;
-		border-bottom: 1px solid var(--line);
 		transition: background 0.2s var(--ease-out);
+		min-width: 0;
 	}
 
 	.binaries a:hover {
 		background: var(--bg-2);
 	}
 
-	.binaries a.current .os {
+	.binaries li.current :global(.os) {
 		color: var(--accent);
+	}
+
+	.curl {
+		font-size: 0.62rem;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		color: var(--ink-3);
+		padding: 0 0.8em;
+		border-left: 1px solid var(--line);
+		transition: color 0.2s var(--ease-out), background 0.2s var(--ease-out);
+		white-space: nowrap;
+	}
+
+	.curl:hover {
+		color: var(--accent);
+		background: var(--bg-2);
 	}
 
 	.os {
