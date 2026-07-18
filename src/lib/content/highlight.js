@@ -15,7 +15,9 @@ export function makeTheme(accent) {
 	};
 	return {
 		name: 'null-kitchen',
-		type: 'dark',
+		type: /** @type {'dark'} */ ('dark'),
+		fg: warm.fg,
+		bg: '#0a0806',
 		colors: {
 			'editor.background': '#0a0806',
 			'editor.foreground': warm.fg

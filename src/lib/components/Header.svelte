@@ -2,11 +2,21 @@
 	import { page } from '$app/state';
 	import { site } from '$lib/site';
 	import { themeState, toggleTheme } from '$lib/theme.svelte.js';
-	import { searchState } from '$lib/search.svelte.js';
+	import { requestSearch } from '$lib/search.svelte.js';
 	import Logo from './Logo.svelte';
+	import {
+		inertElements,
+		lockPageScroll,
+		searchShortcutLabel,
+		trapTab
+	} from './overlay.js';
 
 	let scrolled = $state(false);
 	let open = $state(false);
+	let burger = $state();
+	let mobilePanel = $state();
+	let shortcut = $state('Ctrl K');
+	const scrollLock = Symbol('main-navigation');
 
 	const isMenu = site.kind === 'menu';
 	const suffix = isMenu ? 'menu' : site.id;
@@ -30,6 +40,67 @@
 		page.url.pathname;
 		open = false;
 	});
+
+	$effect(() => {
+		shortcut = searchShortcutLabel();
+	});
+
+	$effect(() => {
+		function onSearchOpening() {
+			if (open) closeMenu(true);
+		}
+		window.addEventListener('nullmenu:search-opening', onSearchOpening);
+		return () => window.removeEventListener('nullmenu:search-opening', onSearchOpening);
+	});
+
+	$effect(() => {
+		if (!open) return;
+		const releaseScroll = lockPageScroll(scrollLock);
+		let releaseInert = () => {};
+		let cancelled = false;
+		const media = matchMedia('(max-width: 880px)');
+
+		requestAnimationFrame(() => {
+			if (cancelled) return;
+			mobilePanel?.querySelector('a, button')?.focus();
+			releaseInert = inertElements([
+				document.querySelector('main'),
+				document.querySelector('footer')
+			]);
+		});
+
+		function onKey(event) {
+			if (event.key === 'Escape') {
+				event.preventDefault();
+				closeMenu(true);
+			} else if (event.key === 'Tab') {
+				trapTab(event, document.querySelector('header'));
+			}
+		}
+
+		function onBreakpoint(event) {
+			if (!event.matches) open = false;
+		}
+
+		window.addEventListener('keydown', onKey);
+		media.addEventListener('change', onBreakpoint);
+		return () => {
+			cancelled = true;
+			window.removeEventListener('keydown', onKey);
+			media.removeEventListener('change', onBreakpoint);
+			releaseInert();
+			releaseScroll();
+		};
+	});
+
+	function closeMenu(restoreFocus = false) {
+		open = false;
+		if (restoreFocus) requestAnimationFrame(() => burger?.focus());
+	}
+
+	function openSearch() {
+		requestSearch();
+	}
 </script>
 
 <header class:scrolled class:open>
@@ -65,9 +136,9 @@
 				</a>
 			{/each}
 
-			<button class="search-btn mono" onclick={() => (searchState.open = true)} aria-label="Search docs">
+			<button class="search-btn mono" onclick={requestSearch} aria-label="Search docs">
 				<span aria-hidden="true">⌕</span>
-				<kbd>⌘K</kbd>
+				<kbd>{shortcut}</kbd>
 			</button>
 
 			<button
@@ -86,39 +157,63 @@
 		</nav>
 
 		<button
+			bind:this={burger}
 			class="burger"
 			aria-expanded={open}
-			aria-label="Toggle navigation"
-			onclick={() => (open = !open)}
+			aria-controls="mobile-navigation"
+			aria-label={open ? 'Close navigation' : 'Open navigation'}
+			onclick={() => (open ? closeMenu(true) : (open = true))}
 		>
 			<span></span><span></span>
 		</button>
 	</div>
 
 	{#if open}
-		<nav class="mobile" aria-label="Main">
-			{#each links as l}
-				{@const active = !l.external && page.url.pathname.startsWith(l.href)}
-				<a
-					href={l.href}
-					class="mono"
-					class:active
-					aria-current={active ? 'page' : undefined}
-					target={l.external ? '_blank' : undefined}
-					rel={l.external ? 'noopener' : undefined}>{l.label}{#if l.external}&nbsp;&nearr;{/if}</a
-				>
-			{/each}
-			<button class="mobile-theme mono" onclick={() => (searchState.open = true)}>search ⌕</button>
-			<button
-				class="mobile-theme mono"
-				onclick={toggleTheme}
-				aria-label={themeState.current === 'dark'
-					? 'Switch to day service (light theme)'
-					: 'Switch to evening service (dark theme)'}
+		<div class="mobile-layer">
+			<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+			<div
+				class="mobile-backdrop"
+				aria-hidden="true"
+				onclick={() => closeMenu(true)}
+			></div>
+			<div
+				bind:this={mobilePanel}
+				id="mobile-navigation"
+				class="mobile-panel"
 			>
-				{themeState.current === 'dark' ? 'day service' : 'evening service'}
-			</button>
-		</nav>
+				<div class="mobile-head mono">
+					<span>Navigation</span>
+				</div>
+				<nav class="mobile" aria-label="Main">
+					{#each links as l}
+						{@const active = !l.external && page.url.pathname.startsWith(l.href)}
+						<a
+							href={l.href}
+							class="mono"
+							class:active
+							aria-current={active ? 'page' : undefined}
+							target={l.external ? '_blank' : undefined}
+							rel={l.external ? 'noopener' : undefined}
+							onclick={() => closeMenu(false)}>{l.label}{#if l.external}&nbsp;&nearr;{/if}</a
+						>
+					{/each}
+					<button class="mobile-theme mono" onclick={openSearch}>
+						<span>search</span><span class="action-detail">⌕ · {shortcut}</span>
+					</button>
+					<button
+						class="mobile-theme mono"
+						onclick={toggleTheme}
+						aria-label={themeState.current === 'dark'
+							? 'Switch to day service (light theme)'
+							: 'Switch to evening service (dark theme)'}
+					>
+						<span>{themeState.current === 'dark' ? 'day service' : 'evening service'}</span>
+						<span class="action-detail" aria-hidden="true">theme</span>
+					</button>
+				</nav>
+				<p class="mobile-note mono">Local tools. Quiet infrastructure.</p>
+			</div>
+		</div>
 	{/if}
 </header>
 
@@ -141,7 +236,15 @@
 		border-bottom-color: var(--line);
 	}
 
+	header.open {
+		background: var(--bg);
+		backdrop-filter: none;
+		-webkit-backdrop-filter: none;
+	}
+
 	.inner {
+		position: relative;
+		z-index: 2;
 		height: var(--header-h);
 		display: flex;
 		align-items: center;
@@ -275,11 +378,29 @@
 	}
 
 	.mobile-theme {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		width: 100%;
+		min-height: 54px;
 		font-size: 1.05rem;
-		padding: 0.9rem 0;
+		padding: 0.8rem var(--pad);
 		border-top: 1px solid var(--line);
 		color: var(--ink-2);
 		text-align: left;
+	}
+
+	.mobile-theme:hover {
+		color: var(--accent);
+		background: var(--bg-2);
+	}
+
+	.action-detail {
+		font-size: 0.65rem;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		color: var(--ink-3);
 	}
 
 	.burger {
@@ -309,22 +430,96 @@
 		transform: translateY(-3.75px) rotate(-45deg);
 	}
 
+	.mobile-layer {
+		position: fixed;
+		inset: var(--header-h) 0 0;
+		z-index: 1;
+		display: flex;
+		justify-content: flex-end;
+	}
+
+	.mobile-backdrop {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		background: color-mix(in srgb, var(--bg) 72%, transparent);
+		backdrop-filter: blur(8px);
+		-webkit-backdrop-filter: blur(8px);
+		cursor: default;
+	}
+
+	.mobile-panel {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		width: min(29rem, 100%);
+		height: 100%;
+		overflow-y: auto;
+		overscroll-behavior: contain;
+		background:
+			linear-gradient(135deg, var(--accent-glow), transparent 42%),
+			var(--bg);
+		border-left: 1px solid var(--line-2);
+		box-shadow: -28px 0 80px -34px rgba(0, 0, 0, 0.78);
+		animation: drawer-in 0.34s var(--ease-out) both;
+	}
+
+	.mobile-head {
+		display: flex;
+		align-items: center;
+		min-height: 52px;
+		padding-inline: var(--pad);
+		border-bottom: 1px solid var(--line-2);
+		font-size: 0.65rem;
+		letter-spacing: 0.13em;
+		text-transform: uppercase;
+		color: var(--accent);
+	}
+
 	nav.mobile {
 		display: flex;
 		flex-direction: column;
-		padding: 0.5rem var(--pad) 1.5rem;
+		padding: 0.8rem 0 1.5rem;
 		gap: 0;
 	}
 
 	nav.mobile a {
+		display: flex;
+		align-items: center;
+		min-height: 54px;
 		font-size: 1.05rem;
-		padding: 0.9rem 0;
+		padding: 0.8rem var(--pad);
 		border-top: 1px solid var(--line);
 		color: var(--ink);
+		transition: color 0.2s var(--ease-out), background 0.2s var(--ease-out);
 	}
 
+	nav.mobile a:hover,
 	nav.mobile a.active {
 		color: var(--accent);
+		background: var(--bg-2);
+	}
+
+	.mobile-note {
+		margin: auto var(--pad) 0;
+		padding: 1.25rem 0 max(1.25rem, env(safe-area-inset-bottom));
+		border-top: 1px solid var(--line);
+		font-size: 0.65rem;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		color: var(--ink-3);
+	}
+
+	@keyframes drawer-in {
+		from {
+			opacity: 0;
+			transform: translateX(1.5rem);
+		}
+		to {
+			opacity: 1;
+			transform: none;
+		}
 	}
 
 	@media (max-width: 880px) {
@@ -333,6 +528,12 @@
 		}
 		.burger {
 			display: flex;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.mobile-panel {
+			animation: none;
 		}
 	}
 

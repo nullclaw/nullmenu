@@ -106,11 +106,32 @@
 		margin-top: 3.5rem;
 	}
 
+	/* Catalog rows stay fully legible at rest; hover carries the interaction here. */
+	.group :global(.sda),
+	.group :global(.reveal) {
+		animation: none;
+		opacity: 1;
+		transform: none;
+		filter: none;
+	}
+
 	.group-head {
 		display: flex;
 		align-items: baseline;
 		gap: 1rem;
 		margin-bottom: 1rem;
+	}
+
+	.group-head,
+	.group-head > *,
+	.row,
+	.row > *,
+	.ident,
+	.topline,
+	.meta,
+	.tags {
+		min-width: 0;
+		max-width: 100%;
 	}
 
 	.group-head h2 {
@@ -222,6 +243,8 @@
 
 	.tags {
 		display: flex;
+		flex-wrap: wrap;
+		justify-content: flex-end;
 		gap: 0.4rem;
 	}
 
@@ -252,17 +275,62 @@
 
 	@media (max-width: 640px) {
 		.row {
-			flex-wrap: wrap;
+			display: grid;
+			grid-template-columns: 30px minmax(0, 1fr);
+			gap: 0.85rem 1rem;
 		}
 		.topline :global(.leaders) {
 			display: none;
 		}
 		.meta {
-			width: 100%;
+			grid-column: 2;
+			width: auto;
 			flex-direction: row;
+			flex-wrap: wrap;
 			align-items: baseline;
 			justify-content: space-between;
-			padding-left: calc(30px + 1.25rem);
+			gap: 0.6rem 1rem;
+			padding-left: 0;
+		}
+		.tags {
+			justify-content: flex-start;
+		}
+	}
+
+	@media (max-width: 420px) {
+		.head {
+			padding-top: 3.5rem;
+		}
+
+		.group-head {
+			align-items: flex-start;
+			flex-wrap: wrap;
+			gap: 0.35rem 0.75rem;
+		}
+
+		.group-head :global(.leaders) {
+			display: none;
+		}
+
+		.group-head .note {
+			flex-basis: 100%;
+			line-height: 1.5;
+			overflow-wrap: anywhere;
+		}
+
+		.topline {
+			flex-wrap: wrap;
+			gap: 0.25rem 0.65rem;
+		}
+
+		.meta {
+			flex-direction: column;
+			align-items: flex-start;
+		}
+
+		.stat,
+		.tag {
+			overflow-wrap: anywhere;
 		}
 	}
 </style>

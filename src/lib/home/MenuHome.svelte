@@ -41,6 +41,20 @@
 	];
 
 	const mains = products.filter((p) => p.group === 'mains');
+
+	const heroDescription =
+		'Ten small open-source tools for running AI agents on your own hardware: an agent you can message from Telegram or Slack, plus the orchestration, task queue, shared memory and tracing to grow it into a fleet. Each one is a single Zig binary — install NullHub to manage them all, or take any piece alone.';
+
+	function splitIntro(value, limit = 34) {
+		const words = value.trim().split(/\s+/);
+		if (words.length <= limit) return { lead: value, tail: '' };
+		return {
+			lead: words.slice(0, limit).join(' '),
+			tail: words.slice(limit).join(' ')
+		};
+	}
+
+	const heroIntro = splitIntro(heroDescription);
 </script>
 
 <Seo />
@@ -49,20 +63,27 @@
 <section class="hero">
 	<Ink tint="#e8ddc9" intensity={0.55} />
 	<div class="container hero-inner">
-		<p class="label kicker">Open source &nbsp;·&nbsp; self-hosted AI agents &nbsp;·&nbsp; written in Zig</p>
-		<h1>
-			<span class="serif">Autonomous AI,</span>
-			<span class="serif-i accent">à&nbsp;la&nbsp;carte.</span>
-		</h1>
-		<p class="sub">
-			Ten small open-source tools for running AI agents on your own hardware: an agent you can
-			message from Telegram or Slack, plus the orchestration, task queue, shared memory and
-			tracing to grow it into a fleet. Each one is a single Zig binary — install NullHub to
-			manage them all, or take any piece alone.
-		</p>
-		<div class="cta">
-			<a class="btn btn--solid" href="/docs/start/install-nullhub/">Install NullHub</a>
-			<a class="btn" href="/products/">Browse the menu</a>
+		<div class="hero-copy">
+			<p class="label kicker">Open source &nbsp;·&nbsp; self-hosted AI agents &nbsp;·&nbsp; written in Zig</p>
+			<h1>
+				<span class="serif">Autonomous AI,</span>
+				<span class="serif-i accent">à&nbsp;la&nbsp;carte.</span>
+			</h1>
+			<p class="sub">
+				<span class="hero-lead">{heroIntro.lead}</span>{#if heroIntro.tail}<span class="hero-tail">
+					{heroIntro.tail}</span
+				>{/if}
+			</p>
+			{#if heroIntro.tail}
+				<details class="hero-more">
+					<summary class="mono">Continue reading</summary>
+					<p>{heroIntro.tail}</p>
+				</details>
+			{/if}
+			<div class="cta">
+				<a class="btn btn--solid" href="/docs/start/install-nullhub/">Install NullHub</a>
+				<a class="btn" href="/products/">Browse the menu</a>
+			</div>
 		</div>
 
 		<dl class="stats" aria-label="Key numbers">
@@ -73,8 +94,8 @@
 					<dd class="mono">{s.v}</dd>
 				</div>
 			{/each}
-			<p class="fine mono">counted in the source at v2026.5.29 · everything pre-1.0</p>
 		</dl>
+		<p class="fine mono">counted in the source at v2026.5.29 · everything pre-1.0</p>
 	</div>
 </section>
 
@@ -278,11 +299,19 @@
 			var(--bg);
 	}
 
+	.section {
+		overflow-x: clip;
+	}
+
 	.hero-inner {
 		position: relative;
 		z-index: 1;
 		padding-block: 6rem 4rem;
 		width: 100%;
+	}
+
+	.hero-copy {
+		max-width: 44rem;
 	}
 
 	.kicker {
@@ -309,6 +338,10 @@
 		font-size: var(--text-lg);
 		color: var(--ink-2);
 		text-shadow: 0 1px 22px var(--halo);
+	}
+
+	.hero-more {
+		display: none;
 	}
 
 	.cta {
@@ -364,6 +397,22 @@
 		margin-top: 3.25rem;
 	}
 
+	.courses > :global(div),
+	.course,
+	.course :global(.code-figure),
+	.course :global(pre),
+	.solo,
+	.solo :global(.code-figure),
+	.solo :global(pre),
+	.stations > :global(div),
+	.station,
+	.menu-row,
+	.menu-row .ident,
+	.menu-row .topline {
+		min-width: 0;
+		max-width: 100%;
+	}
+
 	.course {
 		border: 1px solid var(--line);
 		background: var(--bg-2);
@@ -410,6 +459,8 @@
 
 	.course :global(pre.shiki) {
 		font-size: 0.72rem;
+		overflow-x: auto;
+		overscroll-behavior-inline: contain;
 	}
 
 	.solo {
@@ -434,6 +485,8 @@
 
 	.solo :global(pre.shiki) {
 		font-size: 0.78rem;
+		overflow-x: auto;
+		overscroll-behavior-inline: contain;
 	}
 
 	/* ———— brigade ———— */
@@ -670,6 +723,10 @@
 		margin-top: 2.5rem;
 	}
 
+	.menu-more .btn {
+		max-width: 100%;
+	}
+
 	/* ———— rules ———— */
 	.rules {
 		display: grid;
@@ -722,9 +779,119 @@
 	}
 
 	@media (max-width: 640px) {
+		.hero {
+			min-height: auto;
+			align-items: stretch;
+			background: var(--bg);
+		}
+
+		.hero::after {
+			content: '';
+			position: absolute;
+			inset: 0;
+			z-index: 0;
+			background: linear-gradient(to bottom, var(--bg) 0 72%, transparent 92%);
+			pointer-events: none;
+		}
+
+		.hero-inner {
+			padding-block: 4.25rem 3rem;
+		}
+
+		.hero-copy,
+		.stats {
+			position: relative;
+			z-index: 1;
+			background: var(--bg);
+		}
+
+		.kicker {
+			margin-bottom: 1.25rem;
+			line-height: 1.55;
+		}
+
+		h1 {
+			font-size: clamp(3rem, 15vw, 4rem);
+		}
+
+		.sub {
+			font-size: 1.05rem;
+			line-height: 1.6;
+			margin-top: 1.2rem;
+			text-shadow: none;
+		}
+
+		.hero-tail {
+			display: none;
+		}
+
+		.hero-lead::after {
+			content: '…';
+		}
+
+		.hero-more {
+			display: block;
+			margin-top: 0.8rem;
+			color: var(--ink-2);
+		}
+
+		.hero-more summary {
+			width: fit-content;
+			min-height: 2.75rem;
+			display: flex;
+			align-items: center;
+			font-size: 0.7rem;
+			letter-spacing: 0.1em;
+			text-transform: uppercase;
+			color: var(--accent);
+			cursor: pointer;
+		}
+
+		.hero-more p {
+			padding: 0.75rem 0 0.25rem;
+			font-size: var(--text-sm);
+			line-height: 1.65;
+		}
+
+		.cta {
+			margin-top: 1.4rem;
+			gap: 0.65rem;
+		}
+
+		.cta .btn {
+			font-size: 0.76rem;
+			padding-inline: 1.15em;
+			min-height: 2.75rem;
+		}
+
+		.stats {
+			margin-top: 2.75rem;
+		}
+
+		.menu-more .btn {
+			white-space: normal;
+			text-align: center;
+			justify-content: center;
+		}
+
 		.hub-band .desc,
 		.pantry-band .desc {
 			display: none;
+		}
+
+		.courses,
+		.course,
+		.solo,
+		.brigade,
+		.hub-band,
+		.pantry-band,
+		.stations,
+		.station,
+		.menu-list,
+		.menu-row,
+		.rules {
+			min-width: 0;
+			max-width: 100%;
 		}
 	}
 
@@ -737,6 +904,40 @@
 		}
 		.menu-row .course {
 			display: none;
+		}
+
+		.menu-row .topline {
+			gap: 0.65rem;
+		}
+
+		.menu-row .leaders {
+			min-width: 0;
+			margin-inline: 0.25rem;
+		}
+	}
+
+	@media (max-width: 360px) {
+		.cta {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr);
+		}
+
+		.cta .btn {
+			justify-content: center;
+			white-space: normal;
+			text-align: center;
+		}
+
+		.solo,
+		.course,
+		.station {
+			padding-inline: 1.15rem;
+		}
+
+		.hub-band,
+		.pantry-band {
+			gap: 0.65rem;
+			padding-inline: 1rem;
 		}
 	}
 </style>

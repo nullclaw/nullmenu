@@ -2,6 +2,7 @@ import { site } from '$lib/site';
 import { renderMarkdown } from '$lib/content/markdown.js';
 import { fetchRelease } from '$lib/content/releases.js';
 
+/** @type {Record<string, any>} */
 const productData = import.meta.glob('/content/*/product.json', {
 	eager: true,
 	import: 'default'
@@ -39,7 +40,9 @@ export async function load() {
 	}
 
 	const [release, installPrimary, quickstart, ...alts] = await Promise.all([
-		fetchRelease(site.repo),
+		// A version marks a product with published release assets. Pre-release
+		// projects keep their source-only presentation even if GitHub is down.
+		site.version ? fetchRelease(site.repo, { fallbackTag: site.version }) : null,
 		md(bash(data.install.primary.code)),
 		md(data.quickstart),
 		...(data.install.alts ?? []).map((a) => md(bash(a.code)))

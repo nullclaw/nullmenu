@@ -36,33 +36,113 @@
 	);
 
 	const pairs = $derived((p?.pairs ?? []).map((id) => sites[id]).filter(Boolean));
+
+	function splitIntro(value, limit = 34) {
+		const words = String(value ?? '').trim().split(/\s+/).filter(Boolean);
+		if (words.length <= limit) return { lead: words.join(' '), tail: '' };
+		return {
+			lead: words.slice(0, limit).join(' '),
+			tail: words.slice(limit).join(' ')
+		};
+	}
+
+	function signatureFor(id) {
+		return String(id ?? '')
+			.split('')
+			.reduce((sum, character) => sum + character.charCodeAt(0), 0) % 3;
+	}
+
+	const heroIntro = $derived(splitIntro(p?.hero.sub ?? site.description));
+	const proofIndex = $derived(signatureFor(site.id));
+	const proofMetric = $derived(p?.metrics?.[proofIndex % (p?.metrics?.length || 1)]);
+	const proofFeature = $derived(p?.features?.[proofIndex % (p?.features?.length || 1)]);
+	const proofSecondary = $derived.by(() => {
+		if (p?.how?.steps?.length) {
+			return { label: 'documented path', value: `${p.how.steps.length} steps` };
+		}
+		const group = p?.inside?.[proofIndex % (p?.inside?.length || 1)];
+		return group?.items?.length
+			? { label: group.title, value: `${group.items.length} listed` }
+			: null;
+	});
+	const insideItemCount = $derived(
+		p?.inside?.reduce((total, group) => total + (group.items?.length ?? 0), 0) ?? 0
+	);
 </script>
 
 <Seo />
 
 <!-- ———— hero ———— -->
-<section class="hero">
+<section class="hero" data-group={site.group}>
 	<Ink tint={site.accent} />
 	<div class="watermark" aria-hidden="true">
 		<ProductMark id={site.id} size={560} stroke="var(--accent)" />
 	</div>
 
 	<div class="container hero-inner">
-		<p class="label">
-			<span class="label--accent">{p?.hero.kicker ?? site.course}</span>
-			&nbsp;·&nbsp; <span class="chip">{site.status}</span>
-		</p>
-		<h1 class="serif">{p?.hero.title ?? site.title.split('—')[1] ?? site.display}</h1>
-		<p class="sub">{p?.hero.sub ?? site.description}</p>
+		<div class="hero-layout">
+			<div class="hero-copy">
+				<p class="label">
+					<span class="label--accent">{p?.hero.kicker ?? site.course}</span>
+					&nbsp;·&nbsp; <span class="chip">{site.status}</span>
+				</p>
+				<h1 class="serif">{p?.hero.title ?? site.title.split('—')[1] ?? site.display}</h1>
+				<p class="sub">
+					<span class="hero-lead">{heroIntro.lead}</span>{#if heroIntro.tail}<span class="hero-tail">
+						{heroIntro.tail}</span
+					>{/if}
+				</p>
+				{#if heroIntro.tail}
+					<details class="hero-more">
+						<summary class="mono">Continue reading</summary>
+						<p>{heroIntro.tail}</p>
+					</details>
+				{/if}
 
-		<div class="cta">
-			{#if data.release}
-				<a class="btn btn--solid" href="#download">Download &darr;</a>
-				<a class="btn" href="/docs/">Documentation</a>
-			{:else}
-				<a class="btn btn--solid" href="/docs/">Documentation</a>
+				<div class="cta">
+					{#if data.release}
+						<a class="btn btn--solid" href="#download">Download &darr;</a>
+						<a class="btn" href="/docs/">Documentation</a>
+					{:else}
+						<a class="btn btn--solid" href="/docs/">Documentation</a>
+					{/if}
+					<a class="btn" href={site.github} target="_blank" rel="noopener">GitHub &nearr;</a>
+				</div>
+			</div>
+
+			{#if p && proofFeature && proofMetric}
+				<aside
+					class="hero-proof"
+					data-signature={proofIndex}
+					aria-label={`${site.display} at a glance`}
+				>
+					<div class="proof-head">
+						<span class="proof-mark" aria-hidden="true">
+							<ProductMark id={site.id} size={72} stroke="var(--accent)" />
+						</span>
+						<span>
+							<span class="proof-kicker mono">At a glance</span>
+							<strong class="proof-name serif-i">{site.name}</strong>
+						</span>
+					</div>
+					<div class="proof-copy">
+						<p class="proof-title mono">{proofFeature.title}</p>
+						<p class="proof-body">{proofFeature.body}</p>
+					</div>
+					<dl class="proof-facts">
+						<div>
+							<dt class="mono">{proofMetric.label}</dt>
+							<dd class="serif">{proofMetric.value}</dd>
+						</div>
+						{#if proofSecondary}
+							<div>
+								<dt class="mono">{proofSecondary.label}</dt>
+								<dd class="serif">{proofSecondary.value}</dd>
+							</div>
+						{/if}
+					</dl>
+				</aside>
 			{/if}
-			<a class="btn" href={site.github} target="_blank" rel="noopener">GitHub &nearr;</a>
 		</div>
 
 		{#if p && !site.comingSoon}
@@ -90,22 +170,22 @@
 			<Reveal>
 				<p class="label label--accent">In plain words</p>
 			</Reveal>
-			<dl class="plain">
+			<div class="plain">
 				<Reveal>
-					<div class="plain-row">
+					<dl class="plain-row">
 						<dt class="serif-i">What it is</dt>
 						<dd>{p.plain.what}</dd>
-					</div>
+					</dl>
 				</Reveal>
 				{#if p.plain.fit}
 					<Reveal delay={70}>
-						<div class="plain-row">
+						<dl class="plain-row">
 							<dt class="serif-i">Where it fits</dt>
 							<dd>{p.plain.fit}</dd>
-						</div>
+						</dl>
 					</Reveal>
 				{/if}
-			</dl>
+			</div>
 			<Reveal>
 				<p class="soon-note">
 					<span class="serif-i">Still on the stove.</span> No releases yet — the dish is being
@@ -117,44 +197,64 @@
 		</div>
 	</section>
 {:else if p}
-	<!-- ———— in plain words ———— -->
-	{#if p.plain}
-		<section class="section">
-			<div class="container">
-				<Reveal>
-					<p class="label label--accent">In plain words</p>
-				</Reveal>
-				<dl class="plain">
-					<Reveal>
-						<div class="plain-row">
-							<dt class="serif-i">What it is</dt>
-							<dd>{p.plain.what}</dd>
+	<!-- ———— editorial overview: story and evidence in one compact service note ———— -->
+	<section class="section overview" data-group={site.group} data-profile={proofIndex}>
+		<div class="container">
+			<Reveal>
+				<p class="label label--accent">Service notes</p>
+				<h2 class="serif">The useful part, at a glance.</h2>
+			</Reveal>
+
+			<div class="overview-grid">
+				{#if p.plain}
+					<div class="overview-story">
+						<p class="ledger-label mono">In plain words</p>
+						<div class="plain">
+							<dl class="plain-row">
+								<dt class="serif-i">What it is</dt>
+								<dd>{p.plain.what}</dd>
+							</dl>
+							{#if p.plain.fit}
+								<dl class="plain-row">
+									<dt class="serif-i">Where it fits</dt>
+									<dd>{p.plain.fit}</dd>
+								</dl>
+							{/if}
+							<details class="plain-more">
+								<summary>
+									<span class="serif-i">Why it exists — and when you need it</span>
+									<span class="plain-ind mono" aria-hidden="true">+</span>
+								</summary>
+								<div>
+									<dl class="plain-row">
+										<dt class="serif-i">Why it exists</dt>
+										<dd>{p.plain.why}</dd>
+									</dl>
+									<dl class="plain-row">
+										<dt class="serif-i">When you need it</dt>
+										<dd>{p.plain.when}</dd>
+									</dl>
+								</div>
+							</details>
 						</div>
-					</Reveal>
-					<Reveal delay={70}>
-						<div class="plain-row">
-							<dt class="serif-i">Why it exists</dt>
-							<dd>{p.plain.why}</dd>
-						</div>
-					</Reveal>
-					<Reveal delay={140}>
-						<div class="plain-row">
-							<dt class="serif-i">When you need it</dt>
-							<dd>{p.plain.when}</dd>
-						</div>
-					</Reveal>
-					{#if p.plain.fit}
-						<Reveal delay={210}>
-							<div class="plain-row">
-								<dt class="serif-i">Where it fits</dt>
-								<dd>{p.plain.fit}</dd>
-							</div>
-						</Reveal>
-					{/if}
-				</dl>
+					</div>
+				{/if}
+
+				<aside class="overview-evidence" aria-label="Project figures">
+					<p class="ledger-label mono">By the numbers</p>
+					<div class="metrics">
+						{#each p.metrics as m}
+							<dl class="metric">
+								<dt class="mono">{m.label}</dt>
+								<dd class="serif">{m.value}</dd>
+							</dl>
+						{/each}
+					</div>
+					<p class="fine mono">figures measured by the project</p>
+				</aside>
 			</div>
-		</section>
-	{/if}
+		</div>
+	</section>
 
 	<!-- ———— how it works ———— -->
 	{#if p.how}
@@ -165,77 +265,46 @@
 					<h2 class="serif">From zero to running.</h2>
 					{#if p.how.intro}<p class="section-sub">{p.how.intro}</p>{/if}
 				</Reveal>
+			<Reveal>
 				<ol class="how">
 					{#each p.how.steps as step, i}
-						<Reveal delay={i * 60}>
-							<li class="how-step">
-								<span class="num serif-i" aria-hidden="true">{i + 1}</span>
+						<li class="how-step">
+							<details open={i === 0}>
+								<summary>
+									<span class="num serif-i" aria-hidden="true">{i + 1}</span>
+									<span class="how-title mono">{step.title}</span>
+									<span class="how-ind mono" aria-hidden="true">+</span>
+								</summary>
 								<div class="how-body">
-									<h3 class="mono">{step.title}</h3>
 									<p>{step.body}</p>
 									{#if step.code}
-										<figure class="code-figure mini"><pre class="mono">{step.code}</pre></figure>
+										<figure class="code-figure mini">
+											<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+											<pre
+												class="mono"
+												role="region"
+												aria-label={`${step.title} command`}
+												tabindex="0">{step.code}</pre
+											>
+										</figure>
 									{/if}
 								</div>
-							</li>
-						</Reveal>
+							</details>
+						</li>
 					{/each}
 				</ol>
-			</div>
-		</section>
-	{/if}
-
-	<!-- ———— metrics ———— -->
-	<section class="section">
-		<div class="container">
-			<Reveal>
-				<p class="label label--accent">By the numbers</p>
-			</Reveal>
-			<dl class="metrics">
-				{#each p.metrics as m, i}
-					<Reveal delay={i * 60}>
-						<div class="metric">
-							<dt class="mono">{m.label}</dt>
-							<dd class="serif">{m.value}</dd>
-						</div>
-					</Reveal>
-				{/each}
-			</dl>
-			<p class="fine mono">figures measured by the project</p>
-		</div>
-	</section>
-
-	<!-- ———— what's inside ———— -->
-	{#if p.inside?.length}
-		<section class="section">
-			<div class="container">
-				<Reveal>
-					<p class="label label--accent">What's inside</p>
-					<h2 class="serif">Counted in the source,<br />not the brochure.</h2>
 				</Reveal>
-				<div class="inside">
-					{#each p.inside as group, i}
-						<Reveal delay={i * 60}>
-							<div class="inside-group">
-								<div class="inside-head">
-									<h3 class="serif-i">{group.title}</h3>
-									{#if group.note}<p class="inside-note">{group.note}</p>{/if}
-								</div>
-								<ul class="chips" role="list">
-									{#each group.items as item}
-										<li class="chip-item mono">{item}</li>
-									{/each}
-								</ul>
-							</div>
-						</Reveal>
-					{/each}
-				</div>
 			</div>
 		</section>
 	{/if}
 
-	<!-- ———— features ———— -->
-	<section class="section">
+	<!-- The primary task follows the decision context, before the deep capability ledger. -->
+	{#if data.release}
+		<Downloads release={data.release} />
+	{/if}
+
+	<!-- ———— capabilities: the complete story without a ten-course scroll ———— -->
+	<section class="section capabilities" data-group={site.group} data-profile={proofIndex}>
 		<div class="container">
 			<Reveal>
 				<p class="label label--accent">On the plate</p>
@@ -251,38 +320,66 @@
 					</Reveal>
 				{/each}
 			</div>
+
+			{#if p.useCases?.length}
+				<div class="use-cases-block">
+					<p class="label label--accent">Use it for</p>
+					<h3 class="serif section-title">Where it earns its place.</h3>
+					<div class="cases">
+						{#each p.useCases as c}
+							<details class="case">
+								<summary>
+									<span class="serif-i">{c.title}</span>
+									<span class="case-ind mono" aria-hidden="true">+</span>
+								</summary>
+								<div class="case-body">
+									<p>{c.body}</p>
+								{#if c.code}
+									<figure class="code-figure mini">
+										<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+										<pre
+											class="mono"
+											role="region"
+											aria-label={`${c.title} command`}
+											tabindex="0">{c.code}</pre
+										>
+									</figure>
+								{/if}
+								</div>
+							</details>
+						{/each}
+					</div>
+				</div>
+			{/if}
+
+			{#if p.inside?.length}
+				<details class="inventory">
+					<summary>
+						<span>
+							<span class="label label--accent">What's inside</span>
+							<span class="serif inventory-title">Counted in the source, not the brochure.</span>
+						</span>
+						<span class="inventory-count mono">{insideItemCount} listed&nbsp;&nbsp;＋</span>
+					</summary>
+					<div class="inside">
+						{#each p.inside as group}
+							<div class="inside-group">
+								<div class="inside-head">
+									<h3 class="serif-i">{group.title}</h3>
+									{#if group.note}<p class="inside-note">{group.note}</p>{/if}
+								</div>
+								<ul class="chips" role="list">
+									{#each group.items as item}
+										<li class="chip-item mono">{item}</li>
+									{/each}
+								</ul>
+							</div>
+						{/each}
+					</div>
+				</details>
+			{/if}
 		</div>
 	</section>
-
-	<!-- ———— use it for ———— -->
-	{#if p.useCases?.length}
-		<section class="section">
-			<div class="container">
-				<Reveal>
-					<p class="label label--accent">Use it for</p>
-					<h2 class="serif">Three dinners it cooks well.</h2>
-				</Reveal>
-				<div class="cases">
-					{#each p.useCases as c, i}
-						<Reveal delay={i * 70}>
-							<article class="card case">
-								<h3 class="serif-i">{c.title}</h3>
-								<p>{c.body}</p>
-								{#if c.code}
-									<figure class="code-figure mini"><pre class="mono">{c.code}</pre></figure>
-								{/if}
-							</article>
-						</Reveal>
-					{/each}
-				</div>
-			</div>
-		</section>
-	{/if}
-
-	<!-- ———— takeaway ———— -->
-	{#if data.release}
-		<Downloads release={data.release} />
-	{/if}
 
 	<!-- ———— quickstart ———— -->
 	<section class="section">
@@ -383,6 +480,14 @@
 			var(--bg);
 	}
 
+	.section {
+		overflow-x: clip;
+	}
+
+	.capabilities {
+		padding-block: clamp(4.5rem, 9vw, 6.75rem);
+	}
+
 	.watermark {
 		position: absolute;
 		right: -6rem;
@@ -397,6 +502,22 @@
 		padding-block: 6rem 4.5rem;
 		width: 100%;
 		max-width: var(--container);
+	}
+
+	.hero-layout {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(18rem, 22rem);
+		gap: clamp(3rem, 7vw, 7rem);
+		align-items: center;
+	}
+
+	.hero-copy,
+	.hero-proof,
+	.install,
+	.install :global(.code-figure),
+	.install :global(pre) {
+		min-width: 0;
+		max-width: 100%;
 	}
 
 	.chip {
@@ -422,6 +543,10 @@
 		font-size: var(--text-lg);
 		color: var(--ink-2);
 		text-shadow: 0 1px 22px var(--halo);
+	}
+
+	.hero-more {
+		display: none;
 	}
 
 	.cta {
@@ -475,6 +600,147 @@
 
 	.install :global(pre.shiki) {
 		font-size: 0.8rem;
+		overflow-x: auto;
+		overscroll-behavior-inline: contain;
+	}
+
+	/* A product-specific service note: real catalog data, never a simulated screenshot. */
+	.hero-proof {
+		position: relative;
+		padding: 1.4rem;
+		background: color-mix(in srgb, var(--bg-2) 92%, transparent);
+		border: 1px solid var(--line-2);
+		box-shadow: 0 1.5rem 5rem rgba(0, 0, 0, 0.14);
+		backdrop-filter: blur(16px);
+	}
+
+	.hero-proof::after {
+		content: '';
+		position: absolute;
+		inset: 0.45rem;
+		border: 1px solid var(--line);
+		pointer-events: none;
+	}
+
+	.hero-proof[data-signature='1'] {
+		border-left: 3px solid var(--accent);
+	}
+
+	.hero-proof[data-signature='2'] {
+		background:
+			linear-gradient(135deg, var(--accent-glow), transparent 45%),
+			color-mix(in srgb, var(--bg-2) 94%, transparent);
+	}
+
+	.hero[data-group='small-plates'] .hero-layout {
+		grid-template-columns: minmax(0, 0.9fr) minmax(21rem, 1.1fr);
+	}
+
+	.hero[data-group='small-plates'] .hero-proof {
+		border-left: 1px solid var(--line-2);
+		border-top: 3px solid var(--accent);
+		box-shadow: none;
+	}
+
+	.hero[data-group='small-plates'] .watermark {
+		bottom: auto;
+		right: -9rem;
+		top: -11rem;
+	}
+
+	.hero[data-group='test-kitchen'] {
+		background:
+			linear-gradient(90deg, transparent 0 49.9%, var(--line) 50%, transparent 50.1%),
+			linear-gradient(var(--accent-glow), transparent 52%),
+			var(--bg);
+	}
+
+	.hero[data-group='test-kitchen'] .hero-proof {
+		backdrop-filter: none;
+		border-style: dashed;
+		box-shadow: none;
+	}
+
+	.hero[data-group='test-kitchen'] .hero-proof::after {
+		display: none;
+	}
+
+	.proof-head {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+		position: relative;
+		z-index: 1;
+	}
+
+	.proof-mark {
+		display: grid;
+		place-items: center;
+		width: 4.5rem;
+		height: 4.5rem;
+		color: var(--accent);
+	}
+
+	.proof-kicker,
+	.proof-name {
+		display: block;
+	}
+
+	.proof-kicker {
+		font-size: 0.65rem;
+		letter-spacing: 0.16em;
+		text-transform: uppercase;
+		color: var(--ink-3);
+	}
+
+	.proof-name {
+		font-size: 1.35rem;
+		font-weight: 400;
+		color: var(--accent);
+		margin-top: 0.15rem;
+	}
+
+	.proof-copy {
+		position: relative;
+		z-index: 1;
+		padding: 1.2rem 0;
+		border-block: 1px solid var(--line);
+	}
+
+	.proof-title {
+		font-size: var(--text-xs);
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--accent);
+	}
+
+	.proof-body {
+		font-size: var(--text-sm);
+		color: var(--ink-2);
+		margin-top: 0.55rem;
+	}
+
+	.proof-facts {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 1rem;
+		position: relative;
+		z-index: 1;
+		padding-top: 1rem;
+	}
+
+	.proof-facts dt {
+		font-size: 0.6rem;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		color: var(--ink-3);
+	}
+
+	.proof-facts dd {
+		font-size: 1.3rem;
+		color: var(--ink);
+		margin-top: 0.15rem;
+		overflow-wrap: anywhere;
 	}
 
 	h2 {
@@ -507,40 +773,73 @@
 	/* how it works */
 	.how {
 		list-style: none;
-		margin: 3rem 0 0;
+		margin: 2.5rem 0 0;
 		padding: 0;
 		max-width: 46rem;
-		display: flex;
-		flex-direction: column;
-	}
-
-	.how-step {
-		display: grid;
-		grid-template-columns: 3.5rem minmax(0, 1fr);
-		gap: 1.25rem;
-		padding: 1.75rem 0;
 		border-top: 1px solid var(--line);
 	}
 
+	.how-step {
+		border-bottom: 1px solid var(--line);
+	}
+
+	.how-step details {
+		min-width: 0;
+	}
+
+	.how-step summary {
+		align-items: center;
+		cursor: pointer;
+		display: grid;
+		gap: 1.25rem;
+		grid-template-columns: 3.5rem minmax(0, 1fr) auto;
+		list-style: none;
+		min-height: 5.25rem;
+		padding: 0.75rem 0.5rem;
+	}
+
+	.how-step summary::-webkit-details-marker {
+		display: none;
+	}
+
+	.how-step summary:hover .how-title,
+	.how-step details[open] .how-title {
+		color: var(--accent);
+	}
+
 	.how-step .num {
-		font-size: 2.6rem;
+		font-size: 2.25rem;
 		line-height: 1;
 		color: var(--accent);
 		opacity: 0.85;
 	}
 
-	.how-body h3 {
+	.how-title {
 		font-size: var(--text-xs);
 		font-weight: 500;
 		letter-spacing: 0.14em;
 		text-transform: uppercase;
+		transition: color var(--t-row) var(--ease-out);
+	}
+
+	.how-ind {
+		color: var(--ink-3);
+		transition: color 0.25s, transform 0.3s var(--ease-swift);
+	}
+
+	.how-step details[open] .how-ind {
 		color: var(--accent);
-		margin-bottom: 0.6rem;
+		transform: rotate(45deg);
+	}
+
+	.how-body {
+		padding: 0 3rem 1.5rem 5.25rem;
 	}
 
 	.how-body p {
 		color: var(--ink-2);
 		max-width: 40rem;
+		overflow-wrap: anywhere;
 	}
 
 	.code-figure.mini {
@@ -556,13 +855,205 @@
 		padding: 0.7rem 1rem;
 		font-size: 0.78rem;
 		line-height: 1.6;
-		overflow-x: auto;
 		white-space: pre;
+		overflow-x: auto;
+		overscroll-behavior-inline: contain;
+	}
+
+	/* compact editorial overview */
+	.overview-grid {
+		display: grid;
+		gap: clamp(2.5rem, 6vw, 6rem);
+		grid-template-columns: minmax(0, 1.35fr) minmax(18rem, 0.65fr);
+		margin-top: 3rem;
+		align-items: start;
+	}
+
+	.ledger-label {
+		color: var(--ink-3);
+		font-size: 0.66rem;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+	}
+
+	.overview .plain {
+		margin-top: 0.85rem;
+	}
+
+	.overview .plain-row {
+		gap: 1.25rem;
+		grid-template-columns: 8.5rem minmax(0, 1fr);
+		padding: 1.15rem 0.25rem;
+	}
+
+	.overview .plain-row dt {
+		font-size: 1.12rem;
+	}
+
+	.overview .plain-row dd {
+		font-size: var(--text-sm);
+		line-height: 1.62;
+	}
+
+	.plain-more {
+		border-bottom: 1px solid var(--line);
+	}
+
+	.plain-more > summary {
+		align-items: center;
+		cursor: pointer;
+		display: flex;
+		gap: 1rem;
+		justify-content: space-between;
+		list-style: none;
+		min-height: 4.75rem;
+		padding: 0.9rem 0.25rem;
+	}
+
+	.plain-more > summary::-webkit-details-marker {
+		display: none;
+	}
+
+	.plain-more > summary .serif-i {
+		font-size: 1.05rem;
+		transition: color var(--t-row) var(--ease-out);
+	}
+
+	.plain-more > summary:hover .serif-i,
+	.plain-more[open] > summary .serif-i {
+		color: var(--accent);
+	}
+
+	.plain-ind {
+		color: var(--ink-3);
+		transition: color 0.25s, transform 0.3s var(--ease-swift);
+	}
+
+	.plain-more[open] .plain-ind {
+		color: var(--accent);
+		transform: rotate(45deg);
+	}
+
+	.plain-more .plain-row:last-child {
+		border-bottom: 0;
+	}
+
+	.overview-evidence {
+		background:
+			linear-gradient(145deg, var(--accent-glow), transparent 46%),
+			var(--bg-2);
+		border: 1px solid var(--line-2);
+		padding: 1.25rem;
+	}
+
+	.overview .metrics {
+		gap: 0;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		margin-top: 0.85rem;
+		border-top: 1px solid var(--line);
+	}
+
+	.overview .metric {
+		border-bottom: 1px solid var(--line);
+		border-left: 0;
+		min-height: 7.5rem;
+		padding: 1rem 0.75rem 0.9rem 0;
+	}
+
+	.overview .metric:nth-child(even) {
+		border-left: 1px solid var(--line);
+		padding-left: 0.9rem;
+	}
+
+	.overview .metric dd {
+		font-size: clamp(1.65rem, 3vw, 2.35rem);
+	}
+
+	.overview .fine {
+		margin-top: 1rem;
+	}
+
+	.overview[data-group='small-plates'] .overview-story {
+		grid-column: 2;
+		grid-row: 1;
+	}
+
+	.overview[data-group='small-plates'] .overview-evidence {
+		grid-column: 1;
+		grid-row: 1;
+	}
+
+	.overview[data-group='small-plates'] .plain-row {
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.45rem;
+	}
+
+	.overview[data-group='test-kitchen'] .overview-grid {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.overview[data-group='test-kitchen'] .overview-evidence {
+		display: grid;
+		gap: 0 2rem;
+		grid-template-columns: 10rem minmax(0, 1fr);
+	}
+
+	.overview[data-group='test-kitchen'] .overview-evidence .ledger-label,
+	.overview[data-group='test-kitchen'] .overview-evidence .fine {
+		grid-column: 1;
+	}
+
+	.overview[data-group='test-kitchen'] .overview-evidence .metrics {
+		grid-column: 2;
+		grid-row: 1 / span 2;
+		margin-top: 0;
+	}
+
+	/* expandable source inventory */
+	.inventory {
+		border-block: 1px solid var(--line-2);
+		margin-top: clamp(3.5rem, 8vw, 6rem);
+	}
+
+	.inventory > summary {
+		align-items: center;
+		cursor: pointer;
+		display: flex;
+		gap: 2rem;
+		justify-content: space-between;
+		list-style: none;
+		min-height: 7rem;
+		padding: 1.2rem 0.5rem;
+	}
+
+	.inventory > summary::-webkit-details-marker {
+		display: none;
+	}
+
+	.inventory-title {
+		display: block;
+		font-size: clamp(1.35rem, 3vw, 1.9rem);
+		line-height: 1.15;
+		margin-top: 0.45rem;
+	}
+
+	.inventory-count {
+		color: var(--ink-3);
+		font-size: var(--text-xs);
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		white-space: nowrap;
+		transition: color 0.2s;
+	}
+
+	.inventory[open] .inventory-count,
+	.inventory > summary:hover .inventory-count {
+		color: var(--accent);
 	}
 
 	/* what's inside */
 	.inside {
-		margin-top: 3rem;
+		margin-top: 0;
 		border-top: 1px solid var(--line);
 	}
 
@@ -611,33 +1102,90 @@
 	}
 
 	/* use it for */
-	.cases {
-		display: grid;
-		grid-template-columns: repeat(3, minmax(0, 1fr));
-		gap: 1.5rem;
-		margin-top: 3rem;
+	.use-cases-block {
+		border-top: 1px solid var(--line-2);
+		margin-top: clamp(3.5rem, 8vw, 6rem);
+		padding-top: clamp(2.5rem, 6vw, 4.5rem);
 	}
 
-	.cases > :global(div) {
+	.section-title {
+		font-size: clamp(1.65rem, 3.5vw, 2.25rem);
+		font-weight: 400;
+		line-height: 1.12;
+		margin-top: 0.75rem;
+	}
+
+	.cases {
 		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 0 2rem;
+		margin-top: 2rem;
+		border-top: 1px solid var(--line);
+	}
+
+	.case,
+	.case .code-figure,
+	.case pre,
+	.how-body,
+	.quickstart > :global(div),
+	.qs-code,
+	.qs-code :global(.code-figure),
+	.qs-code :global(pre) {
+		min-width: 0;
+		max-width: 100%;
+	}
+
+	.qs-code :global(pre) {
+		overflow-x: auto;
+		overscroll-behavior-inline: contain;
 	}
 
 	.case {
-		height: 100%;
-		display: flex;
-		flex-direction: column;
-		gap: 0.85rem;
+		border-bottom: 1px solid var(--line);
 	}
 
-	.case h3 {
-		font-size: 1.5rem;
+	.case summary {
+		align-items: center;
+		cursor: pointer;
+		display: flex;
+		gap: 1.5rem;
+		justify-content: space-between;
+		list-style: none;
+		min-height: 5rem;
+		padding: 1rem 0.5rem;
+	}
+
+	.case summary::-webkit-details-marker {
+		display: none;
+	}
+
+	.case summary .serif-i {
+		font-size: 1.25rem;
+		transition: color var(--t-row) var(--ease-out);
+	}
+
+	.case summary:hover .serif-i,
+	.case[open] summary .serif-i {
 		color: var(--accent);
 	}
 
-	.case p {
+	.case-ind {
+		color: var(--ink-3);
+		transition: color 0.25s, transform 0.3s var(--ease-swift);
+	}
+
+	.case[open] .case-ind {
+		color: var(--accent);
+		transform: rotate(45deg);
+	}
+
+	.case-body {
+		padding: 0 2.5rem 1.4rem 0.5rem;
+	}
+
+	.case-body p {
 		color: var(--ink-2);
 		font-size: var(--text-sm);
-		flex: 1;
 	}
 
 	/* before you order */
@@ -774,7 +1322,7 @@
 		display: grid;
 		grid-template-columns: repeat(3, minmax(0, 1fr));
 		gap: 1.5rem;
-		margin-top: 3rem;
+		margin-top: 2.5rem;
 	}
 
 	.features > :global(div) {
@@ -783,6 +1331,7 @@
 
 	.feature {
 		height: 100%;
+		padding: 1.35rem;
 	}
 
 	.feature h3 {
@@ -797,6 +1346,28 @@
 	.feature p {
 		color: var(--ink-2);
 		font-size: var(--text-sm);
+	}
+
+	/* Three editorial rhythms keep the family related without cloning every page. */
+	.capabilities[data-profile='0'] .feature {
+		background: transparent;
+		border-width: 1px 0 0;
+		padding-inline: 0.25rem;
+	}
+
+	:global(.capabilities[data-profile='1'] .features > div:nth-child(2)) .feature,
+	:global(.capabilities[data-profile='1'] .features > div:nth-child(5)) .feature {
+		position: relative;
+		top: 1.25rem;
+	}
+
+	.capabilities[data-profile='2'] .features {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.capabilities[data-profile='2'] .features > :global(div:first-child),
+	.capabilities[data-profile='2'] .features > :global(div:last-child) {
+		grid-column: 1 / -1;
 	}
 
 	/* quickstart */
@@ -875,10 +1446,6 @@
 		color: color-mix(in srgb, var(--spice) 45%, var(--ink));
 	}
 
-	:global([data-theme='light']) .pair:hover .leaders {
-		border-color: color-mix(in srgb, var(--spice) 45%, var(--ink));
-	}
-
 	.notice {
 		border-top: 1px solid var(--line);
 		padding: 1.5rem 0;
@@ -891,6 +1458,10 @@
 	}
 
 	@media (max-width: 980px) {
+		.hero-layout {
+			grid-template-columns: minmax(0, 1fr) minmax(16rem, 19rem);
+			gap: 2.5rem;
+		}
 		.metrics {
 			grid-template-columns: 1fr 1fr;
 			gap: 2rem 1.5rem;
@@ -911,15 +1482,267 @@
 		}
 	}
 
+	@media (max-width: 780px) {
+		.overview-grid,
+		.overview[data-group='test-kitchen'] .overview-grid {
+			grid-template-columns: minmax(0, 1fr);
+			gap: 2.5rem;
+		}
+
+		.overview[data-group='small-plates'] .overview-story,
+		.overview[data-group='small-plates'] .overview-evidence {
+			grid-column: 1;
+			grid-row: auto;
+		}
+
+		.overview[data-group='small-plates'] .overview-evidence {
+			grid-row: 1;
+		}
+
+		.overview[data-group='test-kitchen'] .overview-evidence {
+			display: block;
+		}
+
+		.overview[data-group='test-kitchen'] .overview-evidence .metrics {
+			margin-top: 0.85rem;
+		}
+	}
+
 	@media (max-width: 620px) {
-		.features {
+		.hero {
+			min-height: auto;
+			align-items: stretch;
+			background: var(--bg);
+		}
+
+		.hero::after {
+			content: '';
+			position: absolute;
+			inset: 0;
+			z-index: 0;
+			background: linear-gradient(to bottom, var(--bg) 0 67%, transparent 86%);
+			pointer-events: none;
+		}
+
+		.hero-inner {
+			padding-block: 4.25rem 3rem;
+		}
+
+		.hero-layout {
+			grid-template-columns: minmax(0, 1fr);
+			gap: 2.25rem;
+		}
+
+		.hero[data-group='small-plates'] .hero-layout {
+			grid-template-columns: minmax(0, 1fr);
+		}
+
+		.hero-copy {
+			position: relative;
+			z-index: 2;
+			background: var(--bg);
+		}
+
+		h1 {
+			font-size: clamp(2.55rem, 13vw, 3.5rem);
+			margin-top: 1.15rem;
+		}
+
+		.sub {
+			font-size: 1.05rem;
+			line-height: 1.6;
+			margin-top: 1.15rem;
+			text-shadow: none;
+		}
+
+		.hero-tail {
+			display: none;
+		}
+
+		.hero-lead::after {
+			content: '…';
+		}
+
+		.hero-more {
+			display: block;
+			margin-top: 0.8rem;
+			color: var(--ink-2);
+		}
+
+		.hero-more summary {
+			width: fit-content;
+			min-height: 2.75rem;
+			display: flex;
+			align-items: center;
+			font-size: 0.7rem;
+			letter-spacing: 0.1em;
+			text-transform: uppercase;
+			color: var(--accent);
+			cursor: pointer;
+		}
+
+		.hero-more p {
+			padding: 0.75rem 0 0.25rem;
+			font-size: var(--text-sm);
+			line-height: 1.65;
+		}
+
+		.cta {
+			margin-top: 1.4rem;
+			gap: 0.65rem;
+		}
+
+		.cta .btn {
+			font-size: 0.76rem;
+			padding-inline: 1.15em;
+			min-height: 2.75rem;
+		}
+
+		.hero-proof {
+			padding: 1.15rem;
+			background: var(--bg-2);
+			backdrop-filter: none;
+		}
+
+		.proof-mark {
+			width: 3.25rem;
+			height: 3.25rem;
+		}
+
+		.proof-mark :global(svg) {
+			width: 3.25rem;
+			height: 3.25rem;
+		}
+
+		.proof-copy {
+			padding-block: 0.9rem;
+		}
+
+		.proof-body {
+			display: none;
+		}
+
+		.install {
+			margin-top: 2rem;
+			width: 100%;
+			overflow: hidden;
+		}
+
+		.tabs {
+			overflow-x: auto;
+			flex-wrap: nowrap;
+		}
+
+		.tab {
+			flex: 0 0 auto;
+			min-height: 2.75rem;
+		}
+
+		.watermark {
+			right: -10rem;
+			bottom: -4rem;
+			opacity: 0.04;
+		}
+
+		.hero[data-group='small-plates'] .watermark {
+			bottom: -4rem;
+			right: -10rem;
+			top: auto;
+		}
+
+		.features,
+		.capabilities[data-profile='2'] .features {
 			grid-template-columns: 1fr;
+		}
+
+		.capabilities[data-profile='2'] .features > :global(div:first-child),
+		.capabilities[data-profile='2'] .features > :global(div:last-child) {
+			grid-column: auto;
+		}
+
+		:global(.capabilities[data-profile='1'] .features > div:nth-child(2)) .feature,
+		:global(.capabilities[data-profile='1'] .features > div:nth-child(5)) .feature {
+			top: 0;
+		}
+
+		.overview .plain-row {
+			grid-template-columns: minmax(0, 1fr);
+			gap: 0.45rem;
+		}
+
+		.overview-evidence {
+			padding: 1rem;
+		}
+
+		.overview .metric {
+			min-height: 6.75rem;
+			padding-block: 0.85rem;
+		}
+
+		.how-step summary {
+			gap: 0.8rem;
+			grid-template-columns: 2.5rem minmax(0, 1fr) auto;
+			min-height: 4.75rem;
+			padding-inline: 0.25rem;
+		}
+
+		.how-step .num {
+			font-size: 1.85rem;
+		}
+
+		.how-body {
+			padding: 0 0.5rem 1.4rem 3.55rem;
+		}
+
+		.inventory > summary {
+			align-items: flex-start;
+			gap: 1rem;
+			min-height: 6.5rem;
+			padding-inline: 0.25rem;
+		}
+
+		.inventory-count {
+			padding-top: 0.2rem;
+		}
+
+		.case-body {
+			padding-right: 0.5rem;
 		}
 		.pair {
 			grid-template-columns: auto 1fr auto;
 		}
 		.pair .line {
 			display: none;
+		}
+
+		.inside-group,
+		.plain-row,
+		.how-step,
+		.card,
+		.pair,
+		.faq-item,
+		.metrics,
+		.features,
+		.cases {
+			min-width: 0;
+			max-width: 100%;
+		}
+	}
+
+	@media (max-width: 360px) {
+		.cta {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr);
+		}
+
+		.cta .btn {
+			justify-content: center;
+			white-space: normal;
+			text-align: center;
+		}
+
+		.proof-facts {
+			grid-template-columns: minmax(0, 1fr);
 		}
 	}
 </style>

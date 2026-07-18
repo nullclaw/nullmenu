@@ -394,6 +394,7 @@
 		}
 
 		// ————— dispatch helpers —————
+		/** @returns {[number, number]} */
 		const groups = (w, h) => [Math.ceil(w / 8), Math.ceil(h / 8)];
 
 		function computePass(enc, pipeline, entries, [gx, gy]) {
@@ -426,6 +427,7 @@
 				])
 			);
 			const field = isDye ? tex.dye : tex.vel;
+			/** @type {[number, number]} */
 			const size = isDye ? [dyeW, dyeH] : [simW, simH];
 			computePass(
 				enc,
