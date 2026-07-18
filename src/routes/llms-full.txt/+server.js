@@ -1,5 +1,6 @@
 import { site } from '$lib/site';
 import { docsTree, allDocs } from '$lib/content/docs.js';
+import { machineTextHeaders } from '$lib/content/response-headers.js';
 
 export const prerender = true;
 
@@ -20,6 +21,6 @@ export function GET() {
 	}
 
 	return new Response(parts.join('\n') + '\n', {
-		headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+		headers: machineTextHeaders({ noindex: true })
 	});
 }

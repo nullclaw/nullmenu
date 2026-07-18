@@ -1,14 +1,24 @@
 <script>
 	import { page } from '$app/state';
+	import { site } from '$lib/site';
+
+	const notFound = $derived(page.status === 404);
 </script>
 
+<svelte:head>
+	<title>{notFound ? 'Page not found' : `Error ${page.status}`} — {site.display}</title>
+	<meta name="robots" content="noindex" />
+</svelte:head>
+
 <section class="err container">
-	<p class="label label--accent">{page.status}</p>
-	<h1 class="serif-i">86'd.</h1>
+	<p class="label label--accent">Error {page.status}</p>
+	<h1 class="serif">{notFound ? 'Page not found.' : 'Something went wrong.'}</h1>
 	<p class="sub">
-		This dish is off the menu{page.status === 404 ? " — the page doesn't exist" : ''}.
+		{notFound
+			? 'We could not find this page. It may have moved, or the address may be incorrect.'
+			: 'The page could not be loaded. Return to the homepage and try again.'}
 	</p>
-	<a class="btn" href="/">Back to the kitchen</a>
+	<a class="btn" href="/">Go to {site.display} home</a>
 </section>
 
 <style>
@@ -23,8 +33,8 @@
 	}
 
 	h1 {
-		font-size: clamp(4rem, 12vw, 8rem);
-		line-height: 1;
+		font-size: clamp(3rem, 9vw, 6rem);
+		line-height: 1.05;
 		color: var(--accent);
 	}
 

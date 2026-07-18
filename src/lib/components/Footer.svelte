@@ -9,15 +9,15 @@
 <footer>
 	<div class="container">
 		<div class="signoff">
-			<p class="serif-i big">Bon appétit.</p>
+			<p class="serif-i big">Built for your hardware.</p>
 			<p class="sub">
-				Autonomous AI, à la carte — single-binary Zig tools that run on your own hardware.
+				Single-binary Zig tools for running and supervising AI agents locally.
 			</p>
 		</div>
 
 		<div class="cols">
 			<div class="col">
-				<h3 class="label">The menu</h3>
+				<h3 class="label">Products</h3>
 				<ul>
 					{#each products as p}
 						<li>
@@ -28,12 +28,12 @@
 			</div>
 
 			<div class="col">
-				<h3 class="label">Kitchen</h3>
+				<h3 class="label">Explore</h3>
 				<ul>
 					<li><a href={isMenu ? '/products/' : 'https://nullmenu.ai/products/'}>All products</a></li>
 					<li><a href="/docs/">Documentation</a></li>
 					<li><a href="/llms.txt" class="mono">llms.txt</a></li>
-					<li><a href="/llms-full.txt" class="mono">llms-full.txt</a></li>
+					<li><a href="/llms-full.txt" class="mono" rel="nofollow">llms-full.txt</a></li>
 				</ul>
 			</div>
 
@@ -59,7 +59,7 @@
 		<div class="bottom">
 			<span class="mark"><Logo size={18} /></span>
 			<span class="mono note">© {year} the Null ecosystem</span>
-			<span class="mono note">cooked with Zig 0.16</span>
+			<span class="mono note">built with Zig 0.16</span>
 			<span class="mono note">local-first · no cloud</span>
 		</div>
 	</div>
@@ -67,7 +67,7 @@
 
 <style>
 	footer {
-		border-top: 1px solid var(--line);
+		border-top: 1px solid var(--line-2);
 		padding: var(--section-pad-sm) 0 2.5rem;
 		position: relative;
 		background:
@@ -126,7 +126,7 @@
 	}
 
 	.bottom {
-		border-top: 1px solid var(--line);
+		border-top: 1px solid var(--line-2);
 		padding-top: 1.5rem;
 		display: flex;
 		align-items: center;
@@ -140,7 +140,7 @@
 	}
 
 	.note {
-		font-size: 0.7rem;
+		font-size: 0.75rem;
 		letter-spacing: 0.08em;
 	}
 
@@ -154,6 +154,18 @@
 		}
 		.bottom .note:last-child {
 			margin-left: 0;
+		}
+	}
+
+	@media (hover: none), (pointer: coarse) {
+		.col a {
+			display: inline-flex;
+			align-items: center;
+			min-height: 44px;
+		}
+
+		.cols ul {
+			gap: 0;
 		}
 	}
 </style>

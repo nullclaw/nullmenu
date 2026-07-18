@@ -6,17 +6,21 @@
 </script>
 
 <Seo
-	title="{site.display} documentation — the cookbook"
-	description="Guides, recipes and references for {site.display}. Every page has a Markdown twin; llms.txt included."
+	title="{site.display} documentation"
+	description="Guides, workflows and references for {site.display}. Every page has a Markdown twin; llms.txt included."
+	breadcrumbs={[
+		{ name: site.display, url: `https://${site.domain}/` },
+		{ name: 'Documentation', url: `https://${site.domain}/docs/` }
+	]}
 />
 
 <header class="head">
 	<p class="label label--accent">{site.display} docs</p>
-	<h1><span class="serif">The</span> <span class="serif-i">cookbook.</span></h1>
+	<h1><span class="serif">Product</span> <span class="serif-i">documentation.</span></h1>
 	<p class="sub">
-		Task-oriented: real commands, verified versions, no seasoning you don't need.
-		Machine-readable too — <a href="/llms.txt" class="mono">llms.txt</a>,
-		<a href="/llms-full.txt" class="mono">llms-full.txt</a>, and a
+		Task-oriented guides with real commands and verified versions. Machine-readable too —
+		<a href="/llms.txt" class="mono">llms.txt</a>,
+		<a href="/llms-full.txt" class="mono" rel="nofollow">llms-full.txt</a>, and a
 		<span class="mono">.md</span> twin for every page.
 	</p>
 </header>
@@ -106,7 +110,7 @@
 
 	.desc {
 		color: var(--ink-3);
-		font-size: 0.72rem;
+		font-size: 0.8125rem;
 		letter-spacing: 0.03em;
 		text-align: right;
 		max-width: 24rem;

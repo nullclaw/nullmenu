@@ -35,7 +35,7 @@
 	$effect(() => {
 		const light = themeState.current === 'light';
 		reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-		if (reduced || !navigator.gpu) {
+		if (webgpuFailed || reduced || !navigator.gpu) {
 			webgpuFailed = true;
 			return;
 		}
@@ -47,6 +47,7 @@
 				else cleanup = c ?? (() => {});
 			})
 			.catch((e) => {
+				if (dead) return;
 				console.warn('[ink] webgpu unavailable:', e?.message ?? e);
 				webgpuFailed = true;
 			});
@@ -60,9 +61,8 @@
 		const adapter = await navigator.gpu.requestAdapter();
 		if (!adapter) throw new Error('no adapter');
 		const device = await adapter.requestDevice();
-		device.addEventListener('uncapturederror', (e) =>
-			console.warn('[ink] gpu error:', e.error?.message)
-		);
+		const onGpuError = (e) => console.warn('[ink] gpu error:', e.error?.message);
+		device.addEventListener('uncapturederror', onGpuError);
 		const context = canvas.getContext('webgpu');
 		const format = navigator.gpu.getPreferredCanvasFormat();
 		context.configure({ device, format, alphaMode: 'premultiplied' });
@@ -73,9 +73,10 @@
 		const lowTier =
 			matchMedia('(pointer: coarse)').matches || matchMedia('(max-width: 720px)').matches;
 		const dpr = Math.min(devicePixelRatio || 1, lowTier ? 1.5 : 2);
-		const SIM_CAP = lowTier ? 256 : 384;
-		const DYE_CAP = lowTier ? 768 : 1024;
-		const JACOBI = lowTier ? 12 : 22;
+		const SIM_CAP = lowTier ? 224 : 320;
+		const DYE_CAP = lowTier ? 640 : 896;
+		const JACOBI = lowTier ? 5 : 8;
+		const FRAME_MS = 1000 / (lowTier ? 24 : 30);
 		let W = 8;
 		let H = 8;
 		let simW = 8;
@@ -325,17 +326,26 @@
 			size: 32,
 			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
 		});
-		// pool of splat-uniform buffers: writeBuffer lands before submit, so
-		// every splat recorded into one encoder needs its own buffer. If an
-		// encoder ever wants more, we drop the extras — never alias.
-		const splatPool = Array.from({ length: 128 }, () =>
+		// The landing gesture needs at most eleven splats in one command buffer.
+		// Keep a small fixed pool so uniforms never alias within that submission.
+		const splatPool = Array.from({ length: 16 }, () =>
 			device.createBuffer({ size: 48, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST })
 		);
-		let splatIdx = 0;
+		const simValues = new Float32Array(8);
+		const splatValues = new Float32Array(12);
 		let splatsThisEncoder = 0;
+		const u = { buffer: simUniform };
 
-		// ————— textures (recreated on resize) —————
+		// ————— textures and binding cache (recreated only on resize) —————
 		let tex = null;
+		let bindings = null;
+		let velRead = 0;
+		let dyeRead = 0;
+		let prsRead = 0;
+		let gSimX = 1;
+		let gSimY = 1;
+		let gDyeX = 1;
+		let gDyeY = 1;
 
 		function makeTex(w, h) {
 			return device.createTexture({
@@ -346,6 +356,13 @@
 					GPUTextureUsage.STORAGE_BINDING |
 					GPUTextureUsage.COPY_DST |
 					GPUTextureUsage.COPY_SRC
+			});
+		}
+
+		function bind(pipeline, resources) {
+			return device.createBindGroup({
+				layout: pipeline.getBindGroupLayout(0),
+				entries: resources.map((resource, binding) => ({ binding, resource }))
 			});
 		}
 
@@ -365,6 +382,62 @@
 				curl: t(simW, simH),
 				all
 			};
+			const view = {
+				vel: tex.vel.map((texture) => texture.createView()),
+				dye: tex.dye.map((texture) => texture.createView()),
+				prs: tex.prs.map((texture) => texture.createView()),
+				div: tex.div.createView(),
+				curl: tex.curl.createView()
+			};
+			const pair = (pipeline, fixed, fields) =>
+				[0, 1].map((read) => bind(pipeline, [...fixed, fields[read], fields[read ^ 1]]));
+
+			bindings = {
+				advVel: pair(pAdvVel, [u, sampler], view.vel),
+				curl: [0, 1].map((read) => bind(pCurl, [u, view.vel[read], view.curl])),
+				vort: [0, 1].map((read) =>
+					bind(pVort, [u, view.vel[read], view.curl, view.vel[read ^ 1]])
+				),
+				div: [0, 1].map((read) => bind(pDiv, [u, view.vel[read], view.div])),
+				jacobi: [0, 1].map((read) =>
+					bind(pJacobi, [u, view.prs[read], view.div, view.prs[read ^ 1]])
+				),
+				grad: [0, 1].map((pressure) =>
+					[0, 1].map((velocity) =>
+						bind(pGrad, [
+							u,
+							view.prs[pressure],
+							view.vel[velocity],
+							view.vel[velocity ^ 1]
+						])
+					)
+				),
+				advDye: [0, 1].map((velocity) =>
+					[0, 1].map((dye) =>
+						bind(pAdvDye, [u, sampler, view.vel[velocity], view.dye[dye], view.dye[dye ^ 1]])
+					)
+				),
+				render: [0, 1].map((dye) => bind(pRender, [sampler, view.dye[dye]])),
+				splat: {
+					vel: splatPool.map((buffer) =>
+						[0, 1].map((read) =>
+							bind(pSplat, [u, { buffer }, view.vel[read], view.vel[read ^ 1]])
+						)
+					),
+					dye: splatPool.map((buffer) =>
+						[0, 1].map((read) =>
+							bind(pSplat, [u, { buffer }, view.dye[read], view.dye[read ^ 1]])
+						)
+					)
+				}
+			};
+			velRead = 0;
+			dyeRead = 0;
+			prsRead = 0;
+			gSimX = Math.ceil(simW / 8);
+			gSimY = Math.ceil(simH / 8);
+			gDyeX = Math.ceil(dyeW / 8);
+			gDyeY = Math.ceil(dyeH / 8);
 		}
 
 		function resize() {
@@ -386,62 +459,50 @@
 			dyeW = Math.max(8, Math.round(W * Math.min(1, dyeScale)));
 			dyeH = Math.max(8, Math.round(H * Math.min(1, dyeScale)));
 			allocate();
-			device.queue.writeBuffer(
-				simUniform,
-				0,
-				new Float32Array([simW, simH, dyeW, dyeH, 0.016, 0.9992, 0.9988, 24.0])
-			);
+			simValues[0] = simW;
+			simValues[1] = simH;
+			simValues[2] = dyeW;
+			simValues[3] = dyeH;
+			simValues[4] = 0.016;
+			simValues[5] = 0.9992;
+			simValues[6] = 0.9988;
+			simValues[7] = 24;
+			device.queue.writeBuffer(simUniform, 0, simValues);
 		}
 
 		// ————— dispatch helpers —————
-		/** @returns {[number, number]} */
-		const groups = (w, h) => [Math.ceil(w / 8), Math.ceil(h / 8)];
-
-		function computePass(enc, pipeline, entries, [gx, gy]) {
-			const pass = enc.beginComputePass();
+		function dispatch(pass, pipeline, binding, gx, gy) {
 			pass.setPipeline(pipeline);
-			pass.setBindGroup(
-				0,
-				device.createBindGroup({
-					layout: pipeline.getBindGroupLayout(0),
-					entries: entries.map((resource, i) => ({ binding: i, resource }))
-				})
-			);
+			pass.setBindGroup(0, binding);
 			pass.dispatchWorkgroups(gx, gy);
-			pass.end();
 		}
 
-		const u = { buffer: simUniform };
-
-		function doSplat(enc, pos, value, radius, isDye) {
+		function doSplat(pass, x, y, vx, vy, vz, radius, isDye) {
 			if (splatsThisEncoder >= splatPool.length) return;
-			splatsThisEncoder++;
-			const buf = splatPool[splatIdx++ % splatPool.length];
-			device.queue.writeBuffer(
-				buf,
-				0,
-				new Float32Array([
-					pos[0], pos[1], 0, 0,
-					value[0], value[1], value[2] ?? 0, 0,
-					radius, isDye ? 1 : 0, 0, 0
-				])
-			);
-			const field = isDye ? tex.dye : tex.vel;
-			/** @type {[number, number]} */
-			const size = isDye ? [dyeW, dyeH] : [simW, simH];
-			computePass(
-				enc,
-				pSplat,
-				[{ buffer: simUniform }, { buffer: buf }, field[0].createView(), field[1].createView()],
-				groups(...size)
-			);
-			field.reverse();
+			const poolIndex = splatsThisEncoder++;
+			splatValues.fill(0);
+			splatValues[0] = x;
+			splatValues[1] = y;
+			splatValues[4] = vx;
+			splatValues[5] = vy;
+			splatValues[6] = vz;
+			splatValues[8] = radius;
+			splatValues[9] = isDye ? 1 : 0;
+			device.queue.writeBuffer(splatPool[poolIndex], 0, splatValues);
+			if (isDye) {
+				dispatch(pass, pSplat, bindings.splat.dye[poolIndex][dyeRead], gDyeX, gDyeY);
+				dyeRead ^= 1;
+			} else {
+				dispatch(pass, pSplat, bindings.splat.vel[poolIndex][velRead], gSimX, gSimY);
+				velRead ^= 1;
+			}
 		}
 
 		// ————— frame —————
 		let raf = 0;
 		let running = false;
 		let last = 0;
+		let lastFrame = 0;
 		let time = 0;
 		const pointer = { x: 0.5, y: 0.5, dx: 0, dy: 0, active: false };
 
@@ -482,123 +543,145 @@
 			pourCount++;
 		}
 
-		function stepPour(enc) {
+		function stepPour(pass) {
 			const k = (time - pour.t0) / pour.dur;
 			if (k < 1) {
 				// the falling stream — dye laid down along an easing path
 				const y = 0.02 + (pour.yTo - 0.02) * easeOut(k);
 				const c = pour.col;
 				const w = 0.014 * pour.s * (1 + 0.3 * Math.sin(k * 9)); // living stream width
-				doSplat(enc, [pour.x, y], [c[0] * 1.1, c[1] * 1.1, c[2] * 1.1], w, true);
-				doSplat(enc, [pour.x, y], [0, 34 * pour.s], 0.016 * pour.s, false);
+				doSplat(pass, pour.x, y, c[0] * 1.1, c[1] * 1.1, c[2] * 1.1, w, true);
+				doSplat(pass, pour.x, y, 0, 34 * pour.s, 0, 0.016 * pour.s, false);
 				return;
 			}
 			// landing: the pool receives the pour, then one slow vortex bloom
 			const { x, yTo: y, s, spin, col } = pour;
-			doSplat(enc, [x, y], [col[0] * 0.55, col[1] * 0.55, col[2] * 0.55], 0.05 * s, true);
+			doSplat(pass, x, y, col[0] * 0.55, col[1] * 0.55, col[2] * 0.55, 0.05 * s, true);
 			for (let i = 0; i < 6; i++) {
 				const a = (i / 6) * Math.PI * 2;
 				const rx = x + Math.cos(a) * 0.024 * s;
 				const ry = y + Math.sin(a) * 0.024 * s;
 				const tx = -Math.sin(a) * spin;
 				const ty = Math.cos(a) * spin;
-				doSplat(enc, [rx, ry], [(Math.cos(a) * 0.4 + tx) * 52 * s, (Math.sin(a) * 0.4 + ty) * 52 * s], 0.02 * s, false);
+				doSplat(
+					pass,
+					rx,
+					ry,
+					(Math.cos(a) * 0.4 + tx) * 52 * s,
+					(Math.sin(a) * 0.4 + ty) * 52 * s,
+					0,
+					0.02 * s,
+					false
+				);
 			}
 			// three dots of sauce, set just so — the chef's signature
 			for (let i = 0; i < 3; i++) {
 				const c = palette[i % palette.length];
-				doSplat(enc, [x - 0.1 - i * 0.05, y + 0.16], [c[0] * 0.55, c[1] * 0.55, c[2] * 0.55], 0.01, true);
+				doSplat(
+					pass,
+					x - 0.1 - i * 0.05,
+					y + 0.16,
+					c[0] * 0.55,
+					c[1] * 0.55,
+					c[2] * 0.55,
+					0.01,
+					true
+				);
 			}
 			pour = null;
 			nextPour = time + 38 + Math.random() * 22;
 		}
 
+		/** @type {GPURenderPassColorAttachment} */
+		const renderAttachment = {
+			view: context.getCurrentTexture().createView(),
+			clearValue: { r: 0, g: 0, b: 0, a: 0 },
+			loadOp: 'clear',
+			storeOp: 'store'
+		};
+		/** @type {GPURenderPassDescriptor} */
+		const renderDescriptor = { colorAttachments: [renderAttachment] };
+		/** @type {GPUCommandBuffer[]} */
+		const submission = [];
+
 		function frame(ts) {
+			if (!running) return;
 			raf = requestAnimationFrame(frame);
+			if (ts - lastFrame < FRAME_MS) return;
+			lastFrame = ts;
 			const dt = Math.min((ts - last) / 1000, 1 / 30) || 1 / 60;
 			last = ts;
 			time += dt;
 
 			const enc = device.createCommandEncoder();
+			// All simulation dispatches share one compute pass. Bind groups and
+			// texture views were cached at allocation time, so a steady frame only
+			// creates the command encoder and the required swap-chain view.
+			const compute = enc.beginComputePass();
 
-			if (pour) stepPour(enc);
+			if (pour) stepPour(compute);
 			else if (time > nextPour) beginPour();
 
 			// pointer stirring — gentle, never painting
 			if (pointer.active && (Math.abs(pointer.dx) + Math.abs(pointer.dy)) > 0.0005) {
-				doSplat(
-					enc,
-					[pointer.x, pointer.y],
-					[pointer.dx * 900, pointer.dy * 900],
-					0.025,
-					false
-				);
+				doSplat(compute, pointer.x, pointer.y, pointer.dx * 900, pointer.dy * 900, 0, 0.025, false);
 				pointer.dx = 0;
 				pointer.dy = 0;
 			}
 
-			const gSim = groups(simW, simH);
-			const gDye = groups(dyeW, dyeH);
-
 			// advect velocity
-			computePass(enc, pAdvVel, [u, sampler, tex.vel[0].createView(), tex.vel[1].createView()], gSim);
-			tex.vel.reverse();
+			dispatch(compute, pAdvVel, bindings.advVel[velRead], gSimX, gSimY);
+			velRead ^= 1;
 			// vorticity confinement
-			computePass(enc, pCurl, [u, tex.vel[0].createView(), tex.curl.createView()], gSim);
-			computePass(enc, pVort, [u, tex.vel[0].createView(), tex.curl.createView(), tex.vel[1].createView()], gSim);
-			tex.vel.reverse();
+			dispatch(compute, pCurl, bindings.curl[velRead], gSimX, gSimY);
+			dispatch(compute, pVort, bindings.vort[velRead], gSimX, gSimY);
+			velRead ^= 1;
 			// pressure projection
-			computePass(enc, pDiv, [u, tex.vel[0].createView(), tex.div.createView()], gSim);
+			dispatch(compute, pDiv, bindings.div[velRead], gSimX, gSimY);
 			for (let i = 0; i < JACOBI; i++) {
-				computePass(enc, pJacobi, [u, tex.prs[0].createView(), tex.div.createView(), tex.prs[1].createView()], gSim);
-				tex.prs.reverse();
+				dispatch(compute, pJacobi, bindings.jacobi[prsRead], gSimX, gSimY);
+				prsRead ^= 1;
 			}
-			computePass(enc, pGrad, [u, tex.prs[0].createView(), tex.vel[0].createView(), tex.vel[1].createView()], gSim);
-			tex.vel.reverse();
+			dispatch(compute, pGrad, bindings.grad[prsRead][velRead], gSimX, gSimY);
+			velRead ^= 1;
 			// advect dye
-			computePass(enc, pAdvDye, [u, sampler, tex.vel[0].createView(), tex.dye[0].createView(), tex.dye[1].createView()], gDye);
-			tex.dye.reverse();
+			dispatch(compute, pAdvDye, bindings.advDye[velRead][dyeRead], gDyeX, gDyeY);
+			dyeRead ^= 1;
+			compute.end();
 
 			// render
-			const pass = enc.beginRenderPass({
-				colorAttachments: [
-					{
-						view: context.getCurrentTexture().createView(),
-						clearValue: { r: 0, g: 0, b: 0, a: 0 },
-						loadOp: 'clear',
-						storeOp: 'store'
-					}
-				]
-			});
+			renderAttachment.view = context.getCurrentTexture().createView();
+			const pass = enc.beginRenderPass(renderDescriptor);
 			pass.setPipeline(pRender);
-			pass.setBindGroup(
-				0,
-				device.createBindGroup({
-					layout: pRender.getBindGroupLayout(0),
-					entries: [
-						{ binding: 0, resource: sampler },
-						{ binding: 1, resource: tex.dye[0].createView() }
-					]
-				})
-			);
+			pass.setBindGroup(0, bindings.render[dyeRead]);
 			pass.draw(3);
 			pass.end();
 
-			device.queue.submit([enc.finish()]);
+			submission[0] = enc.finish();
+			device.queue.submit(submission);
 			splatsThisEncoder = 0;
 		}
 
-
+		let intersecting = false;
+		let pageVisible = !document.hidden;
+		let disposed = false;
 		function start() {
-			if (running) return;
+			if (running || disposed) return;
 			running = true;
 			last = performance.now();
+			lastFrame = last - FRAME_MS;
 			raf = requestAnimationFrame(frame);
 		}
 
 		function stop() {
 			running = false;
 			cancelAnimationFrame(raf);
+			raf = 0;
+		}
+
+		function syncRunning() {
+			if (pageVisible && intersecting) start();
+			else stop();
 		}
 
 		function onPointer(e) {
@@ -623,15 +706,23 @@
 
 		const ro = new ResizeObserver(() => resize());
 		ro.observe(canvas.parentElement);
-		const io = new IntersectionObserver(([e]) => (e.isIntersecting ? start() : stop()));
+		const io = new IntersectionObserver(([e]) => {
+			intersecting = e.isIntersecting;
+			syncRunning();
+		});
 		io.observe(canvas);
-		const onVis = () => (document.hidden ? stop() : start());
+		const onVis = () => {
+			pageVisible = !document.hidden;
+			syncRunning();
+		};
 		document.addEventListener('visibilitychange', onVis);
 		const parent = canvas.parentElement;
 		parent.addEventListener('pointermove', onPointer, { passive: true });
 		parent.addEventListener('pointerleave', onLeave, { passive: true });
 
-		return () => {
+		function shutdown(destroyDevice = true) {
+			if (disposed) return;
+			disposed = true;
 			stop();
 			ro.disconnect();
 			io.disconnect();
@@ -639,8 +730,21 @@
 			parent.removeEventListener('pointermove', onPointer);
 			parent.removeEventListener('pointerleave', onLeave);
 			tex?.all.forEach((t) => t.destroy());
-			device.destroy();
-		};
+			simUniform.destroy();
+			splatPool.forEach((buffer) => buffer.destroy());
+			device.removeEventListener('uncapturederror', onGpuError);
+			context.unconfigure();
+			if (destroyDevice) device.destroy();
+		}
+
+		device.lost.then((info) => {
+			if (disposed) return;
+			console.warn(`[ink] gpu device lost (${info.reason}): ${info.message || 'no detail'}`);
+			shutdown(false);
+			webgpuFailed = true;
+		});
+
+		return () => shutdown(true);
 	}
 </script>
 

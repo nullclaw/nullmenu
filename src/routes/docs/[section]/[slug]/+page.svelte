@@ -43,7 +43,19 @@
 	}
 </script>
 
-<Seo title="{doc.title} — {site.display} docs" description={doc.description} />
+<Seo
+	title="{doc.title} — {site.display} docs"
+	description={doc.description}
+	pageType="article"
+	version={site.version ?? doc.verified}
+	dateModified={data.dateModified}
+	sectionTitle={data.sectionTitle}
+	breadcrumbs={[
+		{ name: site.display, url: `https://${site.domain}/` },
+		{ name: 'Documentation', url: `https://${site.domain}/docs/` },
+		{ name: doc.title, url: `https://${site.domain}/docs/${doc.section}/${doc.slug}/` }
+	]}
+/>
 
 <div class="page" class:has-toc={doc.toc.length > 1}>
 	<article data-pagefind-body>
@@ -57,9 +69,31 @@
 			<button class="meta-link" onclick={copyMarkdown}>
 				{copied ? 'copied ✓' : 'copy as markdown'}
 			</button>
-			<a class="meta-link" href="/docs/{doc.section}/{doc.slug}.md">.md</a>
+			<a class="meta-link" href="/docs/{doc.section}/{doc.slug}.md" rel="nofollow">.md</a>
 			<a class="meta-link" href={editUrl} target="_blank" rel="noopener">edit on github &nearr;</a>
 		</div>
+
+		{#if doc.toc.length > 1}
+			<details class="mobile-toc" data-pagefind-ignore>
+				<summary>
+					<span class="label">On this page</span>
+					<span class="toc-count mono">{doc.toc.length} sections <span aria-hidden="true">＋</span></span>
+				</summary>
+				<nav aria-label="On this page">
+					<ul>
+						{#each doc.toc as t}
+							<li class="d{t.depth}">
+								<a
+									href="#{t.id}"
+									class:current={currentHeading === t.id}
+									aria-current={currentHeading === t.id ? 'true' : undefined}>{t.text}</a
+								>
+							</li>
+						{/each}
+					</ul>
+				</nav>
+			</details>
+		{/if}
 
 		<div class="prose">
 			{@html doc.html}
@@ -123,16 +157,16 @@
 	.meta {
 		display: flex;
 		align-items: center;
-		gap: 1.25rem;
+		gap: 0.25rem 0.75rem;
 		flex-wrap: wrap;
 		margin-top: 1.25rem;
 		padding-bottom: 1.5rem;
-		border-bottom: 1px solid var(--line);
+		border-bottom: 1px solid var(--line-2);
 		margin-bottom: 2rem;
 	}
 
 	.chip {
-		font-size: 0.65rem;
+		font-size: 0.75rem;
 		letter-spacing: 0.1em;
 		text-transform: uppercase;
 		color: var(--accent);
@@ -142,13 +176,16 @@
 	}
 
 	.meta-link {
-		font-size: 0.7rem;
+		display: inline-flex;
+		align-items: center;
+		min-height: 44px;
+		padding: 0 0.35rem;
+		font-size: 0.75rem;
 		letter-spacing: 0.1em;
 		text-transform: uppercase;
 		color: var(--ink-3);
 		font-family: var(--font-mono);
 		transition: color 0.2s;
-		padding: 0;
 	}
 
 	.meta-link:hover {
@@ -179,7 +216,7 @@
 	}
 
 	.pager-link .dir {
-		font-size: 0.65rem;
+		font-size: 0.75rem;
 		letter-spacing: 0.12em;
 		text-transform: uppercase;
 		color: var(--ink-3);
@@ -202,6 +239,9 @@
 	.toc {
 		position: sticky;
 		top: calc(var(--header-h) + 2rem);
+		max-height: calc(100vh - var(--header-h) - 4rem);
+		overflow-y: auto;
+		scrollbar-width: thin;
 	}
 
 	.toc h2 {
@@ -216,10 +256,12 @@
 	}
 
 	.toc a {
-		display: block;
-		font-size: 0.78rem;
+		display: flex;
+		align-items: center;
+		min-height: 44px;
+		font-size: 0.8125rem;
 		color: var(--ink-3);
-		padding: 0.28rem 0 0.28rem 0.9rem;
+		padding: 0.55rem 0 0.55rem 0.9rem;
 		border-left: 1px solid var(--line);
 		transition: color 0.2s, border-color 0.2s;
 	}
@@ -238,12 +280,72 @@
 		border-left-color: var(--accent);
 	}
 
+	.mobile-toc {
+		display: none;
+		border-block: 1px solid var(--line-2);
+		margin: -0.5rem 0 2rem;
+	}
+
+	.mobile-toc > summary {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		min-height: 52px;
+		padding: 0.5rem;
+		list-style: none;
+		cursor: pointer;
+	}
+
+	.mobile-toc > summary::-webkit-details-marker {
+		display: none;
+	}
+
+	.toc-count {
+		font-size: 0.75rem;
+		color: var(--ink-2);
+	}
+
+	.mobile-toc nav {
+		padding: 0 0 0.75rem;
+	}
+
+	.mobile-toc ul {
+		list-style: none;
+		padding: 0;
+	}
+
+	.mobile-toc a {
+		display: flex;
+		align-items: center;
+		min-height: 44px;
+		padding: 0.55rem 0.75rem;
+		border-left: 2px solid var(--line);
+		color: var(--ink-2);
+		font-size: var(--text-sm);
+		transition: color 0.2s, border-color 0.2s, background 0.2s;
+	}
+
+	.mobile-toc li.d3 a {
+		padding-left: 1.5rem;
+	}
+
+	.mobile-toc a:hover,
+	.mobile-toc a.current {
+		background: var(--bg-2);
+		border-left-color: var(--accent);
+		color: var(--accent);
+	}
+
 	@media (max-width: 1200px) {
 		.page.has-toc {
 			grid-template-columns: minmax(0, 1fr);
 		}
 		.toc {
 			display: none;
+		}
+		.mobile-toc {
+			display: block;
 		}
 	}
 

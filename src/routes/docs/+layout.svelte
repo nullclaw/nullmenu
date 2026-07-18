@@ -90,6 +90,29 @@
 		{navOpen ? 'close' : 'menu'} — docs
 	</button>
 
+	<details class="nojs-docs-navigation" data-pagefind-ignore>
+		<summary class="mono">Browse documentation</summary>
+		<nav aria-label="Documentation navigation">
+			<a href="/docs/" class="serif-i">Docs home</a>
+			{#each data.tree as section}
+				<div class="nojs-group">
+					<h2 class="label">{section.title}</h2>
+					{#each section.pages as item}
+						<a href="/docs/{section.slug}/{item.slug}/">{item.title}</a>
+					{/each}
+				</div>
+			{/each}
+			{#if isMenu}
+				<div class="nojs-group">
+					<h2 class="label">Product docs</h2>
+					{#each products as product}
+						<a href="https://{product.domain}/docs/">{product.display}</a>
+					{/each}
+				</div>
+			{/if}
+		</nav>
+	</details>
+
 	{#if navOpen}
 		<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
 		<div
@@ -108,7 +131,7 @@
 	>
 		<div class="drawer-head mono">
 			<div>
-				<span class="drawer-kicker">The index</span>
+				<span class="drawer-kicker">Browse</span>
 				<span class="drawer-title">Documentation</span>
 			</div>
 			<button bind:this={navClose} class="drawer-close" onclick={() => closeNav(true)}>
@@ -122,7 +145,7 @@
 			aria-current={current === '/docs/' ? 'page' : undefined}
 			onclick={() => closeNav(false)}
 		>
-			The cookbook
+			Docs home
 		</a>
 		{#each data.tree as section}
 			<div class="group">
@@ -177,6 +200,10 @@
 		display: none;
 	}
 
+	.nojs-docs-navigation {
+		display: none;
+	}
+
 	.nav-backdrop,
 	.drawer-head {
 		display: none;
@@ -197,7 +224,7 @@
 		color: var(--ink);
 		display: block;
 		padding-bottom: 1.25rem;
-		border-bottom: 1px solid var(--line);
+		border-bottom: 1px solid var(--line-2);
 		margin-bottom: 1.5rem;
 	}
 
@@ -223,10 +250,12 @@
 	}
 
 	li a {
-		display: block;
+		display: flex;
+		align-items: center;
+		min-height: 44px;
 		font-size: var(--text-sm);
 		color: var(--ink-2);
-		padding: 0.35rem 0 0.35rem 0.9rem;
+		padding: 0.55rem 0 0.55rem 0.9rem;
 		border-left: 1px solid var(--line);
 		transition: color 0.2s, border-color 0.2s;
 	}
@@ -271,6 +300,52 @@
 			width: fit-content;
 			background: var(--bg);
 			transition: color 0.2s var(--ease-out), border-color 0.2s var(--ease-out), background 0.2s var(--ease-out);
+		}
+
+		:global(html:not(.js)) .nav-toggle {
+			display: none;
+		}
+
+		:global(html:not(.js)) .nojs-docs-navigation {
+			display: block;
+			border: 1px solid var(--line-2);
+			background: var(--bg-2);
+		}
+
+		.nojs-docs-navigation summary {
+			display: flex;
+			align-items: center;
+			min-height: 48px;
+			padding: 0.65rem 1rem;
+			color: var(--ink);
+			cursor: pointer;
+			font-size: var(--text-xs);
+			letter-spacing: 0.1em;
+			text-transform: uppercase;
+		}
+
+		.nojs-docs-navigation nav {
+			display: grid;
+			max-height: min(70vh, 38rem);
+			overflow-y: auto;
+			padding: 0 1rem 1rem;
+		}
+
+		.nojs-docs-navigation nav a {
+			display: flex;
+			align-items: center;
+			min-height: 44px;
+			border-bottom: 1px solid var(--line);
+			color: var(--ink-2);
+		}
+
+		.nojs-group {
+			display: grid;
+			margin-top: 1rem;
+		}
+
+		.nojs-group h2 {
+			margin-bottom: 0.25rem;
 		}
 
 		.nav-toggle:hover {
@@ -339,7 +414,7 @@
 
 		.drawer-kicker,
 		.drawer-title {
-			font-size: 0.62rem;
+			font-size: 0.75rem;
 			letter-spacing: 0.13em;
 			text-transform: uppercase;
 		}
@@ -360,7 +435,7 @@
 			min-width: 86px;
 			min-height: 64px;
 			padding: 0 1.25rem 0 0.7rem;
-			font-size: 0.62rem;
+			font-size: 0.75rem;
 			letter-spacing: 0.1em;
 			text-transform: uppercase;
 			color: var(--ink);

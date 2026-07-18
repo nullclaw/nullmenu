@@ -39,8 +39,13 @@ function resolveRequest(url) {
 createServer((request, response) => {
 	const path = resolveRequest(request.url ?? '/');
 	if (!path) {
-		response.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' });
-		response.end('Not found');
+		const fallback = join(root, '404.html');
+		response.writeHead(404, {
+			'cache-control': 'no-store',
+			'content-type': 'text/html; charset=utf-8'
+		});
+		if (request.method === 'HEAD') response.end();
+		else createReadStream(fallback).pipe(response);
 		return;
 	}
 	response.writeHead(200, {

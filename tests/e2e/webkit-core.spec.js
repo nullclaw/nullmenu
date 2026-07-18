@@ -84,7 +84,7 @@ test('alternate Windows asset updates its post-download instructions in WebKit',
 	const row = page.locator('.binaries li').filter({ hasText: /Windows\s+x64/ }).first();
 	await row.locator('.binary-download').click();
 	await row.getByRole('link', { name: 'raw .exe', exact: true }).click();
-	await expect(page.locator('.after-download .hint')).toContainText(
+	await expect(page.locator('.run-step .hint')).toContainText(
 		'.\\nullhub-windows-x86_64.exe --help'
 	);
 });

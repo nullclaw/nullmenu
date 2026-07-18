@@ -152,15 +152,17 @@ test.describe('download interaction contracts', () => {
 
 		const windowsX64 = page.locator('.binaries li').filter({ hasText: /Windows\s+x64/ }).first();
 		await windowsX64.locator('.binary-download').click();
-		await expect(page.locator('.after-download .hint')).toContainText(
+		await expect(page.locator('.run-step .hint')).toContainText(
 			'Unzip nullhub-windows-x86_64.zip'
 		);
 
 		await windowsX64.getByRole('link', { name: 'raw .exe', exact: true }).click();
-		await expect(page.locator('.after-download .hint')).toContainText(
+		await expect(page.locator('.run-step .hint')).toContainText(
 			'.\\nullhub-windows-x86_64.exe --help'
 		);
-		await expect(page.locator('.after-download').getByRole('button')).toHaveText('Copy PowerShell');
+		await expect(page.locator('.after-download').getByRole('button')).toHaveText(
+			'Copy download + verify'
+		);
 	});
 });
 
@@ -263,6 +265,138 @@ test.describe('keyboard navigation contracts', () => {
 		await page.keyboard.press('Escape');
 		await expect(dialog).toBeHidden();
 		await expect(trigger).toBeFocused();
+	});
+});
+
+test.describe('progressive enhancement and preference contracts', () => {
+	test('server-rendered reveal content stays visible without JavaScript', async ({ browser }) => {
+		const context = await browser.newContext({
+			javaScriptEnabled: false,
+			colorScheme: 'dark',
+			viewport: { width: 1280, height: 900 }
+		});
+		const page = await context.newPage();
+		try {
+			await page.goto(`${menu}/`, { waitUntil: 'load' });
+			await expect(
+				page.getByRole('heading', { name: 'Install once, then add what you need.' })
+			).toBeVisible();
+			expect(await page.locator('.reveal, .sda').count()).toBe(0);
+		} finally {
+			await context.close();
+		}
+	});
+
+	test('mobile navigation and documentation remain reachable without JavaScript', async ({ browser }) => {
+		const context = await browser.newContext({
+			javaScriptEnabled: false,
+			colorScheme: 'dark',
+			viewport: { width: 390, height: 844 }
+		});
+		const page = await context.newPage();
+		try {
+			await page.goto(`${menu}/`, { waitUntil: 'load' });
+			const mainMenu = page.locator('.nojs-navigation');
+			await expect(mainMenu.locator('summary')).toBeVisible();
+			await mainMenu.locator('summary').click();
+			await expect(mainMenu.getByRole('link', { name: 'The menu' })).toBeVisible();
+
+			await page.goto(`${menu}/docs/start/install-nullhub/`, { waitUntil: 'load' });
+			const docsMenu = page.locator('.nojs-docs-navigation');
+			await expect(docsMenu.locator('summary')).toBeVisible();
+			await docsMenu.locator('summary').click();
+			await expect(docsMenu.getByRole('link', { name: 'Docs home' })).toBeVisible();
+			await expect(docsMenu.getByRole('link', { name: 'Run your first agent' })).toBeVisible();
+		} finally {
+			await context.close();
+		}
+	});
+
+	test('unknown routes provide a useful branded 404 without JavaScript', async ({ browser }) => {
+		const context = await browser.newContext({ javaScriptEnabled: false });
+		const page = await context.newPage();
+		try {
+			const response = await page.goto(`${menu}/definitely-missing/`, { waitUntil: 'load' });
+			expect(response.status()).toBe(404);
+			await expect(page.getByRole('heading', { name: 'Page not found.' })).toBeVisible();
+			await expect(page.getByRole('link', { name: 'Go to Null home' })).toBeVisible();
+		} finally {
+			await context.close();
+		}
+	});
+
+	test('docs expose a compact TOC below 1200px with practical 44px targets', async ({ page }) => {
+		await openStable(page, `${menu}/docs/start/install-nullhub/`, { width: 1000, height: 900 });
+
+		const mobileToc = page.locator('.mobile-toc');
+		await expect(mobileToc).toBeVisible();
+		await expect(page.locator('aside.toc')).toBeHidden();
+		const summary = mobileToc.locator('summary');
+		expect((await summary.boundingBox()).height).toBeGreaterThanOrEqual(44);
+		await summary.click();
+
+		for (const selector of ['.mobile-toc a', '.meta-link', '.heading-anchor']) {
+			const heights = await page.locator(selector).evaluateAll((elements) =>
+				elements.map((element) => element.getBoundingClientRect().height)
+			);
+			expect(heights.length).toBeGreaterThan(0);
+			expect(Math.min(...heights), selector).toBeGreaterThanOrEqual(43.5);
+		}
+
+		await openStable(page, `${menu}/docs/start/install-nullhub/`, { width: 1280, height: 900 });
+		const sidebarHeights = await page.locator('.sidebar li a').evaluateAll((elements) =>
+			elements.map((element) => element.getBoundingClientRect().height)
+		);
+		expect(sidebarHeights.length).toBeGreaterThan(0);
+		expect(Math.min(...sidebarHeights)).toBeGreaterThanOrEqual(43.5);
+	});
+
+	test('theme cycles system to light to dark and shares the pinned mode across products', async ({ page }) => {
+		await openStable(page, `${menu}/`, { width: 1280, height: 900 });
+		const root = page.locator('html');
+		const toggle = page.locator('.theme-toggle');
+
+		await expect(root).toHaveAttribute('data-theme-mode', 'system');
+		await expect(root).toHaveAttribute('data-theme', 'dark');
+		await toggle.click();
+		await expect(root).toHaveAttribute('data-theme-mode', 'light');
+		await expect(root).toHaveAttribute('data-theme', 'light');
+
+		await openStable(page, `${hub}/`, { width: 1280, height: 900 });
+		await expect(page.locator('html')).toHaveAttribute('data-theme-mode', 'light');
+		await page.locator('.theme-toggle').click();
+		await expect(page.locator('html')).toHaveAttribute('data-theme-mode', 'dark');
+		await page.locator('.theme-toggle').click();
+		await expect(page.locator('html')).toHaveAttribute('data-theme-mode', 'system');
+		await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+
+		await openStable(page, `${menu}/`, { width: 1280, height: 900 });
+		await expect(page.locator('html')).toHaveAttribute('data-theme-mode', 'system');
+	});
+
+	test('a malformed shared theme cookie falls back without blocking first paint', async ({
+		context,
+		page
+	}) => {
+		await context.addCookies([{ name: 'nullmenu-theme', value: '%', url: menu }]);
+		await page.addInitScript(() => localStorage.setItem('nullmenu-theme', 'dark'));
+		await page.goto(`${menu}/`, { waitUntil: 'domcontentloaded' });
+		await expect(page.locator('html')).toHaveAttribute('data-theme-mode', 'dark');
+		await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+	});
+
+	test('The menu keeps same-tab navigation in both menu and product headers', async ({ page }) => {
+		await openStable(page, `${menu}/`, { width: 1280, height: 900 });
+		await expect(page.locator('header').getByRole('link', { name: 'The menu' })).not.toHaveAttribute(
+			'target',
+			'_blank'
+		);
+
+		await openStable(page, `${hub}/`, { width: 1280, height: 900 });
+		await expect(page.locator('header').getByRole('link', { name: 'The menu' })).not.toHaveAttribute(
+			'target',
+			'_blank'
+		);
 	});
 });
 

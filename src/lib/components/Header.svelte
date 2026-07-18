@@ -1,7 +1,7 @@
 <script>
 	import { page } from '$app/state';
 	import { site } from '$lib/site';
-	import { themeState, toggleTheme } from '$lib/theme.svelte.js';
+	import { themeState, themeToggleLabel, toggleTheme } from '$lib/theme.svelte.js';
 	import { requestSearch } from '$lib/search.svelte.js';
 	import Logo from './Logo.svelte';
 	import {
@@ -24,8 +24,10 @@
 	const links = [
 		...(isMenu ? [{ href: '/products/', label: 'The menu' }] : []),
 		{ href: '/docs/', label: 'Docs' },
-		...(isMenu ? [] : [{ href: 'https://nullmenu.ai', label: 'The menu', external: true }]),
-		{ href: site.github, label: 'GitHub', external: true }
+		...(isMenu
+			? []
+			: [{ href: 'https://nullmenu.ai', label: 'The menu', external: true }]),
+		{ href: site.github, label: 'GitHub', external: true, newTab: true }
 	];
 
 	$effect(() => {
@@ -113,10 +115,10 @@
 			{#if site.version}
 				<a
 					class="version mono"
-					href="{site.github}/releases"
+					href="{site.github}/releases/tag/{site.version}"
 					target="_blank"
 					rel="noopener"
-					aria-label="Releases — latest {site.version}">{site.version}</a
+					aria-label="Published release {site.version}">{site.version}</a
 				>
 			{/if}
 		</div>
@@ -129,10 +131,10 @@
 					class="nav-link mono"
 					class:active
 					aria-current={active ? 'page' : undefined}
-					target={l.external ? '_blank' : undefined}
-					rel={l.external ? 'noopener' : undefined}
+					target={l.newTab ? '_blank' : undefined}
+					rel={l.newTab ? 'noopener' : undefined}
 				>
-					{l.label}{#if l.external}<span class="ext">&nearr;</span>{/if}
+					{l.label}{#if l.newTab}<span class="ext">&nearr;</span>{/if}
 				</a>
 			{/each}
 
@@ -144,15 +146,14 @@
 			<button
 				class="theme-toggle"
 				onclick={toggleTheme}
-				aria-label={themeState.current === 'dark'
-					? 'Switch to day service (light theme)'
-					: 'Switch to evening service (dark theme)'}
-				title={themeState.current === 'dark' ? 'day service' : 'evening service'}
+				aria-label={themeToggleLabel()}
+				title={themeToggleLabel()}
 			>
 				<svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
 					<circle cx="9" cy="9" r="6.75" fill="none" stroke="currentColor" stroke-width="1.5" />
 					<path class="half" d="M9 2.25 a6.75 6.75 0 0 1 0 13.5 Z" fill="currentColor" />
 				</svg>
+				<span class="theme-mode mono" aria-hidden="true">{themeState.mode}</span>
 			</button>
 		</nav>
 
@@ -167,6 +168,21 @@
 			<span></span><span></span>
 		</button>
 	</div>
+
+	<details class="nojs-navigation" data-pagefind-ignore>
+		<summary class="mono">Menu</summary>
+		<nav aria-label="Main navigation">
+			{#each links as link}
+				<a
+					href={link.href}
+					class="mono"
+					target={link.newTab ? '_blank' : undefined}
+					rel={link.newTab ? 'noopener' : undefined}
+					>{link.label}{#if link.newTab}&nbsp;&nearr;{/if}</a
+				>
+			{/each}
+		</nav>
+	</details>
 
 	{#if open}
 		<div class="mobile-layer">
@@ -192,9 +208,9 @@
 							class="mono"
 							class:active
 							aria-current={active ? 'page' : undefined}
-							target={l.external ? '_blank' : undefined}
-							rel={l.external ? 'noopener' : undefined}
-							onclick={() => closeMenu(false)}>{l.label}{#if l.external}&nbsp;&nearr;{/if}</a
+							target={l.newTab ? '_blank' : undefined}
+							rel={l.newTab ? 'noopener' : undefined}
+							onclick={() => closeMenu(false)}>{l.label}{#if l.newTab}&nbsp;&nearr;{/if}</a
 						>
 					{/each}
 					<button class="mobile-theme mono" onclick={openSearch}>
@@ -203,12 +219,12 @@
 					<button
 						class="mobile-theme mono"
 						onclick={toggleTheme}
-						aria-label={themeState.current === 'dark'
-							? 'Switch to day service (light theme)'
-							: 'Switch to evening service (dark theme)'}
+						aria-label={themeToggleLabel()}
 					>
-						<span>{themeState.current === 'dark' ? 'day service' : 'evening service'}</span>
-						<span class="action-detail" aria-hidden="true">theme</span>
+						<span>theme</span>
+						<span class="action-detail" aria-hidden="true">
+							{themeState.mode}{themeState.mode === 'system' ? ` · ${themeState.current}` : ''}
+						</span>
 					</button>
 				</nav>
 				<p class="mobile-note mono">Local tools. Quiet infrastructure.</p>
@@ -280,7 +296,7 @@
 	}
 
 	.version {
-		font-size: 0.65rem;
+		font-size: 0.75rem;
 		color: var(--ink-3);
 		border: 1px solid var(--line);
 		padding: 0.15em 0.5em;
@@ -303,6 +319,9 @@
 	}
 
 	.nav-link {
+		display: inline-flex;
+		align-items: center;
+		min-height: 44px;
 		font-size: var(--text-xs);
 		font-weight: 500;
 		letter-spacing: 0.14em;
@@ -338,7 +357,8 @@
 		gap: 0.5rem;
 		color: var(--ink-2);
 		font-size: 0.95rem;
-		padding: 0.25rem 0.4rem;
+		min-height: 44px;
+		padding: 0.4rem 0.55rem;
 		transition: color 0.2s var(--ease-out);
 	}
 
@@ -348,7 +368,7 @@
 
 	.search-btn kbd {
 		font-family: var(--font-mono);
-		font-size: 0.58rem;
+		font-size: 0.75rem;
 		letter-spacing: 0.08em;
 		color: var(--ink-3);
 		border: 1px solid var(--line);
@@ -357,10 +377,13 @@
 	}
 
 	.theme-toggle {
-		display: grid;
-		place-items: center;
-		padding: 0.4rem;
-		margin: -0.4rem -0.4rem -0.4rem -0.5rem;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.45rem;
+		min-height: 44px;
+		padding: 0.4rem 0.55rem;
+		margin: 0 -0.55rem 0 -0.35rem;
 		color: var(--ink-2);
 		transition: color 0.3s var(--ease-out);
 	}
@@ -371,6 +394,12 @@
 
 	.theme-toggle svg {
 		transition: transform 0.6s var(--ease-swift);
+	}
+
+	.theme-mode {
+		font-size: 0.75rem;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
 	}
 
 	:global([data-theme='light']) .theme-toggle svg {
@@ -397,7 +426,7 @@
 	}
 
 	.action-detail {
-		font-size: 0.65rem;
+		font-size: 0.75rem;
 		letter-spacing: 0.1em;
 		text-transform: uppercase;
 		color: var(--ink-3);
@@ -412,6 +441,10 @@
 		min-width: 44px;
 		min-height: 44px;
 		margin-right: -11px;
+	}
+
+	.nojs-navigation {
+		display: none;
 	}
 
 	.burger span {
@@ -471,7 +504,7 @@
 		min-height: 52px;
 		padding-inline: var(--pad);
 		border-bottom: 1px solid var(--line-2);
-		font-size: 0.65rem;
+		font-size: 0.75rem;
 		letter-spacing: 0.13em;
 		text-transform: uppercase;
 		color: var(--accent);
@@ -505,7 +538,7 @@
 		margin: auto var(--pad) 0;
 		padding: 1.25rem 0 max(1.25rem, env(safe-area-inset-bottom));
 		border-top: 1px solid var(--line);
-		font-size: 0.65rem;
+		font-size: 0.75rem;
 		letter-spacing: 0.1em;
 		text-transform: uppercase;
 		color: var(--ink-3);
@@ -528,6 +561,59 @@
 		}
 		.burger {
 			display: flex;
+		}
+
+		:global(html:not(.js)) .burger {
+			display: none;
+		}
+
+		:global(html:not(.js)) .nojs-navigation {
+			display: block;
+			position: absolute;
+			right: var(--pad);
+			top: 10px;
+			z-index: 3;
+		}
+
+		.nojs-navigation summary {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			min-width: 64px;
+			min-height: 44px;
+			border: 1px solid var(--line-2);
+			color: var(--ink);
+			cursor: pointer;
+			font-size: var(--text-xs);
+			letter-spacing: 0.12em;
+			list-style: none;
+			text-transform: uppercase;
+		}
+
+		.nojs-navigation summary::-webkit-details-marker {
+			display: none;
+		}
+
+		.nojs-navigation nav {
+			position: fixed;
+			top: var(--header-h);
+			left: 0;
+			right: 0;
+			display: grid;
+			background: var(--bg);
+			border-block: 1px solid var(--line-2);
+			box-shadow: 0 22px 42px rgba(0, 0, 0, 0.28);
+			padding: 0.5rem var(--pad);
+		}
+
+		.nojs-navigation nav a {
+			display: flex;
+			align-items: center;
+			min-height: 48px;
+			border-bottom: 1px solid var(--line);
+			font-size: var(--text-sm);
+			letter-spacing: 0.08em;
+			text-transform: uppercase;
 		}
 	}
 

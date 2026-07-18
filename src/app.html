@@ -5,19 +5,33 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="theme-color" content="#0c0a08" />
 		<script>
-			// set the theme before first paint: stored choice, else system
+			document.documentElement.classList.add('js');
+			// Resolve the shared theme mode before first paint.
 			(function () {
+				var key = 'nullmenu-theme';
+				var valid = function (value) {
+					return value === 'system' || value === 'light' || value === 'dark';
+				};
+				var cookieMode = null;
 				try {
-					var t = localStorage.getItem('nullmenu-theme');
-					if (t !== 'light' && t !== 'dark') {
-						t = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+					var cookie = document.cookie
+						.split(';')
+						.map(function (part) { return part.trim(); })
+						.find(function (part) { return part.indexOf(key + '=') === 0; });
+					if (cookie) {
+						try { cookieMode = decodeURIComponent(cookie.slice(key.length + 1)); } catch (e) {}
 					}
-					document.documentElement.dataset.theme = t;
-					if (t === 'light') {
-						document.querySelector('meta[name="theme-color"]').content = '#f2ead8';
-					}
-				} catch (e) {
-					document.documentElement.dataset.theme = 'dark';
+				} catch (e) {}
+				var localMode = null;
+				try { localMode = localStorage.getItem(key); } catch (e) {}
+				var mode = valid(cookieMode) ? cookieMode : valid(localMode) ? localMode : 'system';
+				var theme = mode === 'system'
+					? (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark')
+					: mode;
+				document.documentElement.dataset.themeMode = mode;
+				document.documentElement.dataset.theme = theme;
+				if (theme === 'light') {
+					document.querySelector('meta[name="theme-color"]').content = '#f2ead8';
 				}
 			})();
 		</script>

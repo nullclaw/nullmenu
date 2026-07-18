@@ -202,7 +202,7 @@
 			onclick={(e) => e.stopPropagation()}
 		>
 			<div class="panel-head mono">
-				<span id="search-title">Search the index</span>
+				<span id="search-title">Search documentation</span>
 				<span aria-hidden="true">documentation search</span>
 			</div>
 			<div class="field">
@@ -255,7 +255,7 @@
 			{:else if searching}
 				<p class="hint mono">searching the index…</p>
 			{:else if query.trim() && results.length === 0}
-				<p class="hint mono">nothing on the menu for “{query}”</p>
+				<p class="hint mono">No results for “{query}”</p>
 			{:else if results.length}
 				<ul id="search-results" aria-label="Search results">
 					{#each results as r, i}
@@ -325,7 +325,7 @@
 		justify-content: space-between;
 		gap: 1rem;
 		padding: 0.75rem 1rem 0.45rem;
-		font-size: 0.65rem;
+		font-size: 0.75rem;
 		letter-spacing: 0.13em;
 		text-transform: uppercase;
 		color: var(--ink-3);
@@ -394,7 +394,7 @@
 	}
 
 	kbd {
-		font-size: 0.62rem;
+		font-size: 0.75rem;
 		letter-spacing: 0.1em;
 		text-transform: uppercase;
 		color: var(--ink-3);
@@ -434,7 +434,7 @@
 
 	.path {
 		display: block;
-		font-size: 0.62rem;
+		font-size: 0.75rem;
 		letter-spacing: 0.06em;
 		color: var(--ink-3);
 		margin-top: 0.15rem;
@@ -489,7 +489,7 @@
 		min-height: 44px;
 		padding: 0.65rem 0.8rem;
 		border: 1px solid var(--line-2);
-		font-size: 0.68rem;
+		font-size: 0.75rem;
 		letter-spacing: 0.08em;
 		color: var(--ink-2);
 		transition: color 0.2s var(--ease-out), border-color 0.2s var(--ease-out), background 0.2s var(--ease-out);
@@ -518,7 +518,7 @@
 		gap: 1.5rem;
 		padding: 0.6rem 1rem;
 		border-top: 1px solid var(--line);
-		font-size: 0.62rem;
+		font-size: 0.75rem;
 		letter-spacing: 0.1em;
 		text-transform: uppercase;
 		color: var(--ink-3);

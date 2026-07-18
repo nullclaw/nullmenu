@@ -14,14 +14,18 @@
 	title="The menu — every product in the Null ecosystem"
 	description="The full catalog: agent runtime, management console, orchestration, tasks, memory, observability. Single-binary Zig tools, each on its own subdomain."
 	canonical="https://nullmenu.ai/products/"
+	breadcrumbs={[
+		{ name: 'Home', url: 'https://nullmenu.ai/' },
+		{ name: 'Products', url: 'https://nullmenu.ai/products/' }
+	]}
 />
 
 <section class="head">
 	<div class="container">
-		<p class="label label--accent">nullmenu.ai · full carte</p>
+		<p class="label label--accent">nullmenu.ai · full catalog</p>
 		<h1><span class="serif">The</span> <span class="serif-i">menu.</span></h1>
 		<p class="sub">
-			Every dish is a single static Zig binary with its own site and docs. Composable over plain
+			Every product is a single static Zig binary with its own site and docs. Composable over plain
 			JSON and HTTP — each one works alone.
 		</p>
 	</div>
@@ -249,7 +253,7 @@
 	}
 
 	.tag {
-		font-size: 0.62rem;
+		font-size: 0.75rem;
 		letter-spacing: 0.08em;
 		color: var(--ink-3);
 		border: 1px solid var(--line);
@@ -268,7 +272,7 @@
 
 	.fine {
 		margin-top: 3rem;
-		font-size: 0.65rem;
+		font-size: 0.75rem;
 		letter-spacing: 0.08em;
 		color: var(--ink-3);
 	}

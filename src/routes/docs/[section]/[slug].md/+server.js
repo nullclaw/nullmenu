@@ -1,5 +1,6 @@
 import { error } from '@sveltejs/kit';
 import { getDoc, flatDocs } from '$lib/content/docs.js';
+import { machineTextHeaders } from '$lib/content/response-headers.js';
 import { site } from '$lib/site';
 
 export const prerender = true;
@@ -16,6 +17,10 @@ export function GET({ params }) {
 	const header = `# ${doc.title}\n\n> ${doc.description}\n> Source: https://${site.domain}/docs/${doc.section}/${doc.slug}/${doc.verified ? `\n> Verified with: ${doc.verified}` : ''}\n\n`;
 
 	return new Response(header + doc.body, {
-		headers: { 'Content-Type': 'text/markdown; charset=utf-8' }
+		headers: machineTextHeaders({
+			canonical: `https://${site.domain}/docs/${doc.section}/${doc.slug}/`,
+			contentType: 'text/markdown; charset=utf-8',
+			noindex: true
+		})
 	});
 }

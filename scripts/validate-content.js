@@ -3,7 +3,9 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, resolve } from 'node:path';
+import { pinnedReleaseSnapshots } from '../src/lib/content/releases.js';
 import { groups, menuOrder, sites } from '../src/lib/site/sites.js';
+import { deploymentTargets } from './site-targets.js';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -44,6 +46,9 @@ export function validateContent() {
 	const ids = Object.keys(sites);
 	const productIds = ids.filter((id) => id !== 'menu');
 	const groupIds = new Set(groups.map((group) => group.id));
+	const releaseByRepo = new Map(
+		pinnedReleaseSnapshots().map(({ repo, release }) => [repo, release])
+	);
 
 	if (new Set(menuOrder).size !== menuOrder.length) errors.push('menuOrder contains duplicate ids');
 	if (menuOrder.length !== productIds.length) {
@@ -85,6 +90,16 @@ export function validateContent() {
 
 		if (site.kind !== 'product') continue;
 		if (!groupIds.has(site.group)) errors.push(`sites.${id}.group references unknown group "${site.group}"`);
+		if (site.version) {
+			const release = releaseByRepo.get(site.repo);
+			if (!release || release.status === 'unavailable') {
+				errors.push(`sites.${id}.version has no complete repository-anchored release manifest`);
+			} else if (release.tag !== site.version) {
+				errors.push(
+					`sites.${id}.version (${site.version}) must match the trusted release tag (${release.tag})`
+				);
+			}
+		}
 
 		const productPath = join(root, 'content', id, 'product.json');
 		const product = readJson(productPath, errors);
@@ -192,12 +207,8 @@ export function validateContent() {
 		);
 	}
 
-	const workflow = readFileSync(join(root, '.github', 'workflows', 'deploy.yml'), 'utf8');
-	const workflowTargets = [
-		...workflow.matchAll(/- \{ site: ([\w-]+), repo: ([\w-]+\/[\w-]+), domain: ([\w.-]+) \}/g)
-	].map((match) => ({ site: match[1], repo: match[2], domain: match[3] }));
-	const actualDeployTargets = workflowTargets
-		.map(({ site, repo, domain }) => `${site}|${repo}|${domain}`)
+	const actualDeployTargets = deploymentTargets
+		.map(({ id, repository, domain }) => `${id}|${repository}|${domain}`)
 		.sort();
 	const expectedDeployTargets = registryProducts
 		.map((id) => {
@@ -206,7 +217,7 @@ export function validateContent() {
 		})
 		.sort();
 	if (JSON.stringify(actualDeployTargets) !== JSON.stringify(expectedDeployTargets)) {
-		errors.push('deploy matrix site/repository/domain targets must exactly match the registry');
+		errors.push('structured deploy site/repository/domain targets must exactly match the registry');
 	}
 
 	return errors;

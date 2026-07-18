@@ -13,8 +13,12 @@
 
 	// remember the visitor's preferred install method
 	$effect(() => {
-		const saved = Number(localStorage.getItem(`install-${site.id}`));
-		if (saved > 0 && saved < installTabs.length) activeInstall = saved;
+		try {
+			const saved = Number(localStorage.getItem(`install-${site.id}`));
+			if (saved > 0 && saved < installTabs.length) activeInstall = saved;
+		} catch {
+			/* storage can be unavailable in hardened/private contexts */
+		}
 	});
 
 	function pickInstall(i) {
@@ -36,6 +40,16 @@
 	);
 
 	const pairs = $derived((p?.pairs ?? []).map((id) => sites[id]).filter(Boolean));
+	const operatingSystems = $derived.by(() => {
+		const labels = { mac: 'macOS', linux: 'Linux', windows: 'Windows', android: 'Android' };
+		return [
+			...new Set(
+				(data.release?.binaries ?? [])
+					.map((binary) => labels[binary.os])
+					.filter(Boolean)
+			)
+		];
+	});
 
 	function splitIntro(value, limit = 34) {
 		const words = String(value ?? '').trim().split(/\s+/).filter(Boolean);
@@ -70,7 +84,18 @@
 	);
 </script>
 
-<Seo />
+<Seo
+	pageType={site.id === 'builder' ? 'website' : 'software'}
+	version={site.version}
+	releaseUrl={data.release?.url ??
+		(site.version ? `${site.github}/releases/tag/${site.version}` : null)}
+	operatingSystems={operatingSystems}
+	faq={p && !site.comingSoon ? (p.faq ?? []) : []}
+	breadcrumbs={[
+		{ name: 'The menu', url: 'https://nullmenu.ai/products/' },
+		{ name: site.display, url: `https://${site.domain}/` }
+	]}
+/>
 
 <!-- ———— hero ———— -->
 <section class="hero" data-group={site.group}>
@@ -188,8 +213,7 @@
 			</div>
 			<Reveal>
 				<p class="soon-note">
-					<span class="serif-i">Still on the stove.</span> No releases yet — the dish is being
-					cooked in the open at
+					<span class="serif-i">In development.</span> No releases yet — work is public at
 					<a href={site.github} target="_blank" rel="noopener">{site.name} on GitHub</a>. The
 					<a href="/docs/">notes so far</a> cover what already works.
 				</p>
@@ -201,7 +225,7 @@
 	<section class="section overview" data-group={site.group} data-profile={proofIndex}>
 		<div class="container">
 			<Reveal>
-				<p class="label label--accent">Service notes</p>
+				<p class="label label--accent">Overview</p>
 				<h2 class="serif">The useful part, at a glance.</h2>
 			</Reveal>
 
@@ -307,7 +331,7 @@
 	<section class="section capabilities" data-group={site.group} data-profile={proofIndex}>
 		<div class="container">
 			<Reveal>
-				<p class="label label--accent">On the plate</p>
+				<p class="label label--accent">Capabilities</p>
 				<h2 class="serif">What {site.display} does.</h2>
 			</Reveal>
 			<div class="features">
@@ -386,7 +410,7 @@
 		<div class="container quickstart">
 			<Reveal>
 				<div class="qs-head">
-					<p class="label label--accent">First taste</p>
+					<p class="label label--accent">Quickstart</p>
 					<h2 class="serif">Up and running.</h2>
 					<p class="qs-sub">
 						Full walkthrough in the <a href="/docs/">docs</a>
@@ -407,7 +431,7 @@
 		<section class="section">
 			<div class="container faq-wrap">
 				<Reveal>
-					<p class="label label--accent">Before you order</p>
+					<p class="label label--accent">Common questions</p>
 					<h2 class="serif">Questions, answered.</h2>
 				</Reveal>
 				<div class="faq">
@@ -432,7 +456,7 @@
 		<section class="section">
 			<div class="container">
 				<Reveal>
-					<p class="label label--accent">Pairs well with</p>
+					<p class="label label--accent">Works with</p>
 				</Reveal>
 				<div class="pairs">
 					{#each pairs as pair, i}
@@ -463,7 +487,7 @@
 {:else}
 	<section class="section">
 		<div class="container">
-			<p class="sub">Documentation is being plated. Meanwhile — <a href={site.github}>the repository</a>.</p>
+			<p class="sub">Documentation is in progress. Meanwhile — <a href={site.github}>the repository</a>.</p>
 		</div>
 	</section>
 {/if}
@@ -687,7 +711,7 @@
 	}
 
 	.proof-kicker {
-		font-size: 0.65rem;
+		font-size: 0.75rem;
 		letter-spacing: 0.16em;
 		text-transform: uppercase;
 		color: var(--ink-3);
@@ -730,7 +754,7 @@
 	}
 
 	.proof-facts dt {
-		font-size: 0.6rem;
+		font-size: 0.75rem;
 		letter-spacing: 0.1em;
 		text-transform: uppercase;
 		color: var(--ink-3);
@@ -871,7 +895,7 @@
 
 	.ledger-label {
 		color: var(--ink-3);
-		font-size: 0.66rem;
+		font-size: 0.75rem;
 		letter-spacing: 0.14em;
 		text-transform: uppercase;
 	}
@@ -1087,7 +1111,7 @@
 	}
 
 	.chip-item {
-		font-size: 0.68rem;
+		font-size: 0.75rem;
 		letter-spacing: 0.05em;
 		color: var(--ink-2);
 		border: 1px solid var(--line);
@@ -1312,7 +1336,7 @@
 
 	.fine {
 		margin-top: 2rem;
-		font-size: 0.65rem;
+		font-size: 0.75rem;
 		letter-spacing: 0.08em;
 		color: var(--ink-3);
 	}
@@ -1574,7 +1598,7 @@
 			min-height: 2.75rem;
 			display: flex;
 			align-items: center;
-			font-size: 0.7rem;
+			font-size: 0.75rem;
 			letter-spacing: 0.1em;
 			text-transform: uppercase;
 			color: var(--accent);

@@ -33,7 +33,7 @@
 
 	// mirror the pre-paint theme choice into reactive state
 	$effect(() => {
-		syncTheme();
+		return syncTheme();
 	});
 
 	// click-to-copy: the button, or anywhere on a code block (event delegation)

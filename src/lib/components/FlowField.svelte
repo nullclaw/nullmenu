@@ -67,6 +67,8 @@
 		let particles = [];
 		let raf = 0;
 		let running = false;
+		let intersecting = false;
+		let pageVisible = !document.hidden;
 		let time = Math.random() * 100;
 		let mouse = { x: -1e4, y: -1e4 };
 
@@ -195,6 +197,11 @@
 			cancelAnimationFrame(raf);
 		}
 
+		function syncRunning() {
+			if (intersecting && pageVisible) start();
+			else stop();
+		}
+
 		function onPointer(e) {
 			const rect = canvas.getBoundingClientRect();
 			mouse.x = e.clientX - rect.left;
@@ -212,11 +219,15 @@
 		ro.observe(canvas.parentElement);
 
 		const io = new IntersectionObserver(([entry]) => {
-			entry.isIntersecting ? start() : stop();
+			intersecting = entry.isIntersecting;
+			syncRunning();
 		});
 		io.observe(canvas);
 
-		const onVisibility = () => (document.hidden ? stop() : start());
+		const onVisibility = () => {
+			pageVisible = !document.hidden;
+			syncRunning();
+		};
 		document.addEventListener('visibilitychange', onVisibility);
 		canvas.parentElement.addEventListener('pointermove', onPointer, { passive: true });
 		canvas.parentElement.addEventListener('pointerleave', onLeave, { passive: true });

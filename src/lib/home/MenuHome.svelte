@@ -32,7 +32,7 @@
 		},
 		{
 			title: 'À la carte',
-			body: 'Components compose over plain JSON and HTTP, and every one works alone. Take one dish or the full tasting menu.'
+			body: 'Components compose over plain JSON and HTTP, and every one works alone. Use one tool or combine the full stack.'
 		},
 		{
 			title: 'As counted',
@@ -103,15 +103,15 @@
 <section class="section" id="order">
 	<div class="container">
 		<Reveal>
-			<p class="label label--accent">01 · The order</p>
-			<h2 class="serif">Set the table once,<br />then order as you go.</h2>
+			<p class="label label--accent">01 · Get started</p>
+			<h2 class="serif">Install once,<br />then add what you need.</h2>
 		</Reveal>
 
 		<div class="courses">
 			<Reveal delay={0}>
 				<article class="course">
 					<span class="num serif-i">1</span>
-					<h3 class="mono">Seat the sous-chef</h3>
+					<h3 class="mono">Install the control plane</h3>
 					<p>
 						NullHub is one binary with an embedded dashboard. Run it with Docker, or grab a <a
 							href="https://github.com/nullclaw/nullhub/releases">release binary</a
@@ -123,10 +123,10 @@
 			<Reveal delay={90}>
 				<article class="course">
 					<span class="num serif-i">2</span>
-					<h3 class="mono">Order à la carte</h3>
+					<h3 class="mono">Choose components</h3>
 					<p>
 						The install wizard fetches, configures and links each component. Skip what you don't
-						need — every dish stands alone.
+						need — every component runs independently.
 					</p>
 					{@html data.code.order}
 				</article>
@@ -134,7 +134,7 @@
 			<Reveal delay={180}>
 				<article class="course">
 					<span class="num serif-i">3</span>
-					<h3 class="mono">Service</h3>
+					<h3 class="mono">Run the stack</h3>
 					<p>
 						One command brings the stack up; the dashboard supervises processes, health, logs and
 						updates from <span class="mono">~/.nullhub</span>.
@@ -147,7 +147,7 @@
 		<Reveal>
 			<aside class="solo">
 				<p>
-					<span class="serif-i">In a hurry?</span> The chef also works alone —
+					<span class="serif-i">Need only the agent?</span> NullClaw works independently —
 					a fully autonomous agent, no console required:
 				</p>
 				{@html data.code.solo}
@@ -160,8 +160,8 @@
 <section class="section">
 	<div class="container">
 		<Reveal>
-			<p class="label label--accent">02 · The brigade</p>
-			<h2 class="serif">Each station does one thing.<br />Together they run the kitchen.</h2>
+			<p class="label label--accent">02 · The stack</p>
+			<h2 class="serif">Each component does one job.<br />Together they form the platform.</h2>
 		</Reveal>
 
 		<div class="brigade">
@@ -169,7 +169,7 @@
 				<a class="hub-band" href="https://hub.nullmenu.ai" style:--spice="#e3a93c">
 					<span class="mark"><ProductMark id="hub" size={26} /></span>
 					<span class="mono name">nullhub</span>
-					<span class="serif-i role">the sous-chef</span>
+					<span class="serif-i role">control plane</span>
 					<span class="leaders" aria-hidden="true"></span>
 					<span class="desc">installs, supervises, updates every station below</span>
 				</a>
@@ -190,9 +190,9 @@
 				<a class="pantry-band" href="https://pantry.nullmenu.ai" style:--spice="#8fb573">
 					<span class="mark"><ProductMark id="pantry" size={26} /></span>
 					<span class="mono name">nullpantry</span>
-					<span class="serif-i role">the larder</span>
+					<span class="serif-i role">shared memory</span>
 					<span class="leaders" aria-hidden="true"></span>
-					<span class="desc">shared knowledge & memory, served to every agent</span>
+					<span class="desc">shared knowledge and memory for every agent</span>
 				</a>
 			</Reveal>
 		</div>
@@ -203,8 +203,8 @@
 <section class="section">
 	<div class="container">
 		<Reveal>
-			<p class="label label--accent">03 · Tonight's mains</p>
-			<h2 class="serif">The tasting menu.</h2>
+			<p class="label label--accent">03 · Core tools</p>
+			<h2 class="serif">The core stack.</h2>
 		</Reveal>
 
 		<div class="menu-list">
@@ -228,13 +228,13 @@
 
 		<Reveal>
 			<p class="also">
-				<span class="mono also-label">also in the kitchen</span>
+					<span class="mono also-label">also in the ecosystem</span>
 				{#each products.filter((p) => p.group !== 'mains') as o, i}
 					<a href="https://{o.domain}" class="mono">{o.name}</a>{#if i < products.filter((p) => p.group !== 'mains').length - 1}<span class="dot" aria-hidden="true">·</span>{/if}
 				{/each}
 			</p>
 			<div class="menu-more">
-				<a class="btn" href="/products/">Full menu — all {products.length} products</a>
+				<a class="btn" href="/products/">All {products.length} products</a>
 			</div>
 		</Reveal>
 	</div>
@@ -244,8 +244,8 @@
 <section class="section">
 	<div class="container">
 		<Reveal>
-			<p class="label label--accent">04 · Kitchen rules</p>
-			<h2 class="serif">Cooked to a few<br />non-negotiables.</h2>
+			<p class="label label--accent">04 · Design principles</p>
+			<h2 class="serif">Built around four<br />non-negotiables.</h2>
 		</Reveal>
 		<div class="rules">
 			{#each rules as r, i}
@@ -266,8 +266,8 @@
 		<Reveal>
 			<div class="cookbook-inner">
 				<div>
-					<p class="label label--accent">05 · The cookbook</p>
-					<h2 class="serif">Recipes, references,<br />and run-books.</h2>
+					<p class="label label--accent">05 · Documentation</p>
+					<h2 class="serif">Guides, references,<br />and runbooks.</h2>
 					<p class="cookbook-sub">
 						Task-oriented guides for real setups — a personal assistant, a durable backlog, an
 						observable multi-agent stack. Markdown-first: every page has a <span class="mono"
@@ -277,8 +277,8 @@
 						<a href="/llms.txt" class="mono">llms.txt</a> for your agents.
 					</p>
 					<div class="cta">
-						<a class="btn btn--solid" href="/docs/">Open the cookbook</a>
-						<a class="btn" href="/docs/recipes/personal-assistant/">First recipe</a>
+						<a class="btn btn--solid" href="/docs/">Open documentation</a>
+						<a class="btn" href="/docs/recipes/personal-assistant/">Example workflow</a>
 					</div>
 				</div>
 			</div>
@@ -375,7 +375,7 @@
 
 	.fine {
 		margin-top: 0.9rem;
-		font-size: 0.65rem;
+		font-size: 0.75rem;
 		letter-spacing: 0.08em;
 		color: var(--ink-3);
 	}
@@ -458,7 +458,7 @@
 	}
 
 	.course :global(pre.shiki) {
-		font-size: 0.72rem;
+		font-size: 0.75rem;
 		overflow-x: auto;
 		overscroll-behavior-inline: contain;
 	}
@@ -604,7 +604,7 @@
 	}
 
 	.station .role {
-		font-size: 0.65rem;
+		font-size: 0.75rem;
 		letter-spacing: 0.18em;
 		text-transform: uppercase;
 		color: var(--ink-3);
@@ -840,7 +840,7 @@
 			min-height: 2.75rem;
 			display: flex;
 			align-items: center;
-			font-size: 0.7rem;
+			font-size: 0.75rem;
 			letter-spacing: 0.1em;
 			text-transform: uppercase;
 			color: var(--accent);

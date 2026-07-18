@@ -2,7 +2,7 @@
 
 /* ————————————————————————————————————————————————
    Null — design tokens
-   Concept: the kitchen. Cast iron, warm paper, spice accents.
+   Dark mineral surfaces, warm paper, restrained product accents.
    ———————————————————————————————————————————————— */
 
 :root {
@@ -10,7 +10,7 @@
 	--spice: #e8ddc9;
 	--spice-dim: #8f8574;
 
-	/* ———— evening service (default): cast iron, warm paper ———— */
+	/* ———— dark theme (default): mineral black, warm paper ———— */
 	--bg: #0c0a08;
 	--bg-2: #121009;
 	--bg-3: #181410;
@@ -20,8 +20,8 @@
 	--ink-2: #b0a695;
 	--ink-3: #8a8173;
 
-	--line: rgba(236, 229, 216, 0.1);
-	--line-2: rgba(236, 229, 216, 0.18);
+	--line: rgba(236, 229, 216, 0.28);
+	--line-2: rgba(236, 229, 216, 0.4);
 
 	--accent: var(--spice);
 	--accent-dim: var(--spice-dim);
@@ -46,7 +46,7 @@
 	--header-h: 4rem;
 
 	/* rhythm */
-	--section-pad: clamp(4.5rem, 11vw, 8.5rem);
+	--section-pad: clamp(4.5rem, 11vw, 8rem);
 	--section-pad-sm: clamp(3rem, 8vw, 5.5rem);
 	--row-pad: 1.35rem 0.75rem;
 	--row-gap: 1.25rem;
@@ -59,7 +59,7 @@
 	color-scheme: dark;
 }
 
-/* ———— day service: aged parchment, printed pigment ———— */
+/* ———— light theme: warm paper, printed pigment ———— */
 
 :root[data-theme='light'] {
 	--bg: #f2ead8;
@@ -71,8 +71,8 @@
 	--ink-2: #52483a;
 	--ink-3: #665c4a;
 
-	--line: rgba(38, 33, 26, 0.13);
-	--line-2: rgba(38, 33, 26, 0.22);
+	--line: rgba(38, 33, 26, 0.35);
+	--line-2: rgba(38, 33, 26, 0.5);
 
 	/* pigment: the spice pressed into paper — always ink-dark enough to read */
 	--accent: color-mix(in srgb, var(--spice) 32%, #26211a);
@@ -84,7 +84,7 @@
 	color-scheme: light;
 }
 
-/* faint foxing stains, like an old plate */
+/* faint tonal variation keeps large light surfaces from feeling flat */
 :root[data-theme='light'] body {
 	background:
 		radial-gradient(55rem 38rem at 6% 10%, rgba(158, 126, 74, 0.055), transparent 62%),
@@ -235,7 +235,7 @@ pre {
 	font-weight: 400;
 }
 
-/* small-caps mono kicker: "01 · THE CHEF" */
+/* small-caps mono kicker */
 .label {
 	font-family: var(--font-mono);
 	font-size: var(--text-xs);
@@ -266,7 +266,7 @@ pre {
 	border-top: 1px solid var(--line);
 }
 
-/* ———— dotted menu leaders ———— */
+/* ———— dotted leaders ———— */
 
 .leaders {
 	flex: 1 1 auto;
@@ -390,7 +390,13 @@ pre {
 }
 
 .prose .heading-anchor {
-	margin-left: 0.35em;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 44px;
+	height: 44px;
+	margin: -0.45rem -0.25rem -0.45rem 0.1em;
+	vertical-align: middle;
 	color: var(--ink-3);
 	opacity: 0;
 	transition: opacity 0.2s;
@@ -404,6 +410,12 @@ pre {
 .prose h4:hover .heading-anchor,
 .prose .heading-anchor:focus-visible {
 	opacity: 1;
+}
+
+@media (hover: none) {
+	.prose .heading-anchor {
+		opacity: 0.58;
+	}
 }
 
 .prose ul,
@@ -532,14 +544,14 @@ pre {
 	cursor: copy;
 }
 
-/* language chip, set like a menu footnote */
+/* language chip */
 .code-figure[data-lang]:not([data-lang='text'])::before {
 	content: attr(data-lang);
 	position: absolute;
 	top: 0.5rem;
 	left: 0.8rem;
 	font-family: var(--font-mono);
-	font-size: 0.58rem;
+	font-size: 0.75rem;
 	letter-spacing: 0.14em;
 	text-transform: uppercase;
 	color: var(--ink-3);
@@ -548,7 +560,7 @@ pre {
 }
 
 .code-figure pre.shiki {
-	padding-top: 1.7rem;
+	padding-top: 3rem;
 }
 
 .code-figure pre.shiki {
@@ -566,7 +578,12 @@ pre {
 	color: var(--ink-3);
 	background: var(--bg-glass);
 	border: 1px solid var(--line);
-	padding: 0.3em 0.7em;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 44px;
+	min-height: 44px;
+	padding: 0.4em 0.75em;
 	opacity: 0;
 	transition: opacity 0.2s, color 0.2s, border-color 0.2s;
 	backdrop-filter: blur(8px);
@@ -612,6 +629,7 @@ pre {
 		transition:
 			opacity 0.7s var(--ease-out),
 			transform 0.7s var(--ease-out);
+		transition-delay: var(--reveal-delay, 0ms);
 	}
 
 	.reveal.is-visible {
@@ -629,7 +647,7 @@ pre {
 	}
 }
 
-/* ———— eye-catchers: the plate is engraved, not loaded ———— */
+/* ———— restrained motion accents ———— */
 
 /* the ∅ slash draws itself once on arrival */
 .slash {
@@ -729,5 +747,11 @@ pre {
 	from {
 		opacity: 0;
 		transform: translateY(10px);
+	}
+}
+
+@media (max-width: 600px) {
+	:root {
+		--section-pad: 2.5rem;
 	}
 }

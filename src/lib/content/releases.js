@@ -1,13 +1,20 @@
 /**
  * Build-time GitHub release catalogue.
  *
- * Live API data is preferred, but a pinned, last-known-good manifest keeps
+ * API metadata for the site's selected release is preferred, but a pinned,
+ * last-known-good manifest keeps
  * downloads useful when GitHub is unavailable or rate-limited. Product pages
  * without a published version never call this module (see +page.server.js).
  */
 
+import { trustedAsset, trustedRelease } from './release-trust.js';
+
 const OWNER = 'nullclaw';
 const API_TIMEOUT_MS = 8_000;
+const MANIFEST_REF = /^[a-f0-9]{40}$/.test(process.env.GITHUB_SHA ?? '')
+	? process.env.GITHUB_SHA
+	: 'main';
+const MANIFEST_URL = `https://github.com/nullclaw/nullmenu/blob/${MANIFEST_REF}/src/lib/content/release-digests.json`;
 
 const PLATFORMS = [
 	{ target: 'macos-aarch64', os: 'mac', label: 'macOS', arch: 'Apple Silicon', kind: 'binary' },
@@ -226,7 +233,9 @@ function findVerification(assets, binaryName) {
 	};
 }
 
-function binaryFromAsset(repo, platform, asset, assets) {
+function binaryFromAsset(repo, tag, platform, asset, assets) {
+	const trust = trustedAsset(repo, tag, asset.name);
+	if (!trust || (Number.isFinite(asset.size) && asset.size !== trust.bytes)) return null;
 	// GitHub's asset metadata cannot prove the filename *inside* a ZIP. Live ZIP
 	// instructions therefore stay generic; pinned snapshots record inspected names.
 	const executableName = asset.name.endsWith('.zip') ? null : asset.name;
@@ -234,21 +243,32 @@ function binaryFromAsset(repo, platform, asset, assets) {
 		platform.kind === 'windows' && asset.name.endsWith('.zip')
 			? findExact(assets, [`${repo}-${platform.target}.exe`])
 			: null;
+	const candidateRawWindowsTrust = rawWindowsAsset
+		? trustedAsset(repo, tag, rawWindowsAsset.name)
+		: null;
+	const rawWindowsTrust =
+		candidateRawWindowsTrust &&
+		(!Number.isFinite(rawWindowsAsset.size) || rawWindowsAsset.size === candidateRawWindowsTrust.bytes)
+			? candidateRawWindowsTrust
+			: null;
 
 	return {
 		...platform,
 		name: asset.name,
 		executableName,
 		package: asset.name.endsWith('.zip') ? 'zip' : 'binary',
-		size: fmtSize(asset.size),
-		bytes: Number.isFinite(asset.size) ? asset.size : null,
+		size: fmtSize(trust.bytes),
+		bytes: trust.bytes,
+		sha256: trust.sha256,
 		url: asset.browser_download_url,
-		alternates: rawWindowsAsset?.browser_download_url
+		alternates: rawWindowsAsset?.browser_download_url && rawWindowsTrust
 			? [
 					{
 						label: 'raw .exe',
 						name: rawWindowsAsset.name,
 						url: rawWindowsAsset.browser_download_url,
+						bytes: rawWindowsTrust.bytes,
+						sha256: rawWindowsTrust.sha256,
 						...findVerification(assets, rawWindowsAsset.name)
 					}
 				]
@@ -260,12 +280,14 @@ function binaryFromAsset(repo, platform, asset, assets) {
 /** Convert a GitHub release response into the stable page contract. */
 export function normaliseRelease(repo, release) {
 	if (!release?.tag_name || !Array.isArray(release.assets)) return null;
+	if (!trustedRelease(repo, release.tag_name)) return null;
 
 	const binaries = [];
 	for (const platform of PLATFORMS) {
 		const asset = findExact(release.assets, expectedNames(repo, platform));
 		if (!asset?.browser_download_url) continue;
-		binaries.push(binaryFromAsset(repo, platform, asset, release.assets));
+		const binary = binaryFromAsset(repo, release.tag_name, platform, asset, release.assets);
+		if (binary) binaries.push(binary);
 	}
 
 	if (!binaries.length) return null;
@@ -279,6 +301,7 @@ export function normaliseRelease(repo, release) {
 		tag: release.tag_name,
 		date: release.published_at?.slice(0, 10) ?? null,
 		url: release.html_url || releaseUrl(repo, release.tag_name),
+		manifestUrl: MANIFEST_URL,
 		binaries,
 		status: 'live'
 	};
@@ -288,13 +311,20 @@ function fallbackBinary(repo, tag, platform, snapshot) {
 	const windowsAsset = platform.kind === 'windows' ? snapshot.windows?.[platform.target] : null;
 	if (platform.kind === 'windows' && !windowsAsset) return null;
 	const name = windowsAsset?.primary ?? `${repo}-${platform.target}.bin`;
+	const trust = trustedAsset(repo, tag, name);
+	if (!trust) return null;
 	const executableName = windowsAsset?.executable ?? name;
-	const alternates = windowsAsset?.alternate
+	const alternateTrust = windowsAsset?.alternate
+		? trustedAsset(repo, tag, windowsAsset.alternate)
+		: null;
+	const alternates = windowsAsset?.alternate && alternateTrust
 		? [
 				{
 					label: 'raw .exe',
 					name: windowsAsset.alternate,
 					url: assetUrl(repo, tag, windowsAsset.alternate),
+					bytes: alternateTrust.bytes,
+					sha256: alternateTrust.sha256,
 					checksum: null,
 					signature: null
 				}
@@ -306,8 +336,9 @@ function fallbackBinary(repo, tag, platform, snapshot) {
 		name,
 		executableName,
 		package: name.endsWith('.zip') ? 'zip' : 'binary',
-		size: null,
-		bytes: null,
+		size: fmtSize(trust.bytes),
+		bytes: trust.bytes,
+		sha256: trust.sha256,
 		url: assetUrl(repo, tag, name),
 		alternates,
 		checksum: null,
@@ -318,13 +349,28 @@ function fallbackBinary(repo, tag, platform, snapshot) {
 function fallbackRelease(repo, fallbackTag) {
 	const snapshot = LAST_KNOWN_GOOD[repo];
 	if (snapshot) {
+		const binaries = PLATFORMS.filter((platform) => snapshot.targets.includes(platform.target))
+			.map((platform) => fallbackBinary(repo, snapshot.tag, platform, snapshot))
+			.filter(Boolean);
+		if (binaries.length !== snapshot.targets.length) {
+			return fallbackTag
+				? {
+						tag: fallbackTag,
+						date: null,
+						url: releaseUrl(repo, fallbackTag),
+						manifestUrl: MANIFEST_URL,
+						binaries: [],
+						status: 'unavailable',
+						note: 'This release is not offered here until every binary has a repository-anchored SHA-256 digest.'
+					}
+				: null;
+		}
 		return {
 			tag: snapshot.tag,
 			date: null,
 			url: releaseUrl(repo, snapshot.tag),
-			binaries: PLATFORMS.filter((platform) => snapshot.targets.includes(platform.target))
-				.map((platform) => fallbackBinary(repo, snapshot.tag, platform, snapshot))
-				.filter(Boolean),
+			manifestUrl: MANIFEST_URL,
+			binaries,
 			status: 'cached',
 			note: 'Live release details are temporarily unavailable. Downloads are pinned to the last verified release.'
 		};
@@ -335,6 +381,7 @@ function fallbackRelease(repo, fallbackTag) {
 		tag: fallbackTag,
 		date: null,
 		url: releaseUrl(repo, fallbackTag),
+		manifestUrl: MANIFEST_URL,
 		binaries: [],
 		status: 'unavailable',
 		note: 'GitHub could not be reached during this build. Open the pinned release to choose an asset.'
@@ -349,8 +396,26 @@ export function pinnedReleaseSnapshots() {
 	}));
 }
 
+/** Asset inventory used to generate and independently re-check the digest manifest. */
+export function pinnedReleaseAssetList() {
+	return Object.entries(LAST_KNOWN_GOOD).flatMap(([repo, snapshot]) =>
+		PLATFORMS.filter((platform) => snapshot.targets.includes(platform.target)).flatMap((platform) => {
+			const windowsAsset = platform.kind === 'windows' ? snapshot.windows?.[platform.target] : null;
+			const primary = windowsAsset?.primary ?? `${repo}-${platform.target}.bin`;
+			const names = [primary, ...(windowsAsset?.alternate ? [windowsAsset.alternate] : [])];
+			return names.map((name) => ({
+				repo,
+				tag: snapshot.tag,
+				name,
+				url: assetUrl(repo, snapshot.tag, name)
+			}));
+		})
+	);
+}
+
 /**
- * Fetch the latest published release. Failures never turn a released product
+ * Fetch the site's selected published release (or latest when no tag is given).
+ * Failures never turn a released product
  * into a false "coming soon" page: a pinned snapshot or release-page CTA is
  * returned instead.
  */
@@ -362,7 +427,10 @@ export async function fetchRelease(repo, { fallbackTag = null, fetchImpl = fetch
 	if (process.env.GITHUB_TOKEN) headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
 
 	try {
-		const res = await fetchImpl(`https://api.github.com/repos/${OWNER}/${repo}/releases/latest`, {
+		const endpoint = fallbackTag
+			? `https://api.github.com/repos/${OWNER}/${repo}/releases/tags/${encodeURIComponent(fallbackTag)}`
+			: `https://api.github.com/repos/${OWNER}/${repo}/releases/latest`;
+		const res = await fetchImpl(endpoint, {
 			headers,
 			signal: AbortSignal.timeout(API_TIMEOUT_MS)
 		});
@@ -372,9 +440,15 @@ export async function fetchRelease(repo, { fallbackTag = null, fetchImpl = fetch
 		}
 
 		const live = normaliseRelease(repo, await res.json());
+		if (live && fallbackTag && live.tag !== fallbackTag) {
+			console.warn(
+				`[releases] ${repo}: API returned ${live.tag}, expected ${fallbackTag}; using pinned fallback`
+			);
+			return fallbackRelease(repo, fallbackTag);
+		}
 		if (live) return live;
 		console.warn(
-			`[releases] ${repo}: latest release is incomplete or has no recognised binaries; using pinned fallback`
+			`[releases] ${repo}: release is incomplete, untrusted or has no recognised binaries; using pinned fallback`
 		);
 		return fallbackRelease(repo, fallbackTag);
 	} catch (error) {

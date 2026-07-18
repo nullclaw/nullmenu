@@ -3,19 +3,23 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "packageManager": "pnpm@10.25.0",
   "scripts": {
     "dev": "vite dev",
-    "build": "vite build",
+    "build": "node scripts/build-site.js",
     "build:all": "node scripts/build-all.js",
+    "build:redirects": "node scripts/build-redirects.js",
     "preview": "vite preview",
     "check": "svelte-kit sync && svelte-check --tsconfig ./jsconfig.json --fail-on-warnings",
     "check:content": "node scripts/validate-content.js",
+    "check:infra": "node scripts/validate-infra.js",
+    "check:build": "node scripts/validate-builds.js",
     "test": "pnpm test:unit && pnpm test:release && pnpm test:ui",
     "test:unit": "node --test tests/unit/*.test.js",
     "test:release": "node scripts/test-release-downloads.js",
     "test:release:network": "node scripts/smoke-release-assets.js",
-    "test:ui": "node scripts/build-all.js && playwright test",
-    "quality": "pnpm check && pnpm check:content && pnpm test",
+    "test:ui": "pnpm build:all && pnpm build:redirects && pnpm check:build && playwright test",
+    "quality": "pnpm check && pnpm check:content && pnpm check:infra && pnpm test",
     "dev:claw": "PUBLIC_SITE=claw vite dev --port 5174",
     "dev:hub": "PUBLIC_SITE=hub vite dev --port 5175",
     "dev:desk": "PUBLIC_SITE=desk vite dev --port 5176"
@@ -46,5 +50,10 @@
   "homepage": "https://nullmenu.ai",
   "engines": {
     "node": ">=22"
+  },
+  "pnpm": {
+    "overrides": {
+      "cookie": "0.7.2"
+    }
   }
 }

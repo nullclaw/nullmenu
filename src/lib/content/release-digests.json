@@ -1,0 +1,332 @@
+{
+	"schema": 1,
+	"verifiedAt": "2026-07-18",
+	"releases": {
+		"nllclw@v2026.6.1": {
+			"repo": "nllclw",
+			"tag": "v2026.6.1",
+			"assets": {
+				"nllclw-android-aarch64.bin": {
+					"sha256": "66ce67f612906f3867d9d9656f6e4bf6dc4c33a44890dcf11ac58bbf7dd858c2",
+					"bytes": 896192
+				},
+				"nllclw-android-armv7.bin": {
+					"sha256": "a020367efd3ff5f75a013bf4588966878caf7330e699a799446f51455a4ea2e8",
+					"bytes": 1120820
+				},
+				"nllclw-android-x86_64.bin": {
+					"sha256": "68ec93644da2a928c3a0a6a10c067fb097d93cc88d9bce91bc045329c4e88c7e",
+					"bytes": 1017952
+				},
+				"nllclw-linux-aarch64.bin": {
+					"sha256": "343fe8caa293b6fcf62e80babf18db38cb6de2d0510eb9511af7c25d0a2c6ef3",
+					"bytes": 861744
+				},
+				"nllclw-linux-arm32-gnu.bin": {
+					"sha256": "f05e070254136da0d8150143aa9d2b56cd102298daa6101bd035ece1254ee17d",
+					"bytes": 1011360
+				},
+				"nllclw-linux-arm32-musl.bin": {
+					"sha256": "f05e070254136da0d8150143aa9d2b56cd102298daa6101bd035ece1254ee17d",
+					"bytes": 1011360
+				},
+				"nllclw-linux-riscv64.bin": {
+					"sha256": "ec9b34bceb0eddc41d346286ae70a2ab6377253b6da173a76ac773c842732c0d",
+					"bytes": 1045752
+				},
+				"nllclw-linux-x86_64.bin": {
+					"sha256": "5dc754bf166be2c338c13e7dfc6035c9be40237acf0c5a96f68c4b48a5e620fd",
+					"bytes": 981392
+				},
+				"nllclw-macos-aarch64.bin": {
+					"sha256": "43c6904ac272012915f5e5648864443beb2b742dcbf51895f35bd6d70b148d44",
+					"bytes": 899784
+				},
+				"nllclw-macos-x86_64.bin": {
+					"sha256": "d1c18955e302e7457c6c538b6f7076648ac13ad828b5db9b9f724342efdaf4ec",
+					"bytes": 927394
+				},
+				"nllclw-windows-aarch64.exe": {
+					"sha256": "1d69f746072a1257c2d41fac467c772d2529cbaf07d3636f7fedd8448d1236fc",
+					"bytes": 1056768
+				},
+				"nllclw-windows-aarch64.zip": {
+					"sha256": "0313b429e5b57b293e01cd8e29b10d84fed32d6eae7c173f23bd6c39521502df",
+					"bytes": 444488
+				},
+				"nllclw-windows-x86_64.exe": {
+					"sha256": "5b6389d11b3b3915fbf8548dbb968a9acb5a54251796ff123ebb5e0a48702f45",
+					"bytes": 1232384
+				},
+				"nllclw-windows-x86_64.zip": {
+					"sha256": "e7227e45a62413b0d3bcfdd2158792b66b66a2df7f198f8080397e77109062d0",
+					"bytes": 477092
+				}
+			}
+		},
+		"nullboiler@v2026.5.29": {
+			"repo": "nullboiler",
+			"tag": "v2026.5.29",
+			"assets": {
+				"nullboiler-linux-aarch64.bin": {
+					"sha256": "7558958e1e13782a27000e19617994c3adf839ef22a38903e60ceb6492917d4b",
+					"bytes": 1904096
+				},
+				"nullboiler-linux-riscv64.bin": {
+					"sha256": "fd0e393e673e85561c73cc52b53151729a95a4ff15a32b8230a1230997678a61",
+					"bytes": 2001352
+				},
+				"nullboiler-linux-x86_64.bin": {
+					"sha256": "ecec08fb781b29ca2e0d8d23890ce445d0fb7578d7c2e44eee054655d695b7f7",
+					"bytes": 2059128
+				},
+				"nullboiler-macos-aarch64.bin": {
+					"sha256": "a79382190624053c013785d380e9e0b8e4d42db5a99643d13b00ad3eeb23c529",
+					"bytes": 1998184
+				},
+				"nullboiler-macos-x86_64.bin": {
+					"sha256": "f2715735508b8f3806a1e53d19332e98b2b4eb9bb3cd4cb5c2ed2d5b992d09dd",
+					"bytes": 1937695
+				},
+				"nullboiler-windows-aarch64.exe": {
+					"sha256": "e0c99941b7d27288a0a2821e0ec8be5e253d23a005d55dc1180a8affa7127cc8",
+					"bytes": 2055168
+				},
+				"nullboiler-windows-aarch64.zip": {
+					"sha256": "7d3216804143308154f88b7177ed3876d1e4bf4c2d5020a245f1a75722715e96",
+					"bytes": 953613
+				},
+				"nullboiler-windows-x86_64.exe": {
+					"sha256": "d06d7761ae926e44ead0c58361db98dffcb4b3311c5a0246d959c51b970bad8a",
+					"bytes": 2290176
+				},
+				"nullboiler-windows-x86_64.zip": {
+					"sha256": "0957c91c7475086f740d5e81b2f2c37fb5abda720a44b1e4a4af79dee86b1617",
+					"bytes": 1001072
+				}
+			}
+		},
+		"nullclaw@v2026.5.29": {
+			"repo": "nullclaw",
+			"tag": "v2026.5.29",
+			"assets": {
+				"nullclaw-android-aarch64.bin": {
+					"sha256": "366a4842418e59bd1d189ad22323f90ca74ab59f4c8a62e2b6dd8d65a8c3358c",
+					"bytes": 4746544
+				},
+				"nullclaw-android-armv7.bin": {
+					"sha256": "05599ffba09054f27da527695d1be99aaf41256b93c0efb1d6805555bda634e6",
+					"bytes": 6074336
+				},
+				"nullclaw-android-x86_64.bin": {
+					"sha256": "59e1ac4bcd5ca509766f096ff67da8d07e35bc0092dd9b74b59cba60f9c71c75",
+					"bytes": 5892872
+				},
+				"nullclaw-linux-aarch64.bin": {
+					"sha256": "87d4a19c39dd199f6d5f45b3c80e566d4349d0a291e6cc4ac8f573e2fecfa152",
+					"bytes": 4396464
+				},
+				"nullclaw-linux-arm32-gnu.bin": {
+					"sha256": "ab802e2697b9f96a17a50bff39623efa71c79a877cc07547b527cfc0de525b37",
+					"bytes": 5687608
+				},
+				"nullclaw-linux-arm32-musl.bin": {
+					"sha256": "db518457910be6d9d5ed77959fb6cbd04eb6511fb72f618510685328912996d7",
+					"bytes": 5554320
+				},
+				"nullclaw-linux-riscv64.bin": {
+					"sha256": "fd68752347580036e8fa54992e969ccd06843263fbec960d3ba4a4cef1f02b9f",
+					"bytes": 4889736
+				},
+				"nullclaw-linux-x86_64.bin": {
+					"sha256": "966c524d3816531371e8657ffc84c40f47d94db89f6c70e816adce983e6d1f0a",
+					"bytes": 5483392
+				},
+				"nullclaw-macos-aarch64.bin": {
+					"sha256": "054ca919b3925923f1b834b2b6a6db7aa70638346afb21e5cb615fe8814c344e",
+					"bytes": 4870888
+				},
+				"nullclaw-macos-x86_64.bin": {
+					"sha256": "a761c1121fb313d8e2c8b2f38dd0644d3ca702f10747aadcfbb65be1626eda33",
+					"bytes": 5525401
+				},
+				"nullclaw-windows-aarch64.exe": {
+					"sha256": "7399a34332094a8cbb31a7111e2c12ecafaf7b21465414bbcfdf3f00ee206dca",
+					"bytes": 5796864
+				},
+				"nullclaw-windows-aarch64.zip": {
+					"sha256": "80b5a0e20d895bd8da2ab31ba60a164d4a31617b10f071065a329813cdcc1351",
+					"bytes": 2529859
+				},
+				"nullclaw-windows-x86_64.exe": {
+					"sha256": "f94aa8ef0a0d0d317d08b3fdcc05bbe1c3d740dd7da2b824f748287aa522e8b5",
+					"bytes": 6531584
+				},
+				"nullclaw-windows-x86_64.zip": {
+					"sha256": "1cf762c049ca9f2c8694d0ae3837d481c9e2c8a89b506744bacb68d2f6791db3",
+					"bytes": 2581140
+				}
+			}
+		},
+		"nullhub@v2026.5.29": {
+			"repo": "nullhub",
+			"tag": "v2026.5.29",
+			"assets": {
+				"nullhub-linux-aarch64.bin": {
+					"sha256": "79ce79edff2db60679de8ffa951f6841990dbbe3b3795305ca97f412d2b692a1",
+					"bytes": 2417928
+				},
+				"nullhub-linux-riscv64.bin": {
+					"sha256": "2db59db532471c83ff394305172f0476db657c2d8d83f5f82f8623e89019ad69",
+					"bytes": 2626136
+				},
+				"nullhub-linux-x86_64.bin": {
+					"sha256": "dd01348a782ab94e6f8104beda746a8b550490149c2d968397995901c5df98ff",
+					"bytes": 2663560
+				},
+				"nullhub-macos-aarch64.bin": {
+					"sha256": "77e9bb8a5b4159d74aa01165fa5829fdb82924daf02f7bb7d1914b0212c27e5c",
+					"bytes": 2410840
+				},
+				"nullhub-macos-x86_64.bin": {
+					"sha256": "f8cb49dcbca804a4ea94e73a32a4b1edd206a6aa614be291c8b336d49f695ad0",
+					"bytes": 2519366
+				},
+				"nullhub-windows-aarch64.exe": {
+					"sha256": "9212540b33c430a0b49b5adbfd808c8429ea784178969cb24ad53bfb0eb091ce",
+					"bytes": 2598400
+				},
+				"nullhub-windows-aarch64.zip": {
+					"sha256": "cd991cd0281467afac6e67f362b0b2a74e25d7dc74faea6b1c04a81d897a57cc",
+					"bytes": 1004147
+				},
+				"nullhub-windows-x86_64.exe": {
+					"sha256": "5d11cf7ac3492362dfbc40c25313cadebd1775e7e0bb63600ecf24eeddaac530",
+					"bytes": 2905600
+				},
+				"nullhub-windows-x86_64.zip": {
+					"sha256": "e776eb1a6d0c4aac85a003a666fe9cd68f53cf9ea4015a080caedf4d8fcb4cd1",
+					"bytes": 1054466
+				}
+			}
+		},
+		"nullpantry@v2026.06.09": {
+			"repo": "nullpantry",
+			"tag": "v2026.06.09",
+			"assets": {
+				"nullpantry-linux-aarch64.bin": {
+					"sha256": "e8605965314ea1343eefb3a40d0d01eda1be2982206ce38e02474426e0e98ba3",
+					"bytes": 4108600
+				},
+				"nullpantry-linux-riscv64.bin": {
+					"sha256": "67726aedeed958da8ea44ff41e4a3e3b05de4c1f8b099819ba35058847368bad",
+					"bytes": 4227296
+				},
+				"nullpantry-linux-x86_64.bin": {
+					"sha256": "546a992511b3b970cf1e3930083a374dc45ccdc7e6100412b6113ae160582b1d",
+					"bytes": 4677048
+				},
+				"nullpantry-macos-aarch64.bin": {
+					"sha256": "5f689e3d48fb62e97184eb79e90f93d91ecf46506dfd423dd06ebe23c7459713",
+					"bytes": 4289976
+				},
+				"nullpantry-macos-x86_64.bin": {
+					"sha256": "b8dcc340d6427a140001355b8252c4096b8d6ca5b55549c534e8ebb60db1511c",
+					"bytes": 4556639
+				},
+				"nullpantry-windows-aarch64.exe": {
+					"sha256": "240efbacf1488ae31550da1f333a8b8a071bdb66fee9670254bb21cc9a07b33b",
+					"bytes": 4195840
+				},
+				"nullpantry-windows-aarch64.zip": {
+					"sha256": "1305cf1f6b84634efd4da0a035582e44d0da2ff0e32b0ac5c32274344c5f4acd",
+					"bytes": 1999225
+				},
+				"nullpantry-windows-x86_64.exe": {
+					"sha256": "1de24cfa4c13ec38c779c5b8c5ea6f387eabb3eaf37b3cc0c2b8e8a444c814cb",
+					"bytes": 4880384
+				},
+				"nullpantry-windows-x86_64.zip": {
+					"sha256": "956bbc0e609f8bd92f195c10730695dabddcdd130ba8ca8ca3a7ca59864d0ede",
+					"bytes": 2085336
+				}
+			}
+		},
+		"nulltickets@v2026.5.29": {
+			"repo": "nulltickets",
+			"tag": "v2026.5.29",
+			"assets": {
+				"nulltickets-linux-aarch64.bin": {
+					"sha256": "497ad182c260a17912ac3a3b6d7e107efd43beca8ce9ef86e05a5acd1e149614",
+					"bytes": 1471032
+				},
+				"nulltickets-linux-riscv64.bin": {
+					"sha256": "6a9b2f85d199245510fa39950405d6d35918086f7dc175f84adcf7f3d4453789",
+					"bytes": 1345648
+				},
+				"nulltickets-linux-x86_64.bin": {
+					"sha256": "031ce5b987a25ac7853cccf5049d69a5854bddfb4bca5a627007aaafa47f69e2",
+					"bytes": 1519816
+				},
+				"nulltickets-macos-aarch64.bin": {
+					"sha256": "306a7a6d359dbafe56a4dc50892d684a119b7d062a54b2b6a019dcf8d0e88de7",
+					"bytes": 1560296
+				},
+				"nulltickets-macos-x86_64.bin": {
+					"sha256": "870b27c65e64ed74044276dc23eb5dfe52885c650b839c1b868acba0ce196c6d",
+					"bytes": 1433514
+				},
+				"nulltickets-windows-aarch64.exe": {
+					"sha256": "a11530b4b38a747a2f6a23a2e5d775222eff466607f239278e4c8927117a5962",
+					"bytes": 1587712
+				},
+				"nulltickets-windows-x86_64.exe": {
+					"sha256": "4233ecc799dc03378cc0f616d1af0090f12e21d76e9121e16fe959e1698a1f62",
+					"bytes": 1719808
+				}
+			}
+		},
+		"nullwatch@v2026.5.29": {
+			"repo": "nullwatch",
+			"tag": "v2026.5.29",
+			"assets": {
+				"nullwatch-linux-aarch64.bin": {
+					"sha256": "bd636e6bf46d2faf2bb8c7f7676e98966e516c2daaf78072748766f3406dd148",
+					"bytes": 330280
+				},
+				"nullwatch-linux-riscv64.bin": {
+					"sha256": "cfb647169caa72b0434fa6caa8953a264067c515567b6c83dce9e6006826639c",
+					"bytes": 313096
+				},
+				"nullwatch-linux-x86_64.bin": {
+					"sha256": "2d87eef43afb61e9083bb79ce78109f24b2c265c873c6e40db1385f4701c7df7",
+					"bytes": 359800
+				},
+				"nullwatch-macos-aarch64.bin": {
+					"sha256": "969e5092eea003633ec6e0f8c9f65a63b412e6b18a20101c5e3995bf75b501c9",
+					"bytes": 384888
+				},
+				"nullwatch-macos-x86_64.bin": {
+					"sha256": "eb3fe78649136082c85e24c466bd3d15fc46cb696b1fbc1d4d9b02aaf8bbe3c7",
+					"bytes": 338305
+				},
+				"nullwatch-windows-aarch64.exe": {
+					"sha256": "9b696bfdb6408c51dfb15bc7262cc77129729252d4b36ec5284345a4e7ccb215",
+					"bytes": 577536
+				},
+				"nullwatch-windows-aarch64.zip": {
+					"sha256": "eb18e330fbcc1a29a368fc179c9ee891bd285069b28236aa5b174ae08fdc97f7",
+					"bytes": 174583
+				},
+				"nullwatch-windows-x86_64.exe": {
+					"sha256": "70a69c530f4fedd7921affb4b1ca44a59498ab5ad70e781f26fff7735b3a5274",
+					"bytes": 652800
+				},
+				"nullwatch-windows-x86_64.zip": {
+					"sha256": "6a1de4839ac60e8ec0372aabd570fe59c51acd2322a24c38ce4d735e1e3f6c6e",
+					"bytes": 201967
+				}
+			}
+		}
+	}
+}

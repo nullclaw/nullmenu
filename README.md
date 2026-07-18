@@ -31,8 +31,8 @@ node scripts/build-all.js claw hub # just some
 Every site ships `llms.txt`, `llms-full.txt`, `sitemap.xml`, `robots.txt`,
 and a Markdown twin for every docs page (`/docs/x/y/` ⇄ `/docs/x/y.md`).
 
-Two themes — evening service (cast iron) and day service (aged parchment) —
-derived from each product's accent via `color-mix`, persisted, system-aware.
+Three theme modes — system, light and dark — derive from each product's accent
+via `color-mix`. The preference is persisted across the product subdomains.
 The hero runs a WebGPU Navier–Stokes ink simulation (canvas fallback), and
 product pages bake platform-aware binary downloads from GitHub Releases.
 
@@ -40,17 +40,52 @@ product pages bake platform-aware binary downloads from GitHub Releases.
 
 1. Add an entry to `src/lib/site/sites.js` (accent, course, docsSections, …).
 2. Drop `content/<id>/product.json` + `content/<id>/docs/<section>/<slug>.md`.
-3. Add the site to the deploy matrix in `.github/workflows/deploy.yml`.
-4. DNS + Pages setup for the new subdomain (below).
+3. Configure DNS and GitHub Pages for the repository named by the registry entry.
+
+The build list and deployment targets are derived from the registry; there is
+no second matrix to keep in sync. `pnpm check:content` and `pnpm check:infra`
+fail if content, domains or repositories drift.
 
 ## Deploy
 
 Push to `main` — `.github/workflows/deploy.yml` builds every site, deploys
-the apex to this repo's GitHub Pages and each `build/<site>` to the matching
-product repo's `gh-pages` branch, so docs live next to the code they document.
-A weekly cron rebuild keeps the baked-in release/download data fresh.
-Subdomain pushes need the `NULLMENU_DEPLOY_TOKEN` secret (a token with
-`contents: write` on the product repos).
+the ten product builds to staged refs, promotes their `gh-pages` branches with
+lease protection, then deploys the apex last. Promotion or apex failures roll
+the product refs back without overwriting a ref changed by another publisher.
+Subdomain pushes require `NULLMENU_DEPLOY_TOKEN` with `contents: write` on the
+product repositories.
+
+`nullclaw.io` and `nullhub.io` cannot return real cross-domain 308 responses
+from GitHub Pages. `pnpm build:redirects` therefore produces Cloudflare Pages
+workers and equivalent Vercel rules. To activate the workflow deploys:
+
+1. Create Cloudflare Pages projects named `nullclaw-io-redirect` and
+   `nullhub-io-redirect`.
+2. Add repository secrets `CLOUDFLARE_API_TOKEN` and
+   `CLOUDFLARE_ACCOUNT_ID`; the token needs Pages edit access.
+3. Bind `nullclaw.io` and `nullhub.io` (including the desired `www` aliases)
+   to those projects and remove their GitHub Pages custom-domain bindings.
+4. Verify with `curl -I` that representative legacy paths return `308` and the
+   expected `Location` header.
+
+Without both secrets the legacy job intentionally reports that it is inactive;
+the generated bundles are still validated in CI.
+
+## Release trust
+
+Download recommendations are pinned to the tags and SHA-256 values in
+`src/lib/content/release-digests.json`. When intentionally updating a product
+version, update the site registry and regenerate the manifest from the published
+assets:
+
+```bash
+node scripts/update-release-digests.js --generate
+pnpm test:release
+pnpm test:release:network
+```
+
+The weekly workflow streams and re-hashes all pinned assets; it does not adopt a
+new tag automatically.
 
 ## License
 

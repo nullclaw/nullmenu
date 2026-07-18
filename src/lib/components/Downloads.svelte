@@ -4,6 +4,11 @@
 	 * the operating system: guessing a CPU can offer a binary that cannot run.
 	 */
 	import { site } from '$lib/site';
+	import {
+		downloadCommand,
+		runCommand,
+		verificationCommand
+	} from '$lib/content/release-commands.js';
 	import Reveal from './Reveal.svelte';
 
 	let { release } = $props();
@@ -11,12 +16,19 @@
 	let detectedOs = $state(null);
 	let selectedName = $state(null);
 	let copiedName = $state('');
+	let copiedVerification = $state('');
 
 	const detectedLabel = $derived(
 		detectedOs ? release.binaries.find((binary) => binary.os === detectedOs)?.label : null
 	);
 	const platformChoices = $derived(
 		detectedOs ? release.binaries.filter((binary) => binary.os === detectedOs) : []
+	);
+	const hasPublisherSignatures = $derived(
+		release.binaries.some(
+			(binary) =>
+				binary.signature || binary.alternates?.some((alternate) => alternate.signature)
+		)
 	);
 	const selected = $derived.by(() => {
 		for (const binary of release.binaries) {
@@ -30,7 +42,8 @@
 					package: alternate.name.endsWith('.zip') ? 'zip' : 'binary',
 					executableName: alternate.name.endsWith('.exe') ? alternate.name : null,
 					size: null,
-					bytes: null,
+					bytes: alternate.bytes ?? null,
+					sha256: alternate.sha256 ?? null,
 					alternates: [],
 					checksum: alternate.checksum,
 					signature: alternate.signature
@@ -49,38 +62,32 @@
 		else if (/linux/i.test(platform) || /Linux/.test(ua)) detectedOs = 'linux';
 	});
 
-	function shellQuote(value) {
-		return `'${String(value).replaceAll("'", "'\\''")}'`;
-	}
-
-	function powershellQuote(value) {
-		return `'${String(value).replaceAll("'", "''")}'`;
-	}
-
-	function installCommand(binary) {
-		if (binary.os === 'windows') {
-			return `Invoke-WebRequest -Uri ${powershellQuote(binary.url)} -OutFile ${powershellQuote(binary.name)}`;
-		}
-		return `curl -fL ${shellQuote(binary.url)} -o ${shellQuote(binary.name)} && chmod +x ${shellQuote(binary.name)}`;
-	}
-
-	function runHint(binary) {
-		if (binary.os === 'windows' && binary.package === 'zip') {
-			return binary.executableName
-				? `Unzip ${binary.name}, then run .\\${binary.executableName} --help`
-				: `Unzip ${binary.name}, then run the included .exe with --help`;
-		}
-		if (binary.os === 'windows') return `.\\${binary.name} --help`;
-		return `chmod +x ${binary.name} && ./${binary.name} --help`;
-	}
-
 	async function copyInstall(binary) {
 		try {
-			await navigator.clipboard.writeText(installCommand(binary));
+			await navigator.clipboard.writeText(downloadCommand(binary));
 			copiedName = binary.name;
 			const status = document.getElementById('sr-status');
-			if (status) status.textContent = 'Install command copied';
+			if (status) {
+				status.textContent = binary.sha256
+					? 'Download and SHA-256 verification command copied'
+					: 'Download command copied';
+			}
 			setTimeout(() => (copiedName = ''), 1600);
+		} catch {
+			const status = document.getElementById('sr-status');
+			if (status) status.textContent = 'Clipboard unavailable';
+		}
+	}
+
+	async function copyVerification(binary) {
+		const command = verificationCommand(binary);
+		if (!command) return;
+		try {
+			await navigator.clipboard.writeText(command);
+			copiedVerification = binary.name;
+			const status = document.getElementById('sr-status');
+			if (status) status.textContent = 'SHA-256 verification command copied';
+			setTimeout(() => (copiedVerification = ''), 1600);
 		} catch {
 			const status = document.getElementById('sr-status');
 			if (status) status.textContent = 'Clipboard unavailable';
@@ -109,6 +116,29 @@
 			</Reveal>
 		{/if}
 
+		{#if release.binaries.length}
+			<Reveal>
+				<aside class="trust-guide" aria-labelledby="release-trust-title">
+					<div>
+						<p class="eyebrow mono">Byte-for-byte trust</p>
+						<h3 id="release-trust-title" class="serif">Verify before you run.</h3>
+						<p>
+							Every file matches a SHA-256 digest committed with this site.
+							{#if hasPublisherSignatures}
+								The publisher's detached signature is linked beside the relevant asset.
+							{:else}
+								No detached publisher signatures were released; the digest proves an exact manifest
+								match, not publisher identity.
+							{/if}
+						</p>
+					</div>
+					<a href={release.manifestUrl} target="_blank" rel="noopener">
+						Audit the digest manifest &nearr;
+					</a>
+				</aside>
+			</Reveal>
+		{/if}
+
 		{#if platformChoices.length}
 			<Reveal>
 				<div class="chooser">
@@ -129,6 +159,7 @@
 								<span class="serif-i">{binary.arch}</span>
 								<span class="mono">
 									{binary.package === 'zip' ? 'ZIP' : 'binary'}{#if binary.size} · {binary.size}{/if}
+									{#if binary.sha256} · SHA-256 anchored{/if}
 								</span>
 							</a>
 						{/each}
@@ -137,15 +168,33 @@
 
 				{#if selected}
 					<div class="after-download">
-						<span class="mono">After download</span>
-						<code class="hint mono">{runHint(selected)}</code>
+						<span class="mono">Download safely</span>
+						<code class="hint mono">{downloadCommand(selected)}</code>
 						<button class="copy mono" onclick={() => copyInstall(selected)}>
 							{copiedName === selected.name
 								? 'Copied'
-								: selected.os === 'windows'
-									? 'Copy PowerShell'
-									: 'Copy curl'}
+								: selected.sha256
+									? 'Copy download + verify'
+									: selected.os === 'windows'
+										? 'Copy PowerShell'
+										: 'Copy curl'}
 						</button>
+					</div>
+					{#if selected.sha256}
+						<div class="verification-detail">
+							<div class="verification-copy">
+								<span class="mono">SHA-256 · {selected.name}</span>
+								<code class="digest-value mono">{selected.sha256}</code>
+								<code class="verify-command mono">{verificationCommand(selected)}</code>
+							</div>
+							<button class="copy mono" onclick={() => copyVerification(selected)}>
+								{copiedVerification === selected.name ? 'Copied' : 'Copy verify command'}
+							</button>
+						</div>
+					{/if}
+					<div class="run-step">
+						<span class="mono">After a match</span>
+						<code class="hint mono">{runCommand(selected)}</code>
 					</div>
 				{/if}
 			</Reveal>
@@ -191,7 +240,7 @@
 								<button
 									class="copy mono"
 									onclick={() => copyInstall(binary)}
-									aria-label="Copy {binary.os === 'windows' ? 'PowerShell' : 'curl'} command for {binary.label} {binary.arch}"
+									aria-label="Copy download and SHA-256 verification command for {binary.label} {binary.arch}"
 								>
 									{copiedName === binary.name
 										? 'copied'
@@ -202,12 +251,22 @@
 							</div>
 							<div class="asset-meta mono">
 								<span>{binary.name}</span>
+								{#if binary.sha256}
+									<span class="digest-chip" title={binary.sha256}>
+										SHA-256 · {binary.sha256.slice(0, 12)}…
+									</span>
+								{/if}
 								{#each binary.alternates ?? [] as alternate}
-								<a
-									href={alternate.url}
-									download
-									onclick={() => (selectedName = alternate.name)}>{alternate.label}</a
-								>
+									<a
+										href={alternate.url}
+										download
+										onclick={() => (selectedName = alternate.name)}>{alternate.label}</a
+									>
+									{#if alternate.sha256}
+										<span class="digest-chip" title={alternate.sha256}>
+											SHA-256 · {alternate.sha256.slice(0, 12)}…
+										</span>
+									{/if}
 									{#if alternate.checksum}
 										<a href={alternate.checksum.url} download title={alternate.checksum.name}>
 											{alternate.label} SHA-256
@@ -234,8 +293,8 @@
 					{/each}
 				</ul>
 				<p class="verification mono">
-					When a release publishes a SHA-256 file or signature, its verification link appears beside
-					the asset.
+					Exact digests come from the repository manifest. If a future release also publishes a
+					checksum file or detached signature, that upstream evidence appears beside the asset.
 				</p>
 			</Reveal>
 		{/if}
@@ -293,6 +352,32 @@
 		font-size: var(--text-xs);
 		letter-spacing: 0.06em;
 		text-transform: uppercase;
+	}
+
+	.trust-guide {
+		align-items: end;
+		background: color-mix(in srgb, var(--accent) 5%, var(--bg-2));
+		border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--line));
+		display: grid;
+		gap: clamp(1.25rem, 4vw, 3rem);
+		grid-template-columns: minmax(0, 1fr) auto;
+		margin-top: 1rem;
+		padding: clamp(1rem, 3vw, 1.5rem);
+	}
+
+	.trust-guide p:last-child {
+		color: var(--ink-2);
+		font-size: var(--text-sm);
+		margin-top: 0.65rem;
+		max-width: 48rem;
+	}
+
+	.trust-guide > a {
+		color: var(--accent);
+		font-size: var(--text-xs);
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		white-space: nowrap;
 	}
 
 	.pulse {
@@ -380,6 +465,56 @@
 		padding: 0.8rem 1rem;
 	}
 
+	.verification-detail {
+		align-items: center;
+		background: var(--bg-2);
+		border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--line));
+		border-top: 0;
+		display: grid;
+		gap: 1rem;
+		grid-template-columns: minmax(0, 1fr) auto;
+		padding: 1rem;
+	}
+
+	.verification-copy {
+		display: grid;
+		gap: 0.55rem;
+		min-width: 0;
+	}
+
+	.verification-copy > span,
+	.run-step > span {
+		color: var(--accent);
+		font-size: var(--text-xs);
+		letter-spacing: 0.04em;
+	}
+
+	.digest-value,
+	.verify-command {
+		background: transparent;
+		font-size: var(--text-xs);
+		overflow-wrap: anywhere;
+		white-space: normal;
+	}
+
+	.digest-value {
+		color: var(--ink);
+		user-select: all;
+	}
+
+	.verify-command {
+		color: var(--ink-3);
+	}
+
+	.run-step {
+		border: 1px solid var(--line);
+		border-top: 0;
+		display: grid;
+		gap: 0.65rem;
+		grid-template-columns: auto minmax(0, 1fr);
+		padding: 0.75rem 1rem;
+	}
+
 	.after-download > span,
 	.hint {
 		color: var(--ink-3);
@@ -458,7 +593,7 @@
 	.copy {
 		border-left: 1px solid var(--line);
 		color: var(--ink-3);
-		font-size: 0.66rem;
+		font-size: var(--text-xs);
 		letter-spacing: 0.09em;
 		padding: 0 0.8rem;
 		text-transform: uppercase;
@@ -498,7 +633,8 @@
 	.asset-meta {
 		color: var(--ink-3);
 		display: flex;
-		font-size: 0.63rem;
+		flex-wrap: wrap;
+		font-size: var(--text-xs);
 		gap: 0.7rem;
 		letter-spacing: 0.03em;
 		min-width: 0;
@@ -517,6 +653,11 @@
 		text-underline-offset: 0.2em;
 	}
 
+	.digest-chip {
+		color: var(--ink-3);
+		white-space: nowrap;
+	}
+
 	.verification {
 		color: var(--ink-3);
 		font-size: var(--text-xs);
@@ -526,6 +667,15 @@
 	}
 
 	@media (max-width: 860px) {
+		.trust-guide {
+			align-items: start;
+			grid-template-columns: minmax(0, 1fr);
+		}
+
+		.trust-guide > a {
+			white-space: normal;
+		}
+
 		.chooser,
 		.release-fallback {
 			align-items: start;
@@ -544,10 +694,33 @@
 			grid-template-columns: auto minmax(0, 1fr);
 		}
 
+		.verification-detail,
+		.run-step {
+			align-items: start;
+			grid-template-columns: minmax(0, 1fr);
+		}
+
+		.verification-detail .copy {
+			border: 1px solid var(--line);
+			justify-self: start;
+			min-height: 2.75rem;
+		}
+
 		.release-note a,
 		.after-download .copy {
 			grid-column: 2;
 			justify-self: start;
+		}
+
+		.asset-meta {
+			gap: 0.45rem 0.7rem;
+		}
+
+		.asset-meta a {
+			display: inline-flex;
+			align-items: center;
+			min-height: 44px;
+			padding-inline: 0.25rem;
 		}
 
 		.after-download > span {

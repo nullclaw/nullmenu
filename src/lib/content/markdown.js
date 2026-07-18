@@ -1,8 +1,39 @@
 import { Marked } from 'marked';
 import { getHighlighter } from './highlight.js';
 
+export function escapeHtml(value) {
+	return String(value ?? '')
+		.replace(/&/g, '&amp;')
+		.replace(/</g, '&lt;')
+		.replace(/>/g, '&gt;')
+		.replace(/"/g, '&quot;')
+		.replace(/'/g, '&#39;');
+}
+
+/**
+ * Keep ordinary relative links plus the small set of schemes used by the docs.
+ * The compact copy catches control-character and whitespace-obfuscated schemes;
+ * the original value is escaped before it is written into an attribute.
+ */
+export function safeHref(value) {
+	const href = String(value ?? '').trim();
+	if (!href) return null;
+	const compact = href.replace(/[\u0000-\u0020\u007f]+/g, '');
+	const scheme = compact.match(/^([a-z][a-z0-9+.-]*):/i)?.[1]?.toLowerCase();
+	if (scheme && !['http', 'https', 'mailto'].includes(scheme)) return null;
+	return href;
+}
+
+function plainInline(html) {
+	return String(html)
+		.replace(/<[^>]*>/g, '')
+		.replace(/&(?:amp|lt|gt|quot|#39);/g, (entity) => {
+			return { '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#39;': "'" }[entity];
+		});
+}
+
 export function slugify(text) {
-	return text
+	return String(text)
 		.toLowerCase()
 		.replace(/<[^>]*>/g, '')
 		.replace(/&[a-z]+;/g, '')
@@ -26,7 +57,16 @@ const CALLOUTS = {
 export async function renderMarkdown(md, { accent = '#e8ddc9' } = {}) {
 	const highlighter = await getHighlighter(accent);
 	const toc = [];
-	const seen = new Map();
+	const usedIds = new Set();
+
+	function uniqueId(rawBase) {
+		const base = rawBase || 'section';
+		let id = base;
+		let suffix = 1;
+		while (usedIds.has(id)) id = `${base}-${suffix++}`;
+		usedIds.add(id);
+		return id;
+	}
 
 	const marked = new Marked({
 		async: true,
@@ -34,16 +74,17 @@ export async function renderMarkdown(md, { accent = '#e8ddc9' } = {}) {
 		renderer: {
 			heading({ tokens, depth }) {
 				const text = this.parser.parseInline(tokens);
-				let id = slugify(text);
-				const n = seen.get(id) ?? 0;
-				seen.set(id, n + 1);
-				if (n > 0) id = `${id}-${n}`;
-				if (depth === 2 || depth === 3) toc.push({ id, text: text.replace(/<[^>]*>/g, ''), depth });
+				const plain = plainInline(text);
+				const id = uniqueId(slugify(text));
+				if (depth === 2 || depth === 3) toc.push({ id, text: plain, depth });
+				const labelId = uniqueId(`heading-label-${id}`);
 				const anchor =
 					depth > 1
-						? `<a class="heading-anchor" href="#${id}" aria-label="Link to this section">#</a>`
+						? `<a class="heading-anchor" href="#${id}" aria-label="Permalink to ${escapeHtml(plain)}" data-pagefind-ignore><span aria-hidden="true">#</span></a>`
 						: '';
-				return `<h${depth} id="${id}">${text}${anchor}</h${depth}>\n`;
+				// aria-labelledby isolates the heading name from the adjacent permalink,
+				// while the permalink remains a normal keyboard-focusable link.
+				return `<h${depth} id="${id}" aria-labelledby="${labelId}"><span id="${labelId}">${text}</span>${anchor}</h${depth}>\n`;
 			},
 			code({ text, lang }) {
 				const language = (lang || 'text').split(/\s/)[0];
@@ -54,9 +95,9 @@ export async function renderMarkdown(md, { accent = '#e8ddc9' } = {}) {
 						theme: 'null-kitchen'
 					});
 				} catch {
-					highlighted = `<pre class="shiki"><code>${text.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</code></pre>`;
+					highlighted = `<pre class="shiki"><code>${escapeHtml(text)}</code></pre>`;
 				}
-				return `<figure class="code-figure" data-lang="${language}">${highlighted}<button class="code-copy" type="button" data-code>copy</button></figure>\n`;
+				return `<figure class="code-figure" data-lang="${escapeHtml(language)}">${highlighted}<button class="code-copy" type="button" data-code>copy</button></figure>\n`;
 			},
 			blockquote({ tokens }) {
 				const body = this.parser.parse(tokens);
@@ -70,15 +111,37 @@ export async function renderMarkdown(md, { accent = '#e8ddc9' } = {}) {
 			},
 			link({ href, title, tokens }) {
 				const text = this.parser.parseInline(tokens);
-				const external = /^https?:\/\//.test(href);
+				const safe = safeHref(href);
+				if (!safe) return text;
+				const external = /^(?:https?:)?\/\//i.test(safe);
 				const attrs = [
-					`href="${href}"`,
-					title ? `title="${title}"` : '',
+					`href="${escapeHtml(safe)}"`,
+					title ? `title="${escapeHtml(title)}"` : '',
 					external ? 'target="_blank" rel="noopener"' : ''
 				]
 					.filter(Boolean)
 					.join(' ');
 				return `<a ${attrs}>${text}</a>`;
+			},
+			image({ href, title, text }) {
+				const safe = safeHref(href);
+				if (!safe) return escapeHtml(text || '');
+				const attrs = [
+					`src="${escapeHtml(safe)}"`,
+					`alt="${escapeHtml(text || '')}"`,
+					title ? `title="${escapeHtml(title)}"` : '',
+					'loading="lazy"',
+					'decoding="async"'
+				]
+					.filter(Boolean)
+					.join(' ');
+				return `<img ${attrs}>`;
+			},
+			html({ text }) {
+				// Documentation is data, not a template surface. Showing raw HTML as
+				// text is both safer and less surprising than maintaining a partial
+				// allowlist that can drift as Marked evolves.
+				return escapeHtml(text);
 			}
 		}
 	});

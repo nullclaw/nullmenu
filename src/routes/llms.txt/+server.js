@@ -1,5 +1,6 @@
 import { site, products } from '$lib/site';
 import { docsTree } from '$lib/content/docs.js';
+import { machineTextHeaders } from '$lib/content/response-headers.js';
 
 export const prerender = true;
 
@@ -38,6 +39,6 @@ export function GET() {
 	lines.push(`- [GitHub](${site.github})`);
 
 	return new Response(lines.join('\n') + '\n', {
-		headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+		headers: machineTextHeaders()
 	});
 }

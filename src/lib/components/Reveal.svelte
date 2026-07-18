@@ -1,17 +1,30 @@
 <script>
 	/**
-	 * Scroll reveal. On engines with CSS scroll-driven animations the reveal
-	 * is a pure-CSS scrubbed animation tied to the element's own view timeline
-	 * (reversible, jank-free, no JS). Elsewhere it falls back to a one-shot
-	 * IntersectionObserver reveal. No-op under prefers-reduced-motion.
+	 * Scroll reveal as progressive enhancement. Server-rendered markup stays
+	 * visible, so no-JS visitors and hydration always start from the same DOM.
+	 * Once mounted, capable browsers opt into a CSS view timeline; the rest use
+	 * a one-shot IntersectionObserver. Reduced-motion CSS makes both no-ops.
 	 */
 	let { delay = 0, children, class: className = '' } = $props();
 
-	const sda =
-		typeof CSS !== 'undefined' && CSS.supports('animation-timeline: view()');
-
 	function reveal(node) {
-		if (sda) return;
+		// Never make content disappear after it was already painted in-view. This
+		// matters on slow hydration, restored scroll positions and anchor jumps.
+		const rect = node.getBoundingClientRect();
+		if (rect.bottom > 0 && rect.top < innerHeight * 0.92) return;
+
+		if (typeof CSS !== 'undefined' && CSS.supports('animation-timeline: view()')) {
+			node.classList.add('sda');
+			return {
+				destroy() {
+					node.classList.remove('sda');
+				}
+			};
+		}
+
+		// A missing observer is not a reason to hide content.
+		if (typeof IntersectionObserver === 'undefined') return;
+		node.classList.add('reveal');
 		// Huge top margin: anything at or above the viewport counts as "seen",
 		// so instant jumps (anchors, Home/End, restored scroll) can't skip reveals.
 		const io = new IntersectionObserver(
@@ -24,14 +37,19 @@
 			{ rootMargin: '100000px 0px -8% 0px' }
 		);
 		io.observe(node);
-		return { destroy: () => io.disconnect() };
+		return {
+			destroy() {
+				io.disconnect();
+				node.classList.remove('reveal', 'is-visible');
+			}
+		};
 	}
 </script>
 
 <div
 	use:reveal
-	class="{sda ? 'sda' : 'reveal'} {className}"
-	style:transition-delay={sda ? undefined : `${delay}ms`}
+	class={className}
+	style:--reveal-delay={`${delay}ms`}
 >
 	{@render children?.()}
 </div>

@@ -1,5 +1,7 @@
 import { error } from '@sveltejs/kit';
 import { getDoc, renderDoc, flatDocs } from '$lib/content/docs.js';
+import { repositoryLastmod } from '$lib/server/lastmod.js';
+import { site } from '$lib/site';
 
 export function entries() {
 	return flatDocs().map((d) => ({ section: d.section, slug: d.slug }));
@@ -16,6 +18,9 @@ export async function load({ params }) {
 	return {
 		doc: rendered,
 		raw: doc.body,
+		dateModified: repositoryLastmod([
+			`content/${site.id}/docs/${doc.section}/${doc.slug}.md`
+		]),
 		sectionTitle: flat[i]?.sectionTitle ?? params.section,
 		prev: i > 0 ? flat[i - 1] : null,
 		next: i >= 0 && i < flat.length - 1 ? flat[i + 1] : null

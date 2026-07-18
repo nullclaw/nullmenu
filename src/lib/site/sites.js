@@ -5,8 +5,7 @@
  * `build/<id>` ready to deploy to `<subdomain>.nullmenu.ai` (or the apex
  * for `menu`). Theme, nav, docs structure and catalog copy live here.
  *
- * Each product carries a "spice" — its accent color — and a role in the
- * kitchen metaphor that runs through the whole family. Every claim below
+ * Each product carries its own accent color and a short catalog role. Every claim below
  * is grounded in the repos as of July 2026; don't add adjectives the
  * README can't back.
  */
@@ -318,9 +317,9 @@ export const menuOrder = [
 ];
 
 export const groups = [
-	{ id: 'mains', title: 'Mains', note: 'released, documented, ready to serve' },
-	{ id: 'small-plates', title: 'Small plates', note: 'young, useful, growing fast' },
-	{ id: 'test-kitchen', title: 'The test kitchen', note: 'early — taste at your own risk' }
+	{ id: 'mains', title: 'Core products', note: 'released and documented' },
+	{ id: 'small-plates', title: 'Focused tools', note: 'smaller components, growing fast' },
+	{ id: 'test-kitchen', title: 'Early projects', note: 'in active development' }
 ];
 
 export const products = menuOrder.map((id) => sites[id]);
