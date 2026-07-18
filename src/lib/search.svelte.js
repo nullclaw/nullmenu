@@ -11,6 +11,7 @@ export function requestSearch() {
 	searchState.opening = true;
 	window.dispatchEvent(new CustomEvent('nullmenu:search-opening'));
 	requestAnimationFrame(() => {
+		if (!searchState.opening) return;
 		searchState.opening = false;
 		searchState.open = true;
 	});

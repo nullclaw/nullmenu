@@ -115,8 +115,16 @@
 		function onKey(e) {
 			if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
 				e.preventDefault();
-				if (searchState.open) searchState.open = false;
-				else requestSearch();
+				if (searchState.open || searchState.opening) {
+					searchState.opening = false;
+					searchState.open = false;
+				} else requestSearch();
+				return;
+			}
+			if (e.key === 'Escape' && (searchState.open || searchState.opening)) {
+				e.preventDefault();
+				searchState.opening = false;
+				searchState.open = false;
 				return;
 			}
 			if (!searchState.open) {
@@ -128,11 +136,6 @@
 					e.preventDefault();
 					requestSearch();
 				}
-				return;
-			}
-			if (e.key === 'Escape') {
-				e.preventDefault();
-				searchState.open = false;
 				return;
 			}
 			if (e.key === 'Tab') {
