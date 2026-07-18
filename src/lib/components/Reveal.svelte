@@ -22,21 +22,29 @@
 			};
 		}
 
-		// A missing observer is not a reason to hide content.
+		// A missing or broken observer is not a reason to hide content. Construct
+		// and attach it before opting into the hidden CSS state, so a partial
+		// hydration failure always leaves the server-rendered content readable.
 		if (typeof IntersectionObserver === 'undefined') return;
-		node.classList.add('reveal');
+		let io;
 		// Huge top margin: anything at or above the viewport counts as "seen",
 		// so instant jumps (anchors, Home/End, restored scroll) can't skip reveals.
-		const io = new IntersectionObserver(
-			([entry]) => {
-				if (entry.isIntersecting) {
-					node.classList.add('is-visible');
-					io.disconnect();
-				}
-			},
-			{ rootMargin: '100000px 0px -8% 0px' }
-		);
-		io.observe(node);
+		try {
+			io = new IntersectionObserver(
+				([entry]) => {
+					if (entry.isIntersecting) {
+						node.classList.add('is-visible');
+						io.disconnect();
+					}
+				},
+				{ rootMargin: '100000px 0px -8% 0px' }
+			);
+			io.observe(node);
+			node.classList.add('reveal');
+		} catch {
+			io?.disconnect();
+			return;
+		}
 		return {
 			destroy() {
 				io.disconnect();

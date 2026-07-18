@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
+import { existsSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import test from 'node:test';
 import { buildStructuredData, serializeJsonLd } from '../../src/lib/content/seo.js';
-import { machineTextHeaders } from '../../src/lib/content/response-headers.js';
 import { renderSitemap, sitemapEntries } from '../../src/lib/content/sitemap.js';
 
 const product = {
@@ -67,15 +68,12 @@ test('software JSON-LD omits unsupported platform claims', () => {
 	assert.equal('operatingSystem' in software, false);
 });
 
-test('machine-readable duplicates carry canonical and noindex response intent', () => {
-	const headers = machineTextHeaders({
-		canonical: 'https://hub.nullmenu.ai/docs/start/install/',
-		contentType: 'text/markdown; charset=utf-8',
-		noindex: true
-	});
-	assert.equal(headers['X-Robots-Tag'], 'noindex, follow');
-	assert.equal(headers.Link, '<https://hub.nullmenu.ai/docs/start/install/>; rel="canonical"');
-	assert.equal(headers['X-Content-Type-Options'], 'nosniff');
+test('the LLM index uses canonical HTML and raw duplicate routes stay unpublished', () => {
+	assert.equal(existsSync(resolve('src/routes/llms-full.txt/+server.js')), false);
+	assert.equal(existsSync(resolve('src/routes/docs/[section]/[slug].md/+server.js')), false);
+	const source = readFileSync(resolve('src/routes/llms.txt/+server.js'), 'utf8');
+	assert.match(source, /\/docs\/\$\{section\.slug\}\/\$\{p\.slug\}\//);
+	assert.doesNotMatch(source, /llms-full|\.slug\}\.md/);
 });
 
 test('product sitemap omits the menu-only catalog and includes lastmod', () => {

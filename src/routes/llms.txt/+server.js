@@ -12,7 +12,7 @@ export function GET() {
 		'',
 		`> ${site.description}`,
 		'',
-		`Part of the Null ecosystem (https://nullmenu.ai) — single-binary Zig tools for running AI agents on your own hardware. All components are pre-1.0 with CalVer releases. Every docs page below has a Markdown twin at the same URL with a .md suffix.`,
+		`Part of the Null ecosystem (https://nullmenu.ai) — single-binary Zig tools for running AI agents on your own hardware. All components are pre-1.0 with CalVer releases. The links below point to canonical documentation pages.`,
 		''
 	];
 
@@ -20,7 +20,7 @@ export function GET() {
 		lines.push(`## ${section.title}`, '');
 		for (const p of section.pages) {
 			lines.push(
-				`- [${p.title}](https://${site.domain}/docs/${section.slug}/${p.slug}.md): ${p.description}`
+					`- [${p.title}](https://${site.domain}/docs/${section.slug}/${p.slug}/): ${p.description}`
 			);
 		}
 		lines.push('');
@@ -34,8 +34,7 @@ export function GET() {
 		lines.push('');
 	}
 
-	lines.push('## Optional', '');
-	lines.push(`- [Full docs in one file](https://${site.domain}/llms-full.txt)`);
+	lines.push('## Source', '');
 	lines.push(`- [GitHub](${site.github})`);
 
 	return new Response(lines.join('\n') + '\n', {

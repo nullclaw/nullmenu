@@ -10,8 +10,6 @@ NullDesk is a local-first operations desk for humans running AI agents. You assi
 
 Most agent tooling optimizes for the agent. NullDesk optimizes for the person responsible for the result. It is the daily workspace where you operate agents while keeping final ownership of the work: tasks, files, proposed changes, artifacts, run traces, approvals, and decision history in one local interface.
 
-In kitchen terms, NullDesk is the pass — the counter where the head chef inspects every plate before it leaves the kitchen. Agents cook; nothing goes out without your sign-off.
-
 It is not an editor clone and not a control panel. [NullHub](https://hub.nullmenu.ai/) owns install, configuration, monitoring, and control-plane state. NullDesk owns day-to-day agent work.
 
 ## The write boundary

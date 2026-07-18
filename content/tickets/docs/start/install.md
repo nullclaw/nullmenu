@@ -5,7 +5,7 @@ order: 1
 verified: v2026.5.29
 ---
 
-NullTickets ships as one static binary with SQLite vendored in. There is no database server to run and no runtime to install — the ticket rail arrives as a single piece of metal.
+NullTickets ships as one static binary with SQLite vendored in. There is no database server to run and no language runtime to install.
 
 ## Release binary
 

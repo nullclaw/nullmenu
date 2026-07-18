@@ -17,6 +17,7 @@
 	} = $props();
 
 	let canvas = $state();
+	let reduced = $state(false);
 
 	// — tiny value-noise (deterministic, no deps) —
 	function makeNoise(seed) {
@@ -54,10 +55,24 @@
 	}
 
 	$effect(() => {
-		if (!canvas) return;
+		const media = window.matchMedia('(prefers-reduced-motion: reduce)');
+		const sync = () => (reduced = media.matches);
+		sync();
+		media.addEventListener('change', sync);
+		return () => media.removeEventListener('change', sync);
+	});
 
-		const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-		const ctx = canvas.getContext('2d');
+	$effect(() => {
+		const canvasElement = canvas;
+		if (!canvasElement) return;
+
+		// Referencing the reactive preference makes the whole canvas lifecycle
+		// restart as a still frame, or resume, when the OS setting changes live.
+		reduced;
+		const ctx = canvasElement.getContext('2d');
+		if (!ctx) return;
+		const parent = canvasElement.parentElement;
+		if (!parent) return;
 		const noise = makeNoise(1337);
 		const [tr, tg, tb] = hexToRgb(tint);
 
@@ -73,17 +88,17 @@
 		let mouse = { x: -1e4, y: -1e4 };
 
 		function resize() {
-			const rect = canvas.parentElement.getBoundingClientRect();
+			const rect = parent.getBoundingClientRect();
 			const nw = Math.max(1, rect.width);
 			const nh = Math.max(1, rect.height);
 			// setting canvas.width clears the buffer — skip no-op resizes
 			if (nw === w && nh === h) return;
 			w = nw;
 			h = nh;
-			canvas.width = w * dpr;
-			canvas.height = h * dpr;
-			canvas.style.width = `${w}px`;
-			canvas.style.height = `${h}px`;
+			canvasElement.width = w * dpr;
+			canvasElement.height = h * dpr;
+			canvasElement.style.width = `${w}px`;
+			canvasElement.style.height = `${h}px`;
 			ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 			const target = Math.min(900, Math.round(((w * h) / 2600) * density));
 			particles = Array.from({ length: target }, () => spawn(true));
@@ -203,7 +218,7 @@
 		}
 
 		function onPointer(e) {
-			const rect = canvas.getBoundingClientRect();
+			const rect = canvasElement.getBoundingClientRect();
 			mouse.x = e.clientX - rect.left;
 			mouse.y = e.clientY - rect.top;
 		}
@@ -216,29 +231,29 @@
 		resize();
 
 		const ro = new ResizeObserver(resize);
-		ro.observe(canvas.parentElement);
+		ro.observe(parent);
 
 		const io = new IntersectionObserver(([entry]) => {
 			intersecting = entry.isIntersecting;
 			syncRunning();
 		});
-		io.observe(canvas);
+		io.observe(canvasElement);
 
 		const onVisibility = () => {
 			pageVisible = !document.hidden;
 			syncRunning();
 		};
 		document.addEventListener('visibilitychange', onVisibility);
-		canvas.parentElement.addEventListener('pointermove', onPointer, { passive: true });
-		canvas.parentElement.addEventListener('pointerleave', onLeave, { passive: true });
+		parent.addEventListener('pointermove', onPointer, { passive: true });
+		parent.addEventListener('pointerleave', onLeave, { passive: true });
 
 		return () => {
 			stop();
 			ro.disconnect();
 			io.disconnect();
 			document.removeEventListener('visibilitychange', onVisibility);
-			canvas.parentElement?.removeEventListener('pointermove', onPointer);
-			canvas.parentElement?.removeEventListener('pointerleave', onLeave);
+			parent.removeEventListener('pointermove', onPointer);
+			parent.removeEventListener('pointerleave', onLeave);
 		};
 	});
 </script>

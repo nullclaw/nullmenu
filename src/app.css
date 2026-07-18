@@ -20,8 +20,9 @@
 	--ink-2: #b0a695;
 	--ink-3: #8a8173;
 
-	--line: rgba(236, 229, 216, 0.28);
-	--line-2: rgba(236, 229, 216, 0.4);
+	/* Keep even the quiet card edge above 3:1 against every dark surface. */
+	--line: rgba(236, 229, 216, 0.4);
+	--line-2: rgba(236, 229, 216, 0.52);
 
 	--accent: var(--spice);
 	--accent-dim: var(--spice-dim);
@@ -71,8 +72,9 @@
 	--ink-2: #52483a;
 	--ink-3: #665c4a;
 
-	--line: rgba(38, 33, 26, 0.35);
-	--line-2: rgba(38, 33, 26, 0.5);
+	/* The light palette needs more pigment to retain the same tactile edge. */
+	--line: rgba(38, 33, 26, 0.52);
+	--line-2: rgba(38, 33, 26, 0.62);
 
 	/* pigment: the spice pressed into paper — always ink-dark enough to read */
 	--accent: color-mix(in srgb, var(--spice) 32%, #26211a);

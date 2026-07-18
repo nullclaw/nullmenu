@@ -6,10 +6,6 @@ order: 1
 
 NullCap is a desktop overlay for live calls — interviews, meetings, sales calls, demos. It renders cue cards, transcripts and post-call notes on top of your screen, and it talks to exactly one service: your local [NullHub](https://hub.nullmenu.ai/).
 
-## The cloche
-
-In the Null kitchen, NullCap is the cloche: the dome that keeps a plate covered until it reaches the table. It sits over your screen during service and lifts away when the call ends, leaving summaries, action items and scorecards behind. That is the extent of the metaphor; the rest of this page is plumbing.
-
 ## The runtime contract
 
 NullCap is architecturally strict about where data goes. From the project's own runtime contract:

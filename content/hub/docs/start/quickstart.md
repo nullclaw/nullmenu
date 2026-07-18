@@ -29,7 +29,7 @@ nullhub serve --host 127.0.0.1 --port 19800 --no-open
 
 ## 2. Install a component
 
-The kitchen is open; time to hire the chef. The terminal wizard walks you through provider, ports, and keys — the web UI's **Install Component** flow is the same wizard with the same steps:
+The terminal wizard walks you through provider, ports, and keys. The web UI's **Install Component** flow uses the same steps:
 
 ```bash
 nullhub install nullclaw

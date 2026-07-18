@@ -51,6 +51,145 @@ async function overflowEvidence(page) {
 	});
 }
 
+async function installFakeWebGPU(
+	page,
+	{ delayedFirstDevice = false, nullContext = false, disabled = false } = {}
+) {
+	await page.addInitScript(
+		({ delayedFirstDevice, nullContext, disabled }) => {
+			const state = (window.__inkTest = {
+				requestDeviceCalls: 0,
+				configureCalls: [],
+				unconfigureCalls: 0,
+				configuredDevice: null,
+				destroyedDevices: [],
+				framesByDevice: {},
+				flowStrokes: 0,
+				releaseFirstDevice() {}
+			});
+
+			const nativeStroke = CanvasRenderingContext2D.prototype.stroke;
+			CanvasRenderingContext2D.prototype.stroke = function (...args) {
+				state.flowStrokes++;
+				return nativeStroke.apply(this, args);
+			};
+
+			if (disabled) {
+				Object.defineProperty(navigator, 'gpu', { configurable: true, value: undefined });
+				return;
+			}
+
+			if (!globalThis.GPUBufferUsage) {
+				Object.defineProperty(globalThis, 'GPUBufferUsage', {
+					configurable: true,
+					value: { UNIFORM: 1, COPY_DST: 2 }
+				});
+			}
+			if (!globalThis.GPUTextureUsage) {
+				Object.defineProperty(globalThis, 'GPUTextureUsage', {
+					configurable: true,
+					value: { TEXTURE_BINDING: 1, STORAGE_BINDING: 2, COPY_DST: 4, COPY_SRC: 8 }
+				});
+			}
+
+			const fakePass = () => ({
+				setPipeline() {},
+				setBindGroup() {},
+				dispatchWorkgroups() {},
+				draw() {},
+				end() {}
+			});
+			const fakePipeline = () => ({ getBindGroupLayout: () => ({}) });
+			const makeDevice = (id) => ({
+				__id: id,
+				lost: new Promise(() => {}),
+				queue: { writeBuffer() {}, submit() {} },
+				addEventListener() {},
+				removeEventListener() {},
+				createShaderModule: () => ({}),
+				createComputePipeline: fakePipeline,
+				createRenderPipeline: fakePipeline,
+				createSampler: () => ({}),
+				createBuffer: () => ({ destroy() {} }),
+				createTexture: () => ({ createView: () => ({}), destroy() {} }),
+				createBindGroup: () => ({}),
+				createCommandEncoder() {
+					state.framesByDevice[id] = (state.framesByDevice[id] ?? 0) + 1;
+					return {
+						beginComputePass: fakePass,
+						beginRenderPass: fakePass,
+						finish: () => ({})
+					};
+				},
+				destroy() {
+					state.destroyedDevices.push(id);
+				}
+			});
+
+			const context = {
+				configure({ device }) {
+					state.configureCalls.push(device.__id);
+					state.configuredDevice = device.__id;
+				},
+				unconfigure() {
+					state.unconfigureCalls++;
+					state.configuredDevice = null;
+				},
+				getCurrentTexture() {
+					if (state.configuredDevice === null) {
+						throw new DOMException('context is not configured', 'InvalidStateError');
+					}
+					return { createView: () => ({}) };
+				}
+			};
+
+			const nativeGetContext = HTMLCanvasElement.prototype.getContext;
+			HTMLCanvasElement.prototype.getContext = function (kind, ...args) {
+				if (kind === 'webgpu') return nullContext ? null : context;
+				return nativeGetContext.call(this, kind, ...args);
+			};
+
+			Object.defineProperty(navigator, 'gpu', {
+				configurable: true,
+				value: {
+					getPreferredCanvasFormat: () => 'bgra8unorm',
+					async requestAdapter() {
+						return {
+							requestDevice() {
+								const id = ++state.requestDeviceCalls;
+								const device = makeDevice(id);
+								if (delayedFirstDevice && id === 1) {
+									return new Promise((resolve) => {
+										state.releaseFirstDevice = () => resolve(device);
+									});
+								}
+								return Promise.resolve(device);
+							}
+						};
+					}
+				}
+			});
+		},
+		{ delayedFirstDevice, nullContext, disabled }
+	);
+}
+
+async function waitForAnimationFrames(page, count = 4) {
+	await page.evaluate(
+		(frameCount) =>
+			new Promise((resolve) => {
+				let remaining = frameCount;
+				const next = () => {
+					remaining--;
+					if (remaining === 0) resolve();
+					else requestAnimationFrame(next);
+				};
+				requestAnimationFrame(next);
+			}),
+		count
+	);
+}
+
 test.describe('responsive visual contracts', () => {
 	for (const target of [
 		{ name: 'menu home at 320px', url: `${menu}/`, viewport: { width: 320, height: 844 } },
@@ -339,11 +478,20 @@ test.describe('progressive enhancement and preference contracts', () => {
 		await summary.click();
 
 		for (const selector of ['.mobile-toc a', '.meta-link', '.heading-anchor']) {
-			const heights = await page.locator(selector).evaluateAll((elements) =>
-				elements.map((element) => element.getBoundingClientRect().height)
+			const targets = await page.locator(selector).evaluateAll((elements) =>
+				elements.map((element) => {
+					const { width, height } = element.getBoundingClientRect();
+					return { width, height };
+				})
 			);
-			expect(heights.length).toBeGreaterThan(0);
-			expect(Math.min(...heights), selector).toBeGreaterThanOrEqual(43.5);
+			expect(targets.length).toBeGreaterThan(0);
+			expect(Math.min(...targets.map(({ width }) => width)), `${selector} width`).toBeGreaterThanOrEqual(
+				43.5
+			);
+			expect(
+				Math.min(...targets.map(({ height }) => height)),
+				`${selector} height`
+			).toBeGreaterThanOrEqual(43.5);
 		}
 
 		await openStable(page, `${menu}/docs/start/install-nullhub/`, { width: 1280, height: 900 });
@@ -400,6 +548,85 @@ test.describe('progressive enhancement and preference contracts', () => {
 			'target',
 			'_blank'
 		);
+	});
+});
+
+test.describe('WebGPU lifecycle contracts', () => {
+	test.beforeEach(async ({ page }) => {
+		await page.setViewportSize({ width: 1280, height: 900 });
+		await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'no-preference' });
+	});
+
+	test('a stale delayed boot cannot unconfigure the active themed instance', async ({ page }) => {
+		await installFakeWebGPU(page, { delayedFirstDevice: true });
+		await page.goto(`${menu}/`, { waitUntil: 'networkidle' });
+		await page.waitForFunction(() => window.__inkTest?.requestDeviceCalls === 1);
+
+		await page.locator('.theme-toggle').click();
+		await page.waitForFunction(
+			() =>
+				window.__inkTest?.requestDeviceCalls === 2 &&
+				window.__inkTest?.configuredDevice === 2
+		);
+		await page.evaluate(() => window.__inkTest.releaseFirstDevice());
+		await page.waitForFunction(() => window.__inkTest?.destroyedDevices.includes(1));
+
+		const state = await page.evaluate(() => ({
+			configureCalls: window.__inkTest.configureCalls,
+			unconfigureCalls: window.__inkTest.unconfigureCalls,
+			configuredDevice: window.__inkTest.configuredDevice,
+			destroyedDevices: window.__inkTest.destroyedDevices
+		}));
+		expect(state).toEqual({
+			configureCalls: [2],
+			unconfigureCalls: 0,
+			configuredDevice: 2,
+			destroyedDevices: [1]
+		});
+	});
+
+	test('a missing WebGPU canvas context destroys the partially initialized device', async ({
+		page
+	}) => {
+		await installFakeWebGPU(page, { nullContext: true });
+		await page.goto(`${menu}/`, { waitUntil: 'networkidle' });
+		await page.waitForFunction(() => window.__inkTest?.destroyedDevices.includes(1));
+
+		const state = await page.evaluate(() => ({
+			requestDeviceCalls: window.__inkTest.requestDeviceCalls,
+			configureCalls: window.__inkTest.configureCalls,
+			destroyedDevices: window.__inkTest.destroyedDevices
+		}));
+		expect(state).toEqual({ requestDeviceCalls: 1, configureCalls: [], destroyedDevices: [1] });
+	});
+
+	test('enabling reduced motion stops an active Ink GPU loop', async ({ page }) => {
+		await installFakeWebGPU(page);
+		await page.goto(`${menu}/`, { waitUntil: 'networkidle' });
+		await page.waitForFunction(() => (window.__inkTest?.framesByDevice[1] ?? 0) >= 3);
+
+		await page.emulateMedia({ reducedMotion: 'reduce' });
+		await page.waitForFunction(() => window.__inkTest?.destroyedDevices.includes(1));
+		const stoppedAt = await page.evaluate(() => window.__inkTest.framesByDevice[1]);
+		await waitForAnimationFrames(page);
+		expect(await page.evaluate(() => window.__inkTest.framesByDevice[1])).toBe(stoppedAt);
+	});
+
+	test('enabling reduced motion stops the live FlowField fallback', async ({ page }) => {
+		await installFakeWebGPU(page, { disabled: true });
+		await page.goto(`${menu}/`, { waitUntil: 'networkidle' });
+		await page.waitForFunction(() => (window.__inkTest?.flowStrokes ?? 0) >= 400);
+		const animatedAt = await page.evaluate(() => window.__inkTest.flowStrokes);
+
+		await page.emulateMedia({ reducedMotion: 'reduce' });
+		await page.waitForFunction(
+			(previous) => window.__inkTest?.flowStrokes > previous,
+			animatedAt
+		);
+		await waitForAnimationFrames(page, 2);
+		const stoppedAt = await page.evaluate(() => window.__inkTest.flowStrokes);
+		await waitForAnimationFrames(page);
+		expect(await page.evaluate(() => window.__inkTest.flowStrokes)).toBe(stoppedAt);
 	});
 });
 

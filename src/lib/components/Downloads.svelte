@@ -98,12 +98,12 @@
 <section class="section" id="download">
 	<div class="container">
 		<Reveal>
-			<p class="label label--accent">Takeaway</p>
-			<h2 class="serif">One binary, packed to go.</h2>
-			<p class="sub">
-				Cross-compiled by <a href="https://builder.nullmenu.ai">nullbuilder</a> for every kitchen —
-				no runtime, no installer, nothing else on the plate.
-			</p>
+				<p class="label label--accent">Release binaries</p>
+				<h2 class="serif">One binary, ready to run.</h2>
+				<p class="sub">
+					Cross-compiled by <a href="https://builder.nullmenu.ai">nullbuilder</a> for supported
+					platforms — no language runtime or system-wide installer required.
+				</p>
 		</Reveal>
 
 		{#if release.status !== 'live'}

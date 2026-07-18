@@ -28,8 +28,9 @@ node scripts/build-all.js          # all sites → build/<id>
 node scripts/build-all.js claw hub # just some
 ```
 
-Every site ships `llms.txt`, `llms-full.txt`, `sitemap.xml`, `robots.txt`,
-and a Markdown twin for every docs page (`/docs/x/y/` ⇄ `/docs/x/y.md`).
+Every site ships `llms.txt`, `sitemap.xml`, and `robots.txt`. The LLM index links
+the same canonical HTML documentation that people read; raw duplicates are not
+published because GitHub Pages cannot attach `noindex` response headers to them.
 
 Three theme modes — system, light and dark — derive from each product's accent
 via `color-mix`. The preference is persisted across the product subdomains.

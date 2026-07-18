@@ -1,6 +1,6 @@
 {
 	"hero": {
-		"kicker": "THE PARING KNIFE — TINY ASSISTANT",
+		"kicker": "TINY ASSISTANT — LOCAL-FIRST",
 		"title": "A complete AI assistant in about 1 MB",
 		"sub": "A local AI assistant that ships as one standalone binary — about 1 MB, no Node, no Python, no dependencies at all. Point it at OpenAI, OpenRouter, or any OpenAI-compatible server and chat from your terminal or Telegram while it remembers facts, edits files, searches the web, and runs scheduled tasks — each capability behind an on/off switch in config."
 	},

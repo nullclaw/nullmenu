@@ -1,6 +1,6 @@
 {
 	"hero": {
-		"kicker": "THE TICKET RAIL — TASK STATE",
+		"kicker": "TASK STATE — DURABLE COORDINATION",
 		"title": "Durable task state for AI agents",
 		"sub": "A task tracker for AI agents, shipped as one Zig binary with SQLite built in. It serves a JSON REST API on 127.0.0.1: agents claim tasks by role under expiring leases, report progress, and move tasks through declared stages — so long-running work survives crashes and restarts without a human nudging it along."
 	},

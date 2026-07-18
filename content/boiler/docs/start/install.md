@@ -5,7 +5,7 @@ order: 1
 verified: v2026.5.29
 ---
 
-NullBoiler ships as a single static binary with SQLite vendored inside. There is no external database, no message broker, and nothing to provision — the stockpot arrives ready to fill.
+NullBoiler ships as a single static binary with SQLite vendored inside. There is no external database, no message broker, and nothing else to provision.
 
 > [!NOTE]
 > Pre-1.0: config and CLI may change between releases. Releases use CalVer tags (v2026.x.y).

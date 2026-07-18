@@ -1,6 +1,6 @@
 {
 	"hero": {
-		"kicker": "THE LARDER — KNOWLEDGE SERVICE",
+		"kicker": "KNOWLEDGE SERVICE — SHARED MEMORY",
 		"title": "Knowledge, memory and citation-backed RAG behind one API",
 		"sub": "An HTTP server that stores documents, decisions, and your agents' long-term memory, then answers questions over them — every result filtered by the caller's permissions and backed by citations. It has no UI of its own: agents built on NullClaw (the ecosystem's agent runtime), the NullHub web console and the NullDesk supervision app consume its 197-route /v1 API over plain HTTP, while a background worker keeps summaries, hygiene and vector indexes current. Records live in vendored SQLite by default or in Postgres via a runtime-loaded libpq."
 	},

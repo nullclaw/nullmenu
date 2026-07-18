@@ -5,7 +5,7 @@ order: 1
 verified: v2026.5.29
 ---
 
-NullClaw ships as a single static binary with no runtime dependencies besides libc. The chef travels light: pick one of the paths below and you are done in a minute or two.
+NullClaw ships as a single static binary with no runtime dependencies besides libc. Pick one of the paths below and you are done in a minute or two.
 
 > [!NOTE]
 > Pre-1.0: config and CLI may change between releases.

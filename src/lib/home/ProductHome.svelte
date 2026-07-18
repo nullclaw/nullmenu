@@ -108,7 +108,7 @@
 		<div class="hero-layout">
 			<div class="hero-copy">
 				<p class="label">
-					<span class="label--accent">{p?.hero.kicker ?? site.course}</span>
+					<span class="label--accent">{p?.hero.kicker ?? site.role}</span>
 					&nbsp;·&nbsp; <span class="chip">{site.status}</span>
 				</p>
 				<h1 class="serif">{p?.hero.title ?? site.title.split('—')[1] ?? site.display}</h1>
@@ -327,7 +327,7 @@
 		<Downloads release={data.release} />
 	{/if}
 
-	<!-- ———— capabilities: the complete story without a ten-course scroll ———— -->
+	<!-- ———— capabilities: the complete story in a compact reading length ———— -->
 	<section class="section capabilities" data-group={site.group} data-profile={proofIndex}>
 		<div class="container">
 			<Reveal>
@@ -426,7 +426,7 @@
 		</div>
 	</section>
 
-	<!-- ———— before you order ———— -->
+	<!-- ———— common questions ———— -->
 	{#if p.faq?.length}
 		<section class="section">
 			<div class="container faq-wrap">
@@ -465,7 +465,7 @@
 								<span class="mark"><ProductMark id={pair.id} size={28} /></span>
 								<span>
 									<span class="name mono">{pair.name}</span>
-									<span class="course serif-i">{pair.course}</span>
+									<span class="course serif-i">{pair.role}</span>
 								</span>
 								<span class="line">{pair.line}</span>
 								<span class="go mono" aria-hidden="true">&rarr;</span>
@@ -1212,7 +1212,7 @@
 		font-size: var(--text-sm);
 	}
 
-	/* before you order */
+	/* common questions */
 	.faq {
 		margin-top: 2.5rem;
 		border-top: 1px solid var(--line);

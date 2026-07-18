@@ -1,6 +1,6 @@
 {
 	"hero": {
-		"kicker": "THE SOUS-CHEF — CONTROL PLANE",
+		"kicker": "CONTROL PLANE — LOCAL STACK MANAGEMENT",
 		"title": "One console and API for your whole local agent stack",
 		"sub": "A management console for the Null stack: one binary with a built-in web dashboard and CLI that installs NullClaw agents, NullBoiler workflows, NullTickets task queues and NullWatch tracing, keeps them running with health checks and restart backoff, and updates them with rollback. The same HTTP API also fronts the agents themselves — chat, memory, cron jobs and logs all go through the hub. Everything stays on your machine — all state lives in ~/.nullhub, nothing goes to a hosted service."
 	},

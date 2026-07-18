@@ -1,6 +1,6 @@
 {
 	"hero": {
-		"kicker": "MISE EN PLACE — SHARED CI",
+		"kicker": "SHARED CI — RELEASE INFRASTRUCTURE",
 		"title": "One YAML block, twelve targets, every release.",
 		"sub": "Reusable GitHub Actions workflows for Zig projects. Add a ten-line job block per pipeline — `uses: nullclaw/nullbuilder/.github/workflows/zig-ci.yml@v1` for tests and cross-compiled binaries, plus sibling workflows for nightly builds and tag-driven GitHub releases that ship binaries for 12 targets across Linux, Android, macOS, and Windows. Nothing to install — it all runs in your repo's own Actions."
 	},

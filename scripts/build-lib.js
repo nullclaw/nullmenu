@@ -96,6 +96,22 @@ export function validateSiteBuild(id, root = resolve(`build/${id}`)) {
 	if (!readFileSync(resolve(root, '404.html'), 'utf8').includes('data-static-404')) {
 		throw new Error(`${id}: 404.html has no no-JavaScript fallback`);
 	}
+
+	if (existsSync(resolve(root, 'llms-full.txt'))) {
+		throw new Error(`${id}: llms-full.txt is a duplicate without enforceable noindex headers`);
+	}
+	const rawDocs = [];
+	const visit = (directory) => {
+		for (const entry of readdirSync(directory, { withFileTypes: true })) {
+			const path = resolve(directory, entry.name);
+			if (entry.isDirectory()) visit(path);
+			else if (entry.name.endsWith('.md')) rawDocs.push(path);
+		}
+	};
+	visit(resolve(root, 'docs'));
+	if (rawDocs.length) {
+		throw new Error(`${id}: raw Markdown twins cannot be safely noindexed on the static host`);
+	}
 }
 
 export function buildSite(id) {

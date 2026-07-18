@@ -31,9 +31,8 @@
 				<h3 class="label">Explore</h3>
 				<ul>
 					<li><a href={isMenu ? '/products/' : 'https://nullmenu.ai/products/'}>All products</a></li>
-					<li><a href="/docs/">Documentation</a></li>
-					<li><a href="/llms.txt" class="mono">llms.txt</a></li>
-					<li><a href="/llms-full.txt" class="mono" rel="nofollow">llms-full.txt</a></li>
+						<li><a href="/docs/">Documentation</a></li>
+						<li><a href="/llms.txt" class="mono">llms.txt</a></li>
 				</ul>
 			</div>
 

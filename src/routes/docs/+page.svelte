@@ -7,7 +7,7 @@
 
 <Seo
 	title="{site.display} documentation"
-	description="Guides, workflows and references for {site.display}. Every page has a Markdown twin; llms.txt included."
+	description="Guides, workflows and references for {site.display}, with an llms.txt index for machine-readable discovery."
 	breadcrumbs={[
 		{ name: site.display, url: `https://${site.domain}/` },
 		{ name: 'Documentation', url: `https://${site.domain}/docs/` }
@@ -18,10 +18,8 @@
 	<p class="label label--accent">{site.display} docs</p>
 	<h1><span class="serif">Product</span> <span class="serif-i">documentation.</span></h1>
 	<p class="sub">
-		Task-oriented guides with real commands and verified versions. Machine-readable too —
-		<a href="/llms.txt" class="mono">llms.txt</a>,
-		<a href="/llms-full.txt" class="mono" rel="nofollow">llms-full.txt</a>, and a
-		<span class="mono">.md</span> twin for every page.
+		Task-oriented guides with real commands and verified versions. The
+		<a href="/llms.txt" class="mono">llms.txt</a> index points agents to the same canonical pages.
 	</p>
 </header>
 

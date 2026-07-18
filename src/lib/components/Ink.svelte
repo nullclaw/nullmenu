@@ -26,6 +26,8 @@
 	let canvas = $state();
 	let webgpuFailed = $state(false);
 	let reduced = $state(false);
+	let bootGeneration = 0;
+	const contextOwners = new WeakMap();
 
 	function hexToRgb(hex) {
 		const n = parseInt(hex.slice(1), 16);
@@ -33,40 +35,93 @@
 	}
 
 	$effect(() => {
+		const media = window.matchMedia('(prefers-reduced-motion: reduce)');
+		const sync = () => (reduced = media.matches);
+		sync();
+		media.addEventListener('change', sync);
+		return () => media.removeEventListener('change', sync);
+	});
+
+	$effect(() => {
 		const light = themeState.current === 'light';
-		reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-		if (webgpuFailed || reduced || !navigator.gpu) {
+		if (webgpuFailed || reduced) return;
+		const canvasElement = canvas;
+		if (!canvasElement) return;
+		if (!navigator.gpu) {
 			webgpuFailed = true;
 			return;
 		}
+
+		const generation = ++bootGeneration;
 		let dead = false;
 		let cleanup = () => {};
-		boot(light)
+		const isStale = () => dead || generation !== bootGeneration;
+		boot(light, isStale, canvasElement)
 			.then((c) => {
-				if (dead) c?.();
+				if (isStale()) c?.();
 				else cleanup = c ?? (() => {});
 			})
 			.catch((e) => {
-				if (dead) return;
+				if (isStale()) return;
 				console.warn('[ink] webgpu unavailable:', e?.message ?? e);
 				webgpuFailed = true;
 			});
 		return () => {
 			dead = true;
+			if (bootGeneration === generation) bootGeneration++;
 			cleanup();
 		};
 	});
 
-	async function boot(light) {
+	async function boot(light, isStale, canvasElement) {
 		const adapter = await navigator.gpu.requestAdapter();
 		if (!adapter) throw new Error('no adapter');
+		if (isStale()) return;
 		const device = await adapter.requestDevice();
+		if (isStale()) {
+			device.destroy();
+			return;
+		}
+
 		const onGpuError = (e) => console.warn('[ink] gpu error:', e.error?.message);
 		device.addEventListener('uncapturederror', onGpuError);
-		const context = canvas.getContext('webgpu');
+		const context = canvasElement.getContext('webgpu');
+		if (!context) {
+			device.removeEventListener('uncapturederror', onGpuError);
+			device.destroy();
+			throw new Error('webgpu canvas context unavailable');
+		}
 		const format = navigator.gpu.getPreferredCanvasFormat();
-		context.configure({ device, format, alphaMode: 'premultiplied' });
+		const contextOwner = Symbol('ink-context');
+		contextOwners.set(canvasElement, contextOwner);
 
+		try {
+			context.configure({ device, format, alphaMode: 'premultiplied' });
+			return initialize(
+				device,
+				context,
+				format,
+				contextOwner,
+				onGpuError,
+				light,
+				canvasElement
+			);
+		} catch (error) {
+			device.removeEventListener('uncapturederror', onGpuError);
+			if (contextOwners.get(canvasElement) === contextOwner) {
+				contextOwners.delete(canvasElement);
+				try {
+					context.unconfigure();
+				} catch {
+					/* an initialization error may leave the context unconfigured */
+				}
+			}
+			device.destroy();
+			throw error;
+		}
+	}
+
+	function initialize(device, context, format, contextOwner, onGpuError, light, canvasElement) {
 		const [tr, tg, tb] = hexToRgb(tint);
 
 		// ————— sizing (smaller pots on smaller stoves) —————
@@ -441,17 +496,17 @@
 		}
 
 		function resize() {
-			const rect = canvas.parentElement.getBoundingClientRect();
+			const rect = parent.getBoundingClientRect();
 			const nW = Math.max(8, Math.round(rect.width * dpr));
 			const nH = Math.max(8, Math.round(rect.height * dpr));
 			// ResizeObserver fires once on observe — don't nuke the fields for a no-op
 			if (nW === W && nH === H) return;
 			W = nW;
 			H = nH;
-			canvas.width = W;
-			canvas.height = H;
-			canvas.style.width = `${rect.width}px`;
-			canvas.style.height = `${rect.height}px`;
+			canvasElement.width = W;
+			canvasElement.height = H;
+			canvasElement.style.width = `${rect.width}px`;
+			canvasElement.style.height = `${rect.height}px`;
 			const simScale = SIM_CAP / Math.max(W, H);
 			simW = Math.max(8, Math.round(W * Math.min(1, simScale)));
 			simH = Math.max(8, Math.round(H * Math.min(1, simScale)));
@@ -685,7 +740,7 @@
 		}
 
 		function onPointer(e) {
-			const rect = canvas.getBoundingClientRect();
+			const rect = canvasElement.getBoundingClientRect();
 			const x = (e.clientX - rect.left) / rect.width;
 			const y = (e.clientY - rect.top) / rect.height;
 			if (pointer.active) {
@@ -701,54 +756,67 @@
 			pointer.active = false;
 		}
 
-		resize();
-
-
-		const ro = new ResizeObserver(() => resize());
-		ro.observe(canvas.parentElement);
-		const io = new IntersectionObserver(([e]) => {
-			intersecting = e.isIntersecting;
-			syncRunning();
-		});
-		io.observe(canvas);
-		const onVis = () => {
-			pageVisible = !document.hidden;
-			syncRunning();
-		};
-		document.addEventListener('visibilitychange', onVis);
-		const parent = canvas.parentElement;
-		parent.addEventListener('pointermove', onPointer, { passive: true });
-		parent.addEventListener('pointerleave', onLeave, { passive: true });
+		let ro;
+		let io;
+		let onVis;
+		let parent;
 
 		function shutdown(destroyDevice = true) {
 			if (disposed) return;
 			disposed = true;
 			stop();
-			ro.disconnect();
-			io.disconnect();
-			document.removeEventListener('visibilitychange', onVis);
-			parent.removeEventListener('pointermove', onPointer);
-			parent.removeEventListener('pointerleave', onLeave);
+			ro?.disconnect();
+			io?.disconnect();
+			if (onVis) document.removeEventListener('visibilitychange', onVis);
+			parent?.removeEventListener('pointermove', onPointer);
+			parent?.removeEventListener('pointerleave', onLeave);
 			tex?.all.forEach((t) => t.destroy());
 			simUniform.destroy();
 			splatPool.forEach((buffer) => buffer.destroy());
 			device.removeEventListener('uncapturederror', onGpuError);
-			context.unconfigure();
+			if (contextOwners.get(canvasElement) === contextOwner) {
+				contextOwners.delete(canvasElement);
+				context.unconfigure();
+			}
 			if (destroyDevice) device.destroy();
 		}
 
-		device.lost.then((info) => {
-			if (disposed) return;
-			console.warn(`[ink] gpu device lost (${info.reason}): ${info.message || 'no detail'}`);
+		try {
+			parent = canvasElement.parentElement;
+			if (!parent) throw new Error('ink canvas has no layout parent');
+			resize();
+
+			ro = new ResizeObserver(() => resize());
+			ro.observe(parent);
+			io = new IntersectionObserver(([e]) => {
+				intersecting = e.isIntersecting;
+				syncRunning();
+			});
+			io.observe(canvasElement);
+			onVis = () => {
+				pageVisible = !document.hidden;
+				syncRunning();
+			};
+			document.addEventListener('visibilitychange', onVis);
+			parent.addEventListener('pointermove', onPointer, { passive: true });
+			parent.addEventListener('pointerleave', onLeave, { passive: true });
+
+			device.lost.then((info) => {
+				if (disposed) return;
+				console.warn(`[ink] gpu device lost (${info.reason}): ${info.message || 'no detail'}`);
+				shutdown(false);
+				webgpuFailed = true;
+			});
+		} catch (error) {
 			shutdown(false);
-			webgpuFailed = true;
-		});
+			throw error;
+		}
 
 		return () => shutdown(true);
 	}
 </script>
 
-{#if webgpuFailed}
+{#if webgpuFailed || reduced}
 	<FlowField tint={isLight ? pigmentHex : tint} light={isLight} class={className} />
 {:else}
 	<canvas bind:this={canvas} class={className} aria-hidden="true"></canvas>

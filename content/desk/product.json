@@ -1,6 +1,6 @@
 {
 	"hero": {
-		"kicker": "THE PASS — OPERATIONS DESK",
+		"kicker": "OPERATIONS DESK — HUMAN SUPERVISION",
 		"title": "Agents propose. You approve. Inside a full code editor.",
 		"sub": "NullDesk is a single Zig binary that opens a workspace folder as both an agent-supervision desk and a working code editor. Agents cannot write files — the plugin capability schema forbids a write permission outright — so every change arrives as a diff you accept or reject, every shell command passes risk-classified approval, and every decision lands in a Blake3 hash-chained audit log. Around that sits a real editor: an LSP client for 14 languages, a git workbench, terminal panes, and native support for extensions built for the Zed editor."
 	},

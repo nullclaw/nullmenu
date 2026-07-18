@@ -276,6 +276,7 @@
 	.brand {
 		display: flex;
 		align-items: center;
+		min-height: 44px;
 		gap: 0.65rem;
 		color: var(--ink);
 	}
@@ -296,6 +297,10 @@
 	}
 
 	.version {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-height: 44px;
 		font-size: 0.75rem;
 		color: var(--ink-3);
 		border: 1px solid var(--line);

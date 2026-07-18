@@ -55,6 +55,54 @@ test('Ink keeps steady-state GPU work allocation-free outside required frame obj
 	assert.match(source, /pageVisible && intersecting/);
 });
 
+test('quiet border tokens retain 3:1 contrast across every card surface', () => {
+	const source = readFileSync(resolve('src/app.css'), 'utf8');
+	const dark = source.match(/:root\s*\{([\s\S]*?)\n\}/)?.[1] ?? '';
+	const light = source.match(/:root\[data-theme='light'\]\s*\{([\s\S]*?)\n\}/)?.[1] ?? '';
+
+	const hex = (block, token) => {
+		const value = block.match(new RegExp(`--${token}:\\s*#([a-f0-9]{6})`, 'i'))?.[1];
+		assert.ok(value, `missing --${token}`);
+		return [0, 2, 4].map((offset) => Number.parseInt(value.slice(offset, offset + 2), 16));
+	};
+	const rgba = (block, token) => {
+		const values = block
+			.match(new RegExp(`--${token}:\\s*rgba\\(([^)]+)\\)`, 'i'))?.[1]
+			.split(',')
+			.map((value) => Number(value.trim()));
+		assert.equal(values?.length, 4, `missing --${token}`);
+		return values;
+	};
+	const luminance = (rgb) =>
+		rgb
+			.map((channel) => {
+				const value = channel / 255;
+				return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+			})
+			.reduce((total, value, index) => total + value * [0.2126, 0.7152, 0.0722][index], 0);
+	const contrast = (first, second) => {
+		const values = [luminance(first), luminance(second)].sort((a, b) => b - a);
+		return (values[0] + 0.05) / (values[1] + 0.05);
+	};
+
+	for (const [name, block] of [
+		['dark', dark],
+		['light', light]
+	]) {
+		const [red, green, blue, alpha] = rgba(block, 'line');
+		for (const surface of ['bg', 'bg-2', 'bg-3']) {
+			const background = hex(block, surface);
+			const composited = [red, green, blue].map(
+				(channel, index) => channel * alpha + background[index] * (1 - alpha)
+			);
+			assert.ok(
+				contrast(background, composited) >= 3,
+				`${name} --line must remain at least 3:1 against --${surface}`
+			);
+		}
+	}
+});
+
 test('the root route resolves one build-specific homepage implementation', () => {
 	const route = readFileSync(resolve('src/routes/+page.svelte'), 'utf8');
 	const config = readFileSync(resolve('svelte.config.js'), 'utf8');

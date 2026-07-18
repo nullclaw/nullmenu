@@ -269,12 +269,10 @@
 					<p class="label label--accent">05 · Documentation</p>
 					<h2 class="serif">Guides, references,<br />and runbooks.</h2>
 					<p class="cookbook-sub">
-						Task-oriented guides for real setups — a personal assistant, a durable backlog, an
-						observable multi-agent stack. Markdown-first: every page has a <span class="mono"
-							>.md</span
-						>
-						twin, and the whole site ships
-						<a href="/llms.txt" class="mono">llms.txt</a> for your agents.
+							Task-oriented guides for real setups — a personal assistant, a durable backlog, an
+							observable multi-agent stack. The site also ships an
+							<a href="/llms.txt" class="mono">llms.txt</a> index that points agents to the
+							canonical documentation.
 					</p>
 					<div class="cta">
 						<a class="btn btn--solid" href="/docs/">Open documentation</a>

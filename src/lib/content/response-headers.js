@@ -1,16 +1,8 @@
-export function machineTextHeaders({
-	contentType = 'text/plain; charset=utf-8',
-	canonical = null,
-	noindex = false
-} = {}) {
-	/** @type {Record<string, string>} */
-	const headers = {
+export function machineTextHeaders() {
+	return {
 		'Cache-Control': 'public, max-age=3600',
 		'Content-Language': 'en',
-		'Content-Type': contentType,
+		'Content-Type': 'text/plain; charset=utf-8',
 		'X-Content-Type-Options': 'nosniff'
 	};
-	if (canonical) headers.Link = `<${canonical}>; rel="canonical"`;
-	if (noindex) headers['X-Robots-Tag'] = 'noindex, follow';
-	return headers;
 }

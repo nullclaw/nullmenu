@@ -1,6 +1,6 @@
 {
 	"hero": {
-		"kicker": "THE THERMOMETER — OBSERVABILITY",
+		"kicker": "OBSERVABILITY — TRACING & EVALS",
 		"title": "Every span, verdict and dollar, kept on your machine",
 		"sub": "A single sub-megabyte binary that records what your agent runs actually did — every model call, tool invocation, retry and eval verdict — as append-only JSONL files on your own disk. Query latency, errors, token usage and cost over a JSON HTTP API or an offline CLI, lock the API with a bearer token, and let NullHub, the companion dashboard, render the UI on top."
 	},

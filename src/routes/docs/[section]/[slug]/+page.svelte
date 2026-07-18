@@ -69,7 +69,6 @@
 			<button class="meta-link" onclick={copyMarkdown}>
 				{copied ? 'copied ✓' : 'copy as markdown'}
 			</button>
-			<a class="meta-link" href="/docs/{doc.section}/{doc.slug}.md" rel="nofollow">.md</a>
 			<a class="meta-link" href={editUrl} target="_blank" rel="noopener">edit on github &nearr;</a>
 		</div>
 
@@ -178,6 +177,8 @@
 	.meta-link {
 		display: inline-flex;
 		align-items: center;
+		justify-content: center;
+		min-width: 44px;
 		min-height: 44px;
 		padding: 0 0.35rem;
 		font-size: 0.75rem;

@@ -1,6 +1,6 @@
 {
 	"hero": {
-		"kicker": "THE CLOCHE — CALL OVERLAY",
+		"kicker": "CALL COPILOT — DESKTOP OVERLAY",
 		"title": "Live cue cards, routed only through your NullHub",
 		"sub": "NullCap is a native desktop overlay for macOS, Windows and Linux that shows short answer cards on your screen during interviews, meetings, sales calls and demos. It captures screen and audio and transcribes speech locally, then sends every AI request to exactly one service: NullHub, a gateway running on your own machine at 127.0.0.1:19800 by default."
 	},

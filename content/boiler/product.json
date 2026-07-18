@@ -1,6 +1,6 @@
 {
 	"hero": {
-		"kicker": "THE STOCKPOT — ORCHESTRATION",
+		"kicker": "WORKFLOW ENGINE — ORCHESTRATION",
 		"title": "Graph workflows for AI agents, in one native binary",
 		"sub": "NullBoiler runs multi-step AI agent workflows: define a graph of steps and it dispatches each one to a worker — an agent runtime like NullClaw, any OpenAI-compatible API, or your own webhook — with retries, concurrency limits, and a checkpoint saved after every node. One ~2 MB native Zig binary with SQLite embedded: no external database, no message broker required."
 	},

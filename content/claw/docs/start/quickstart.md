@@ -62,7 +62,7 @@ curl http://127.0.0.1:3000/health
 
 The gateway binds to loopback by default and refuses a public bind without a tunnel or an explicit override — see [Security](/docs/operate/security/) before exposing anything.
 
-## 4. Check the kitchen
+## 4. Check the runtime
 
 Two commands cover most "is it working?" questions:
 

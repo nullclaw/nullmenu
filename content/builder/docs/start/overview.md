@@ -4,7 +4,7 @@ description: What NullBuilder is, who it serves, and how to wire it into a Zig r
 order: 1
 ---
 
-NullBuilder is a repository of reusable GitHub Actions workflows shared by every Null-family Zig project. It is maintainer infrastructure — the mise en place of the kitchen — not something you install or run.
+NullBuilder is a repository of reusable GitHub Actions workflows shared by every Null-family Zig project. It is maintainer infrastructure, not something you install or run.
 
 ## Who this is for
 

@@ -72,4 +72,4 @@ This removes the nllclw user config and state directories. Delete the binary its
 
 ## Next
 
-Run the setup wizard — see the [quickstart](/docs/start/quickstart/). If you outgrow the paring knife and want ~60 providers and 26 chat channels, the bigger sibling is [NullClaw](https://claw.nullmenu.ai/).
+Run the setup wizard — see the [quickstart](/docs/start/quickstart/). If you need ~60 providers and 26 chat channels, the larger runtime is [NullClaw](https://claw.nullmenu.ai/).
