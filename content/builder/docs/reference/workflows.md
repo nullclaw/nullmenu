@@ -59,7 +59,7 @@ Each nightly binary is packaged with a `.sha256` checksum file and a `manifest-<
 
 ## zig-release.yml
 
-Triggers on `v*` tag pushes in the caller. Requires `permissions: contents: write` and `packages: write`, plus `secrets: inherit`.
+Triggers on `v*` tag pushes in the caller. Requires `permissions: contents: write`; add `packages: write` only when `publish_docker` is enabled. It does not require caller repository secrets.
 
 | Input | Default | Notes |
 | --- | --- | --- |
@@ -84,15 +84,15 @@ With `publish_docker: true`, a follow-up job builds `linux/amd64` and `linux/arm
 
 ## Composite actions
 
-Three helpers under `.github/actions/`, referenced with the same `@v1`:
+Three helpers live under `.github/actions/`. At the reviewed snapshot, the reusable workflows still reference them through the mutable `v1` branch; pinning the caller workflow alone therefore does not yet make the complete internal chain immutable:
 
 | Action | Purpose |
 | --- | --- |
-| `setup-zig` | Wraps `mlugg/setup-zig@v2` (referenced by tag, not commit SHA); default version 0.16.0 |
+| `setup-zig` | Runs the bundled `install-zig.sh`, which downloads version 0.16.0 by default and checks the archive against the SHA-256 value in ziglang.org metadata; the composite action itself is still loaded through mutable `v1` |
 | `nightly-decide` | Runs a Zig program over a workflow-runs API dump (`--runs-json`, `--current-run-id`, `--head-sha`, `--workflow-name`, `--force`) and prints `should_build=`, `reason=`, `matched_run_id=`, `matched_run_url=` |
 | `package-artifact` | Runs a Zig program (`--binary`, `--target`, `--zig-target`, `--version`, `--repository`, `--commit`, `--run-id`, `--server-url`, `--built-at`) that writes `<binary>.sha256` and `manifest-<target>.json` |
 
 `nightly-decide` and `package-artifact` are written in Zig — seven `zig test` blocks between them — and tested in NullBuilder's own CI on every push and pull request.
 
 > [!NOTE]
-> Pre-1.0: inputs and defaults above may change on the `v1` branch. The workflow files' own input descriptions are the source of truth.
+> Pre-1.0: inputs and defaults may change upstream. Public caller examples pin commit `2b9c2f2e7bb0ac085baea1c33b4f08beaf5c7fac`; review workflow inputs and internal action references before updating that SHA.

@@ -1,6 +1,7 @@
 <script>
 	import { site, products } from '$lib/site';
 	import Logo from './Logo.svelte';
+	import FunctionalIcon from './FunctionalIcon.svelte';
 
 	const isMenu = site.kind === 'menu';
 	const year = new Date().getFullYear();
@@ -39,10 +40,18 @@
 			<div class="col">
 				<h3 class="label">Source</h3>
 				<ul>
-					<li><a href={site.github} target="_blank" rel="noopener">GitHub &nearr;</a></li>
+					<li>
+						<a href={site.github} target="_blank" rel="noopener"
+							>GitHub <FunctionalIcon name="external" size={15} label="opens in a new tab" /></a
+						>
+					</li>
 					<li>
 						<a href="https://github.com/nullclaw" target="_blank" rel="noopener"
-							>nullclaw org &nearr;</a
+							>nullclaw org <FunctionalIcon
+								name="external"
+								size={15}
+								label="opens in a new tab"
+							/></a
 						>
 					</li>
 					{#if site.license}
@@ -56,7 +65,7 @@
 		</div>
 
 		<div class="bottom">
-			<span class="mark"><Logo size={18} /></span>
+			<span class="mark"><Logo size={24} /></span>
 			<span class="mono note">© {year} the Null ecosystem</span>
 			<span class="mono note">built with Zig 0.16</span>
 			<span class="mono note">local-first · no cloud</span>
@@ -115,6 +124,12 @@
 		transition: color 0.2s var(--ease-out);
 	}
 
+	.col a:has(:global(.functional-icon)) {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+	}
+
 	.col a:hover {
 		color: var(--accent);
 	}
@@ -135,6 +150,11 @@
 	}
 
 	.mark {
+		display: grid;
+		place-items: center;
+		width: 24px;
+		height: 24px;
+		flex: 0 0 24px;
 		color: var(--ink-3);
 	}
 

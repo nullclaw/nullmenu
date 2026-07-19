@@ -1,4 +1,5 @@
 import { Marked } from 'marked';
+import { functionalIconMarkup } from '../components/functional-icons.js';
 import { getHighlighter } from './highlight.js';
 
 export function escapeHtml(value) {
@@ -97,7 +98,21 @@ export async function renderMarkdown(md, { accent = '#e8ddc9' } = {}) {
 				} catch {
 					highlighted = `<pre class="shiki"><code>${escapeHtml(text)}</code></pre>`;
 				}
-				return `<figure class="code-figure" data-lang="${escapeHtml(language)}">${highlighted}<button class="code-copy" type="button" data-code>copy</button></figure>\n`;
+				return `<figure class="code-figure" data-lang="${escapeHtml(language)}">${highlighted}<button class="code-copy" type="button" data-code data-pagefind-ignore aria-live="polite">copy</button></figure>\n`;
+			},
+			table(token) {
+				let head = '';
+				for (const cell of token.header) head += this.tablecell(cell);
+				const rows = token.rows
+					.map((row) => this.tablerow({ text: row.map((cell) => this.tablecell(cell)).join('') }))
+					.join('');
+				const columns = token.header
+					.map((cell) => plainInline(this.parser.parseInline(cell.tokens)))
+					.filter(Boolean)
+					.slice(0, 3)
+					.join(', ');
+				const label = columns ? `Data table: ${columns}` : 'Data table';
+				return `<div class="table-scroll" role="region" aria-label="${escapeHtml(label)}" tabindex="0"><table>\n<thead>\n${this.tablerow({ text: head })}</thead>\n${rows ? `<tbody>${rows}</tbody>\n` : ''}</table>\n</div>\n`;
 			},
 			blockquote({ tokens }) {
 				const body = this.parser.parse(tokens);
@@ -114,14 +129,21 @@ export async function renderMarkdown(md, { accent = '#e8ddc9' } = {}) {
 				const safe = safeHref(href);
 				if (!safe) return text;
 				const external = /^(?:https?:)?\/\//i.test(safe);
+				const accessibleLabel = external
+					? `${plainInline(text)} (opens in a new tab)`
+					: '';
 				const attrs = [
 					`href="${escapeHtml(safe)}"`,
 					title ? `title="${escapeHtml(title)}"` : '',
-					external ? 'target="_blank" rel="noopener"' : ''
+					external ? 'target="_blank" rel="noopener"' : '',
+					external ? `aria-label="${escapeHtml(accessibleLabel)}"` : ''
 				]
 					.filter(Boolean)
 					.join(' ');
-				return `<a ${attrs}>${text}</a>`;
+				const externalIcon = external
+					? functionalIconMarkup('external', { size: 16, className: 'external-icon' })
+					: '';
+				return `<a ${attrs}>${text}${externalIcon}</a>`;
 			},
 			image({ href, title, text }) {
 				const safe = safeHref(href);

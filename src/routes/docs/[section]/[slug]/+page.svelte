@@ -1,6 +1,7 @@
 <script>
 	import { site } from '$lib/site';
 	import Seo from '$lib/components/Seo.svelte';
+	import FunctionalIcon from '$lib/components/FunctionalIcon.svelte';
 
 	let { data } = $props();
 
@@ -10,6 +11,7 @@
 	);
 
 	let copied = $state(false);
+	let copyError = $state(false);
 	let currentHeading = $state('');
 
 	// scroll-spy: the TOC follows the reader
@@ -35,10 +37,13 @@
 		try {
 			await navigator.clipboard.writeText(data.raw);
 			copied = true;
+			copyError = false;
 			if (status) status.textContent = 'Copied to clipboard';
 			setTimeout(() => (copied = false), 1800);
 		} catch {
-			if (status) status.textContent = 'Copy failed';
+			copied = false;
+			copyError = true;
+			if (status) status.textContent = 'Copy failed. Activate the button to retry.';
 		}
 	}
 </script>
@@ -66,17 +71,30 @@
 			{#if doc.verified}
 				<span class="chip" title="Last verified with this release">verified · {doc.verified}</span>
 			{/if}
-			<button class="meta-link" onclick={copyMarkdown}>
-				{copied ? 'copied ✓' : 'copy as markdown'}
+			<button
+				class="meta-link"
+				class:copy-error={copyError}
+				onclick={copyMarkdown}
+				aria-label={copyError ? 'Copy failed. Retry copying as Markdown' : undefined}
+			>
+				{#if copyError}copy failed · retry{:else if copied}copied <FunctionalIcon name="check" size={14} />{:else}copy as markdown{/if}
 			</button>
-			<a class="meta-link" href={editUrl} target="_blank" rel="noopener">edit on github &nearr;</a>
+			<a class="meta-link" href={editUrl} target="_blank" rel="noopener"
+				>edit on github <FunctionalIcon
+					name="external"
+					size={14}
+					label="opens in a new tab"
+				/></a
+			>
 		</div>
 
 		{#if doc.toc.length > 1}
 			<details class="mobile-toc" data-pagefind-ignore>
 				<summary>
 					<span class="label">On this page</span>
-					<span class="toc-count mono">{doc.toc.length} sections <span aria-hidden="true">＋</span></span>
+					<span class="toc-count mono"
+						>{doc.toc.length} sections <FunctionalIcon name="plus" size={14} /></span
+					>
 				</summary>
 				<nav aria-label="On this page">
 					<ul>
@@ -101,7 +119,7 @@
 		<nav class="pager" aria-label="Previous and next" data-pagefind-ignore>
 			{#if data.prev}
 				<a class="pager-link prev" href="/docs/{data.prev.section}/{data.prev.slug}/">
-					<span class="dir mono">&larr; previous</span>
+					<span class="dir mono"><FunctionalIcon name="arrow-left" size={14} /> previous</span>
 					<span class="serif-i">{data.prev.title}</span>
 				</a>
 			{:else}
@@ -109,7 +127,7 @@
 			{/if}
 			{#if data.next}
 				<a class="pager-link next" href="/docs/{data.next.section}/{data.next.slug}/">
-					<span class="dir mono">next &rarr;</span>
+					<span class="dir mono">next <FunctionalIcon name="arrow-right" size={14} /></span>
 					<span class="serif-i">{data.next.title}</span>
 				</a>
 			{/if}
@@ -187,10 +205,15 @@
 		color: var(--ink-3);
 		font-family: var(--font-mono);
 		transition: color 0.2s;
+		gap: 0.35rem;
 	}
 
 	.meta-link:hover {
 		color: var(--accent);
+	}
+
+	.meta-link.copy-error {
+		color: color-mix(in srgb, #ff4f30 78%, var(--ink));
 	}
 
 	.pager {
@@ -217,6 +240,9 @@
 	}
 
 	.pager-link .dir {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
 		font-size: 0.75rem;
 		letter-spacing: 0.12em;
 		text-transform: uppercase;
@@ -303,6 +329,9 @@
 	}
 
 	.toc-count {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
 		font-size: 0.75rem;
 		color: var(--ink-2);
 	}
@@ -336,6 +365,25 @@
 		background: var(--bg-2);
 		border-left-color: var(--accent);
 		color: var(--accent);
+	}
+
+	:global(.prose .table-scroll) {
+		max-width: 100%;
+		overflow-x: auto;
+		overscroll-behavior-inline: contain;
+		scrollbar-width: thin;
+	}
+
+	:global(.prose .table-scroll:focus-visible) {
+		outline: 2px solid var(--accent);
+		outline-offset: 4px;
+	}
+
+	:global(.prose .table-scroll table) {
+		display: table;
+		width: max-content;
+		min-width: 100%;
+		overflow: visible;
 	}
 
 	@media (max-width: 1200px) {

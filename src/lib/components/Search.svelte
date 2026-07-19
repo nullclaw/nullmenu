@@ -5,6 +5,7 @@
 	 * modal explains itself instead of erroring.
 	 */
 	import { requestSearch, searchState } from '$lib/search.svelte.js';
+	import FunctionalIcon from './FunctionalIcon.svelte';
 	import {
 		inertElements,
 		lockPageScroll,
@@ -24,22 +25,61 @@
 	let lastFocus = null;
 
 	let pagefind = null;
+	let loadingPromise = null;
+	let pagefindAttempt = 0;
 	let debounceTimer;
 	let requestId = 0;
 	const scrollLock = Symbol('search');
 
 	async function ensurePagefind() {
 		if (pagefind || unavailable) return;
-		try {
-			// runtime asset from the static build — keep it opaque to Vite
-			const url = '/pagefind/pagefind.js';
-			pagefind = await import(/* @vite-ignore */ `${url}`);
-			await pagefind.init?.();
-			ready = true;
-			if (query.trim()) run(query); // replay what was typed while loading
-		} catch {
-			unavailable = true;
-		}
+		if (loadingPromise) return loadingPromise;
+		loadingPromise = (async () => {
+			try {
+				// runtime asset from the static build — keep it opaque to Vite
+				const url = `/pagefind/pagefind.js${pagefindAttempt ? `?retry=${pagefindAttempt}` : ''}`;
+				pagefind = await import(/* @vite-ignore */ `${url}`);
+				await pagefind.init?.();
+				ready = true;
+				unavailable = false;
+				if (query.trim()) run(query); // replay what was typed while loading
+			} catch {
+				pagefind = null;
+				ready = false;
+				unavailable = true;
+			} finally {
+				loadingPromise = null;
+			}
+		})();
+		return loadingPromise;
+	}
+
+	const searchStopWords = new Set([
+		'and',
+		'are',
+		'can',
+		'does',
+		'for',
+		'from',
+		'how',
+		'the',
+		'this',
+		'what',
+		'when',
+		'where',
+		'which',
+		'with'
+	]);
+
+	function normalizedTerms(value) {
+		const terms = String(value)
+			.normalize('NFKD')
+			.toLowerCase()
+			.match(/[a-z0-9]+/g) ?? [];
+		const meaningful = [...new Set(terms)].filter(
+			(term) => term.length >= 3 && !searchStopWords.has(term)
+		);
+		return meaningful.length ? meaningful.slice(0, 6) : terms.slice(0, 1);
 	}
 
 	async function run(q) {
@@ -52,17 +92,30 @@
 			return;
 		}
 		try {
-			const res = await pagefind.search(normalized);
-			const next = await Promise.all(res.results.slice(0, 8).map((r) => r.data()));
+			const terms = normalizedTerms(normalized);
+			const [combined, ...perTerm] = await Promise.all([
+				pagefind.search(normalized),
+				...(terms.length > 1 ? terms.map((term) => pagefind.search(term)) : [])
+			]);
+			let ranked = combined.results;
+			if (perTerm.length) {
+				const intersection = perTerm
+					.map((search) => new Set(search.results.map((result) => result.id)))
+					.reduce((allowed, ids) => new Set([...allowed].filter((id) => ids.has(id))));
+				ranked = ranked.filter((result) => intersection.has(result.id));
+			}
+			const next = await Promise.all(ranked.slice(0, 8).map((result) => result.data()));
 			if (id !== requestId || normalized !== query.trim()) return;
 			results = next;
-			sel = next.length ? 0 : -1;
+			sel = -1;
 			searching = false;
 		} catch {
 			if (id !== requestId) return;
 			results = [];
 			sel = -1;
 			searching = false;
+			ready = false;
+			pagefind = null;
 			unavailable = true;
 		}
 	}
@@ -143,23 +196,16 @@
 				return;
 			}
 
-			const links = panel ? [...panel.querySelectorAll('[data-search-result]')] : [];
-			const focusedIndex = links.indexOf(document.activeElement);
-			if (e.key === 'ArrowDown' && (document.activeElement === input || focusedIndex >= 0)) {
+			const options = panel ? [...panel.querySelectorAll('[data-search-result]')] : [];
+			if (e.key === 'ArrowDown' && document.activeElement === input && options.length) {
 				e.preventDefault();
-				const next = focusedIndex < 0 ? 0 : Math.min(focusedIndex + 1, links.length - 1);
-				if (links[next]) {
-					sel = next;
-					links[next].focus();
-				}
+				sel = Math.min(sel + 1, options.length - 1);
+				options[sel]?.scrollIntoView({ block: 'nearest' });
 			}
-			if (e.key === 'ArrowUp' && focusedIndex >= 0) {
+			if (e.key === 'ArrowUp' && document.activeElement === input && options.length) {
 				e.preventDefault();
-				if (focusedIndex === 0) input?.focus();
-				else {
-					sel = focusedIndex - 1;
-					links[focusedIndex - 1].focus();
-				}
+				sel = sel <= 0 ? -1 : sel - 1;
+				if (sel >= 0) options[sel]?.scrollIntoView({ block: 'nearest' });
 			}
 			if (e.key === 'Enter' && document.activeElement === input && results[sel]) {
 				e.preventDefault();
@@ -181,6 +227,24 @@
 
 	function useSuggestion(suggestion) {
 		query = suggestion;
+		requestAnimationFrame(() => input?.focus());
+	}
+
+	function clearSearch() {
+		query = '';
+		results = [];
+		sel = -1;
+		requestAnimationFrame(() => input?.focus());
+	}
+
+	async function retrySearch() {
+		pagefindAttempt += 1;
+		pagefind = null;
+		ready = false;
+		unavailable = false;
+		searching = Boolean(query.trim());
+		requestAnimationFrame(() => input?.focus());
+		await ensurePagefind();
 		requestAnimationFrame(() => input?.focus());
 	}
 </script>
@@ -209,20 +273,25 @@
 				<span aria-hidden="true">documentation search</span>
 			</div>
 			<div class="field">
-				<span class="glyph mono" aria-hidden="true">⌕</span>
+				<span class="glyph" aria-hidden="true"><FunctionalIcon name="search" size={20} /></span>
 				<input
 					bind:this={input}
 					bind:value={query}
 					type="search"
+					role="combobox"
 					placeholder="Search the docs…"
 					aria-label="Search the docs"
+					aria-autocomplete="list"
+					aria-expanded={results.length > 0}
 					aria-controls={results.length ? 'search-results' : undefined}
+					aria-activedescendant={sel >= 0 ? `search-result-${sel}` : undefined}
 					aria-describedby="search-status"
 					autocomplete="off"
 					spellcheck="false"
+					onfocus={() => (sel = -1)}
 				/>
 				<button class="close" onclick={() => (searchState.open = false)} aria-label="Close search">
-					<span aria-hidden="true">×</span>
+					<FunctionalIcon name="close" size={20} />
 					<kbd class="mono">esc</kbd>
 				</button>
 			</div>
@@ -252,23 +321,43 @@
 					</div>
 				</div>
 			{:else if unavailable}
-				<p class="hint mono">the search index is baked at build time — run a production build</p>
+				<div class="recovery-state">
+					<p class="empty-title serif">Search is taking a pause.</p>
+					<p class="empty-copy">
+						The documentation is still available. Retry the index or browse every topic.
+					</p>
+					<div class="recovery-actions">
+						<button class="mono" onclick={retrySearch}>Retry search</button>
+						<a class="mono" href="/docs/" onclick={() => (searchState.open = false)}>Browse docs</a>
+					</div>
+				</div>
 			{:else if query.trim() && !ready}
 				<p class="hint mono">warming up…</p>
 			{:else if searching}
 				<p class="hint mono">searching the index…</p>
 			{:else if query.trim() && results.length === 0}
-				<p class="hint mono">No results for “{query}”</p>
+				<div class="recovery-state">
+					<p class="empty-title serif">Nothing matched “{query}”.</p>
+					<p class="empty-copy">
+						Check the spelling, try fewer words, or start from the documentation index.
+					</p>
+					<div class="recovery-actions">
+						<button class="mono" onclick={clearSearch}>Clear search</button>
+						<a class="mono" href="/docs/" onclick={() => (searchState.open = false)}>Browse docs</a>
+					</div>
+				</div>
 			{:else if results.length}
-				<ul id="search-results" aria-label="Search results">
+				<ul id="search-results" role="listbox" aria-label="Search results">
 					{#each results as r, i}
-						<li>
+						<li role="none">
 							<a
+								id="search-result-{i}"
 								href={r.url}
 								data-search-result
+								role="option"
+								tabindex="-1"
+								aria-selected={sel === i}
 								class:selected={sel === i}
-								onmouseenter={() => (sel = i)}
-								onfocus={() => (sel = i)}
 								onclick={() => (searchState.open = false)}
 							>
 								<span class="title serif">{r.meta?.title ?? 'Untitled'}</span>
@@ -281,8 +370,14 @@
 			{/if}
 
 			<div class="foot mono">
-				<span>↑↓ navigate</span>
-				<span>↵ open</span>
+				<span class="key-hint">
+					<span class="paired-icons" aria-hidden="true">
+						<FunctionalIcon name="arrow-up" size={14} />
+						<FunctionalIcon name="arrow-down" size={14} />
+					</span>
+					navigate
+				</span>
+				<span class="key-hint"><FunctionalIcon name="enter" size={15} /> open</span>
 				<span>{shortcut} toggle</span>
 			</div>
 		</div>
@@ -386,11 +481,6 @@
 		transition: color 0.2s var(--ease-out), background 0.2s var(--ease-out);
 	}
 
-	.close > span {
-		font-size: 1.25rem;
-		line-height: 1;
-	}
-
 	.close:hover {
 		color: var(--accent);
 		background: var(--bg-2);
@@ -421,6 +511,7 @@
 		transition: background 0.15s var(--ease-out);
 	}
 
+	li a:hover,
 	li a.selected {
 		background: var(--bg-3);
 	}
@@ -431,6 +522,7 @@
 		color: var(--ink);
 	}
 
+	li a:hover .title,
 	li a.selected .title {
 		color: var(--accent);
 	}
@@ -504,6 +596,36 @@
 		background: var(--bg-2);
 	}
 
+	.recovery-state {
+		padding: 1.35rem 1rem 1.5rem;
+	}
+
+	.recovery-actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+		margin-top: 1rem;
+	}
+
+	.recovery-actions > :is(button, a) {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-height: 44px;
+		padding: 0.65rem 0.85rem;
+		border: 1px solid var(--line-2);
+		font-size: 0.75rem;
+		letter-spacing: 0.08em;
+		color: var(--ink-2);
+		transition: color 0.2s var(--ease-out), border-color 0.2s var(--ease-out), background 0.2s var(--ease-out);
+	}
+
+	.recovery-actions > :is(button, a):hover {
+		color: var(--accent);
+		border-color: var(--accent-dim);
+		background: var(--bg-2);
+	}
+
 	.sr-only {
 		position: absolute;
 		width: 1px;
@@ -525,6 +647,20 @@
 		letter-spacing: 0.1em;
 		text-transform: uppercase;
 		color: var(--ink-3);
+	}
+
+	.key-hint,
+	.paired-icons {
+		display: inline-flex;
+		align-items: center;
+	}
+
+	.key-hint {
+		gap: 0.3rem;
+	}
+
+	.paired-icons {
+		gap: 0;
 	}
 
 	@media (max-width: 560px) {

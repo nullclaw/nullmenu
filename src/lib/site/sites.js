@@ -21,7 +21,7 @@ export const sites = {
 		display: 'Null',
 		title: 'Null — autonomous AI, à la carte',
 		description:
-			'A family of single-binary Zig tools for running AI agents on your own hardware. Install NullHub, add components as you need them. No cloud, no runtime dependencies.',
+			'Run, observe and ship AI agents with local-first tools, from compact Zig runtimes to knowledge services and shared GitHub Actions release infrastructure.',
 		accent: '#e8ddc9',
 		accentDim: '#8f8574',
 		github: `${GH}`,
@@ -45,7 +45,7 @@ export const sites = {
 		display: 'NullHub',
 		title: 'NullHub — one console and API for your whole agent stack',
 		description:
-			'A single Zig binary with an embedded dashboard that installs, supervises and updates the Null stack — and proxies agent chat, memory and cron through one API. Everything local, under ~/.nullhub.',
+			'Install, supervise and update the Null stack from one embedded dashboard and API. NullHub is a single Zig binary with local state under ~/.nullhub.',
 		accent: '#e3a93c',
 		accentDim: '#96702a',
 		github: `${GH}/nullhub`,
@@ -74,7 +74,7 @@ export const sites = {
 		display: 'NullClaw',
 		title: 'NullClaw — an always-on AI agent in one static binary',
 		description:
-			'Self-hosted AI agent runtime written in Zig. ~60 model providers, 26 channels, 39 built-in tools, hybrid memory, sandboxed by default. One 4.4–6.5 MB static binary, no cloud.',
+			'Run an always-on AI agent from one 4.4–6.5 MB static Zig binary: ~60 providers, 26 channels, 39 tools, hybrid memory and default sandboxing.',
 		accent: '#ff4f30',
 		accentDim: '#a83a24',
 		github: `${GH}/nullclaw`,
@@ -103,7 +103,7 @@ export const sites = {
 		display: 'NullBoiler',
 		title: 'NullBoiler — agent workflow orchestration in one native binary',
 		description:
-			'Graph-based workflow engine for AI agents: checkpoints, replay, fork, fan-out, interrupts. Dispatches to workers over webhook, OpenAI-compatible chat or A2A. One ~2 MB binary, SQLite embedded.',
+			'Orchestrate AI-agent workflows with checkpoints, replay, forks, fan-out and interrupts. NullBoiler is a ~2 MB Zig binary with embedded SQLite.',
 		accent: '#d97742',
 		accentDim: '#94512d',
 		github: `${GH}/nullboiler`,
@@ -131,7 +131,7 @@ export const sites = {
 		display: 'NullTickets',
 		title: 'NullTickets — durable task state for AI agents',
 		description:
-			'Task tracker for AI agents: lease-based claiming by role, pipeline state machines, retries with dead letters, idempotent writes. One Zig binary, vendored SQLite.',
+			'Track durable AI-agent work with lease-based claims, pipeline states, retries, dead letters and idempotent writes. One Zig binary with embedded SQLite.',
 		accent: '#b78ce0',
 		accentDim: '#7d5f9a',
 		github: `${GH}/nulltickets`,
@@ -159,7 +159,7 @@ export const sites = {
 		display: 'NullWatch',
 		title: 'NullWatch — tracing, evals and cost for your agent runs',
 		description:
-			'A sub-megabyte observability service for agent runs: span, eval and OTLP trace ingest over a JSON HTTP API and offline CLI, stored as append-only JSONL under ~/.nullwatch. Nothing leaves your machine.',
+			'Trace agent runs, evaluate outputs and track cost through JSON HTTP, OTLP or offline CLI. NullWatch stores append-only JSONL locally in a sub-megabyte binary.',
 		accent: '#5e9ecf',
 		accentDim: '#3f6b8c',
 		github: `${GH}/nullwatch`,
@@ -186,7 +186,7 @@ export const sites = {
 		display: 'NullPantry',
 		title: 'NullPantry — knowledge and memory for the Null ecosystem',
 		description:
-			'Headless knowledge base and long-term agent memory: a 197-route /v1 API, permission-aware hybrid retrieval, citation-backed answers, 17 memory backends. UI-less by design.',
+			'Give agents permission-aware knowledge and long-term memory through hybrid retrieval and citation-backed answers. Headless API with 197 routes and 17 backends.',
 		accent: '#8fb573',
 		accentDim: '#5f7a4c',
 		github: `${GH}/nullpantry`,
@@ -214,7 +214,7 @@ export const sites = {
 		display: 'nllclw',
 		title: 'nllclw — a complete AI assistant in about 1 MB',
 		description:
-			'A local-first assistant in dependency-free Zig: OpenAI-compatible providers, six channels, and capability-gated tools that go read-only after untrusted web output.',
+			'Run a local-first AI assistant in about 1 MB of dependency-free Zig, with OpenAI-compatible providers, six channels and capability-gated tools.',
 		accent: '#ff8a5c',
 		accentDim: '#b05f3f',
 		github: `${GH}/nllclw`,
@@ -242,7 +242,7 @@ export const sites = {
 		display: 'NullDesk',
 		title: 'NullDesk — an agent-supervision desk inside a working code editor',
 		description:
-			'Agents propose, you approve — inside a real editor: LSP for 14 languages, git workbench, Zed extension support, Blake3 hash-chained audit log. One Zig binary, pre-release.',
+			'Supervise agents inside a native code editor: review diffs, approve commands, use LSP for 14 languages and keep a BLAKE3 hash-chained audit log. Pre-release.',
 		accent: '#d4b483',
 		accentDim: '#8f7a58',
 		github: `${GH}/nulldesk`,
@@ -267,7 +267,7 @@ export const sites = {
 		display: 'NullCap',
 		title: 'NullCap — a local-first call copilot',
 		description:
-			'Native desktop overlay for interviews, meetings, sales calls and demos: live cue cards and local transcripts, every AI request routed through your own local NullHub. Experimental.',
+			'Get live cue cards and local transcripts in a native desktop overlay for interviews, meetings and demos. Every AI request goes through your own NullHub.',
 		accent: '#4fc4b8',
 		accentDim: '#37877f',
 		github: `${GH}/nullcap`,
@@ -292,8 +292,7 @@ export const sites = {
 		display: 'NullBuilder',
 		title: 'NullBuilder — shared CI for the whole Null family',
 		description:
-			'Reusable GitHub Actions workflows: tests, deduped nightlies and tag releases ' +
-			'cross-compiled to 12 targets across 4 OS families. Maintainer infrastructure.',
+			'Add shared Zig CI, deduplicated nightlies and 12-target releases with reusable GitHub Actions workflows. Maintainer infrastructure; nothing to install.',
 		accent: '#9aa3ad',
 		accentDim: '#6a7079',
 		github: `${GH}/nullbuilder`,

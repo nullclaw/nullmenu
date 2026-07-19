@@ -40,7 +40,8 @@ Pass `targets_json` to override the matrix. Each entry needs `os` (runner label)
 ```yaml
 jobs:
   zig:
-    uses: nullclaw/nullbuilder/.github/workflows/zig-ci.yml@v1
+    # NullBuilder v1 snapshot; review upstream before updating this full SHA.
+    uses: nullclaw/nullbuilder/.github/workflows/zig-ci.yml@2b9c2f2e7bb0ac085baea1c33b4f08beaf5c7fac
     permissions:
       contents: read
     with:
@@ -88,4 +89,4 @@ The API level (default `24`) is appended to the triple — e.g. `aarch64-linux-a
 `<prefix>` is `artifact_prefix`, falling back to `binary_name`. Workflow inputs are documented in [Workflows](/docs/reference/workflows/).
 
 > [!NOTE]
-> Pre-1.0: the default matrices may change on the `v1` branch. Pin your own `targets_json` if you need a fixed set.
+> Pre-1.0: the default matrices may change upstream. The full workflow SHA above freezes the current defaults; review both the workflow diff and your `targets_json` before updating it.

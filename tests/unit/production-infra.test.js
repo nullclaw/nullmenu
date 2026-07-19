@@ -3,8 +3,50 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import test from 'node:test';
+import {
+	findUnsafePublishedWorkflowReferences,
+	validatePublishedContentReferences
+} from '../../scripts/validate-infra.js';
 import { buildRedirectSite } from '../../scripts/make-redirects.js';
 import { deploymentTargets, siteIds } from '../../scripts/site-targets.js';
+
+const nullbuilderPin = '2b9c2f2e7bb0ac085baea1c33b4f08beaf5c7fac';
+
+test('published workflow examples accept full commit pins and local actions', () => {
+	const source = `
+jobs:
+  ci:
+    uses: nullclaw/nullbuilder/.github/workflows/zig-ci.yml@${nullbuilderPin}
+  local:
+    uses: ./.github/actions/check
+
+Inline audit reference: \`nullclaw/nullbuilder/.github/workflows/zig-ci.yml@${nullbuilderPin}\`.
+`;
+	assert.deepEqual(findUnsafePublishedWorkflowReferences(source, 'safe.md'), []);
+});
+
+test('published workflow examples reject mutable refs and blanket secret forwarding', () => {
+	const source = `
+jobs:
+  ci:
+    uses: nullclaw/nullbuilder/.github/workflows/zig-ci.yml@v1
+  release:
+    uses: nullclaw/nullbuilder/.github/workflows/zig-release.yml@main
+    secrets: inherit
+
+Do not copy \`vendor/setup-tool@v2\`.
+`;
+	assert.deepEqual(findUnsafePublishedWorkflowReferences(source, 'unsafe.md'), [
+		'unsafe.md:4: published action is not SHA-pinned: nullclaw/nullbuilder/.github/workflows/zig-ci.yml@v1',
+		'unsafe.md:6: published action is not SHA-pinned: nullclaw/nullbuilder/.github/workflows/zig-release.yml@main',
+		'unsafe.md:9: published action is not SHA-pinned: vendor/setup-tool@v2',
+		'unsafe.md:7: published workflow must not inherit all caller secrets'
+	]);
+});
+
+test('all currently published content keeps workflow references immutable', () => {
+	assert.deepEqual(validatePublishedContentReferences(), []);
+});
 
 test('site and deployment targets come from the structured registry', () => {
 	assert.equal(siteIds.length, 11);

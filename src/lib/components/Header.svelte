@@ -3,6 +3,7 @@
 	import { site } from '$lib/site';
 	import { themeState, themeToggleLabel, toggleTheme } from '$lib/theme.svelte.js';
 	import { requestSearch } from '$lib/search.svelte.js';
+	import FunctionalIcon from './FunctionalIcon.svelte';
 	import Logo from './Logo.svelte';
 	import {
 		inertElements,
@@ -14,6 +15,7 @@
 	let scrolled = $state(false);
 	let open = $state(false);
 	let burger = $state();
+	let headerInner = $state();
 	let mobilePanel = $state();
 	let shortcut = $state('Ctrl K');
 	const scrollLock = Symbol('main-navigation');
@@ -66,6 +68,7 @@
 			if (cancelled) return;
 			mobilePanel?.querySelector('a, button')?.focus();
 			releaseInert = inertElements([
+				headerInner,
 				document.querySelector('main'),
 				document.querySelector('footer')
 			]);
@@ -76,7 +79,7 @@
 				event.preventDefault();
 				closeMenu(true);
 			} else if (event.key === 'Tab') {
-				trapTab(event, document.querySelector('header'));
+				trapTab(event, mobilePanel);
 			}
 		}
 
@@ -106,7 +109,7 @@
 </script>
 
 <header class:scrolled class:open>
-	<div class="inner container">
+	<div bind:this={headerInner} class="inner container">
 		<div class="left">
 			<a class="brand" href="/" aria-label="{site.display} home">
 				<Logo size={24} />
@@ -118,7 +121,10 @@
 					href="{site.github}/releases/tag/{site.version}"
 					target="_blank"
 					rel="noopener"
-					aria-label="Published release {site.version}">{site.version}</a
+					aria-label="Published release {site.version} (opens in a new tab)"
+				>
+					{site.version}<FunctionalIcon name="external" size={14} />
+				</a
 				>
 			{/if}
 		</div>
@@ -134,12 +140,14 @@
 					target={l.newTab ? '_blank' : undefined}
 					rel={l.newTab ? 'noopener' : undefined}
 				>
-					{l.label}{#if l.newTab}<span class="ext">&nearr;</span>{/if}
+					{l.label}{#if l.newTab}<span class="ext"
+							><FunctionalIcon name="external" size={15} label="opens in a new tab" /></span
+						>{/if}
 				</a>
 			{/each}
 
 			<button class="search-btn mono" onclick={requestSearch} aria-label="Search docs">
-				<span aria-hidden="true">⌕</span>
+				<FunctionalIcon name="search" size={18} />
 				<kbd>{shortcut}</kbd>
 			</button>
 
@@ -178,7 +186,9 @@
 					class="mono"
 					target={link.newTab ? '_blank' : undefined}
 					rel={link.newTab ? 'noopener' : undefined}
-					>{link.label}{#if link.newTab}&nbsp;&nearr;{/if}</a
+					>{link.label}{#if link.newTab}<span class="ext"
+							><FunctionalIcon name="external" size={15} label="opens in a new tab" /></span
+						>{/if}</a
 				>
 			{/each}
 		</nav>
@@ -196,9 +206,16 @@
 				bind:this={mobilePanel}
 				id="mobile-navigation"
 				class="mobile-panel"
+				role="dialog"
+				aria-modal="true"
+				aria-labelledby="mobile-navigation-title"
+				tabindex="-1"
 			>
 				<div class="mobile-head mono">
-					<span>Navigation</span>
+					<span id="mobile-navigation-title">Navigation</span>
+					<button class="mobile-close" onclick={() => closeMenu(true)} aria-label="Close navigation">
+						<span>close</span><FunctionalIcon name="close" size={20} />
+					</button>
 				</div>
 				<nav class="mobile" aria-label="Main">
 					{#each links as l}
@@ -210,11 +227,19 @@
 							aria-current={active ? 'page' : undefined}
 							target={l.newTab ? '_blank' : undefined}
 							rel={l.newTab ? 'noopener' : undefined}
-							onclick={() => closeMenu(false)}>{l.label}{#if l.newTab}&nbsp;&nearr;{/if}</a
+							onclick={() => closeMenu(false)}>{l.label}{#if l.newTab}<span class="ext"
+									><FunctionalIcon
+										name="external"
+										size={16}
+										label="opens in a new tab"
+									/></span
+								>{/if}</a
 						>
 					{/each}
 					<button class="mobile-theme mono" onclick={openSearch}>
-						<span>search</span><span class="action-detail">⌕ · {shortcut}</span>
+						<span>search</span><span class="action-detail"
+							><FunctionalIcon name="search" size={16} /><span>{shortcut}</span></span
+						>
 					</button>
 					<button
 						class="mobile-theme mono"
@@ -310,6 +335,7 @@
 		margin-left: 0.9rem;
 		transform: translateY(1px);
 		transition: color 0.2s var(--ease-out), border-color 0.2s var(--ease-out);
+		gap: 0.3rem;
 	}
 
 	.version:hover {
@@ -351,9 +377,10 @@
 	}
 
 	.ext {
-		margin-left: 0.3em;
-		font-size: 0.85em;
+		display: inline-flex;
+		margin-left: 0.35em;
 		opacity: 0.7;
+		vertical-align: -0.16em;
 	}
 
 	.search-btn {
@@ -431,6 +458,9 @@
 	}
 
 	.action-detail {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
 		font-size: 0.75rem;
 		letter-spacing: 0.1em;
 		text-transform: uppercase;
@@ -506,12 +536,30 @@
 	.mobile-head {
 		display: flex;
 		align-items: center;
+		justify-content: space-between;
 		min-height: 52px;
 		padding-inline: var(--pad);
 		border-bottom: 1px solid var(--line-2);
 		font-size: 0.75rem;
 		letter-spacing: 0.13em;
 		text-transform: uppercase;
+		color: var(--accent);
+	}
+
+	.mobile-close {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.45rem;
+		min-height: 44px;
+		min-width: 44px;
+		color: var(--ink-2);
+		font-size: var(--text-xs);
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+	}
+
+	.mobile-close:hover {
 		color: var(--accent);
 	}
 
@@ -566,6 +614,10 @@
 		}
 		.burger {
 			display: flex;
+		}
+
+		header.open .burger {
+			visibility: hidden;
 		}
 
 		:global(html:not(.js)) .burger {

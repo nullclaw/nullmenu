@@ -9,6 +9,7 @@
 		runCommand,
 		verificationCommand
 	} from '$lib/content/release-commands.js';
+	import FunctionalIcon from './FunctionalIcon.svelte';
 	import Reveal from './Reveal.svelte';
 
 	let { release } = $props();
@@ -17,6 +18,8 @@
 	let selectedName = $state(null);
 	let copiedName = $state('');
 	let copiedVerification = $state('');
+	let copyErrorName = $state('');
+	let verificationErrorName = $state('');
 
 	const detectedLabel = $derived(
 		detectedOs ? release.binaries.find((binary) => binary.os === detectedOs)?.label : null
@@ -56,7 +59,11 @@
 	$effect(() => {
 		const ua = navigator.userAgent;
 		const platform = navigator.platform ?? '';
-		if (/android/i.test(ua)) detectedOs = 'android';
+		const isIPadOs =
+			/iPad|iPhone|iPod/i.test(ua) ||
+			(platform === 'MacIntel' && (navigator.maxTouchPoints ?? 0) > 1);
+		if (isIPadOs) detectedOs = 'ios';
+		else if (/android/i.test(ua)) detectedOs = 'android';
 		else if (/mac/i.test(platform) || /Macintosh/.test(ua)) detectedOs = 'mac';
 		else if (/win/i.test(platform) || /Windows/.test(ua)) detectedOs = 'windows';
 		else if (/linux/i.test(platform) || /Linux/.test(ua)) detectedOs = 'linux';
@@ -66,6 +73,7 @@
 		try {
 			await navigator.clipboard.writeText(downloadCommand(binary));
 			copiedName = binary.name;
+			copyErrorName = '';
 			const status = document.getElementById('sr-status');
 			if (status) {
 				status.textContent = binary.sha256
@@ -74,8 +82,10 @@
 			}
 			setTimeout(() => (copiedName = ''), 1600);
 		} catch {
+			copiedName = '';
+			copyErrorName = binary.name;
 			const status = document.getElementById('sr-status');
-			if (status) status.textContent = 'Clipboard unavailable';
+			if (status) status.textContent = 'Copy failed. Activate the button to retry.';
 		}
 	}
 
@@ -85,12 +95,15 @@
 		try {
 			await navigator.clipboard.writeText(command);
 			copiedVerification = binary.name;
+			verificationErrorName = '';
 			const status = document.getElementById('sr-status');
 			if (status) status.textContent = 'SHA-256 verification command copied';
 			setTimeout(() => (copiedVerification = ''), 1600);
 		} catch {
+			copiedVerification = '';
+			verificationErrorName = binary.name;
 			const status = document.getElementById('sr-status');
-			if (status) status.textContent = 'Clipboard unavailable';
+			if (status) status.textContent = 'Copy failed. Activate the button to retry.';
 		}
 	}
 </script>
@@ -111,7 +124,10 @@
 				<div class="release-note" role="status">
 					<span class="pulse" aria-hidden="true"></span>
 					<p>{release.note}</p>
-					<a href={release.url} target="_blank" rel="noopener">Open pinned release &nearr;</a>
+					<a href={release.url} target="_blank" rel="noopener">
+						Open pinned release
+						<FunctionalIcon name="external" size={15} label="opens in a new tab" />
+					</a>
 				</div>
 			</Reveal>
 		{/if}
@@ -133,9 +149,22 @@
 						</p>
 					</div>
 					<a href={release.manifestUrl} target="_blank" rel="noopener">
-						Audit the digest manifest &nearr;
+						Audit the digest manifest
+						<FunctionalIcon name="external" size={15} label="opens in a new tab" />
 					</a>
 				</aside>
+			</Reveal>
+		{/if}
+
+		{#if detectedOs === 'ios' && !platformChoices.length}
+			<Reveal>
+				<div class="platform-note" role="status">
+					<p class="eyebrow mono">Detected · iPadOS</p>
+					<p>
+						A native iPadOS build is not published. The release files below are for desktop
+						and Android systems and will not run directly on this device.
+					</p>
+				</div>
 			</Reveal>
 		{/if}
 
@@ -147,13 +176,14 @@
 						<h3 class="serif">Choose your processor.</h3>
 						<p>We recognise your operating system, but leave the architecture to you.</p>
 					</div>
-					<div class="choices" aria-label="{detectedLabel} downloads">
+					<div class="choices" role="group" aria-label="{detectedLabel} downloads">
 						{#each platformChoices as binary}
 							<a
 								class="choice"
 								class:chosen={selectedName === binary.name}
 								href={binary.url}
 								download
+								aria-current={selectedName === binary.name ? 'true' : undefined}
 								onclick={() => (selectedName = binary.name)}
 							>
 								<span class="serif-i">{binary.arch}</span>
@@ -166,12 +196,28 @@
 					</div>
 				</div>
 
+				<p class="sr-only" role="status" aria-live="polite" aria-atomic="true">
+					{selected
+						? `${selected.label} ${selected.arch} selected. Download, verification, and run instructions are ready in the Download instructions region.`
+						: ''}
+				</p>
+
 				{#if selected}
+					<section
+						class="download-instructions"
+						aria-labelledby="download-instructions-title"
+					>
 					<div class="after-download">
-						<span class="mono">Download safely</span>
+						<span id="download-instructions-title" class="mono">Download instructions</span>
 						<code class="hint mono">{downloadCommand(selected)}</code>
-						<button class="copy mono" onclick={() => copyInstall(selected)}>
-							{copiedName === selected.name
+						<button
+							class="copy mono"
+							class:copy-error={copyErrorName === selected.name}
+							onclick={() => copyInstall(selected)}
+						>
+							{copyErrorName === selected.name
+								? 'Copy failed · retry'
+								: copiedName === selected.name
 								? 'Copied'
 								: selected.sha256
 									? 'Copy download + verify'
@@ -187,8 +233,16 @@
 								<code class="digest-value mono">{selected.sha256}</code>
 								<code class="verify-command mono">{verificationCommand(selected)}</code>
 							</div>
-							<button class="copy mono" onclick={() => copyVerification(selected)}>
-								{copiedVerification === selected.name ? 'Copied' : 'Copy verify command'}
+							<button
+								class="copy mono"
+								class:copy-error={verificationErrorName === selected.name}
+								onclick={() => copyVerification(selected)}
+							>
+								{verificationErrorName === selected.name
+									? 'Copy failed · retry'
+									: copiedVerification === selected.name
+										? 'Copied'
+										: 'Copy verify command'}
 							</button>
 						</div>
 					{/if}
@@ -196,6 +250,7 @@
 						<span class="mono">After a match</span>
 						<code class="hint mono">{runCommand(selected)}</code>
 					</div>
+					</section>
 				{/if}
 			</Reveal>
 		{:else if !release.binaries.length}
@@ -207,7 +262,8 @@
 						<p>Choose the file for your operating system and processor on GitHub.</p>
 					</div>
 					<a class="btn btn--solid" href={release.url} target="_blank" rel="noopener">
-						Browse release assets &nearr;
+						Browse release assets
+						<FunctionalIcon name="external" size={16} label="opens in a new tab" />
 					</a>
 				</div>
 			</Reveal>
@@ -217,7 +273,10 @@
 			<Reveal class="download-list">
 				<div class="menu-head mono">
 					<span>{site.name} · {release.tag}{#if release.date}&nbsp;· {release.date}{/if}</span>
-					<a href={release.url} target="_blank" rel="noopener">release notes &nearr;</a>
+					<a href={release.url} target="_blank" rel="noopener">
+						release notes
+						<FunctionalIcon name="external" size={15} label="opens in a new tab" />
+					</a>
 				</div>
 				<ul class="binaries">
 					{#each release.binaries as binary}
@@ -230,6 +289,7 @@
 									class="binary-download"
 									href={binary.url}
 									download
+									aria-current={selectedName === binary.name ? 'true' : undefined}
 									onclick={() => (selectedName = binary.name)}
 								>
 									<span class="os mono">{binary.label}</span>
@@ -239,10 +299,15 @@
 								</a>
 								<button
 									class="copy mono"
+									class:copy-error={copyErrorName === binary.name}
 									onclick={() => copyInstall(binary)}
-									aria-label="Copy download and SHA-256 verification command for {binary.label} {binary.arch}"
+									aria-label={copyErrorName === binary.name
+										? `Copy failed. Retry download command for ${binary.label} ${binary.arch}`
+										: `Copy download and SHA-256 verification command for ${binary.label} ${binary.arch}`}
 								>
-									{copiedName === binary.name
+									{copyErrorName === binary.name
+										? 'copy failed · retry'
+										: copiedName === binary.name
 										? 'copied'
 										: binary.os === 'windows'
 											? 'ps'
@@ -260,6 +325,7 @@
 									<a
 										href={alternate.url}
 										download
+										aria-current={selectedName === alternate.name ? 'true' : undefined}
 										onclick={() => (selectedName = alternate.name)}>{alternate.label}</a
 									>
 									{#if alternate.sha256}
@@ -348,6 +414,10 @@
 	}
 
 	.release-note a {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		min-height: 44px;
 		color: var(--accent);
 		font-size: var(--text-xs);
 		letter-spacing: 0.06em;
@@ -373,11 +443,32 @@
 	}
 
 	.trust-guide > a {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		min-height: 44px;
 		color: var(--accent);
 		font-size: var(--text-xs);
 		letter-spacing: 0.06em;
 		text-transform: uppercase;
 		white-space: nowrap;
+	}
+
+	.platform-note {
+		border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--line));
+		background: color-mix(in srgb, var(--accent) 5%, var(--bg-2));
+		margin-top: 1rem;
+		padding: 1rem 1.25rem;
+	}
+
+	.platform-note .eyebrow {
+		margin-bottom: 0.35rem;
+	}
+
+	.platform-note p:last-child {
+		color: var(--ink-2);
+		font-size: var(--text-sm);
+		max-width: 48rem;
 	}
 
 	.pulse {
@@ -453,6 +544,15 @@
 		font-size: var(--text-xs);
 		letter-spacing: 0.06em;
 		text-transform: uppercase;
+	}
+
+	.choice[aria-current='true'] {
+		background: color-mix(in srgb, var(--accent) 6%, var(--bg));
+		border-color: var(--accent);
+	}
+
+	.download-instructions {
+		margin: 0;
 	}
 
 	.after-download {
@@ -546,6 +646,13 @@
 		transition: color 0.2s;
 	}
 
+	.menu-head a {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		min-height: 44px;
+	}
+
 	.menu-head a:hover,
 	.asset-meta a:hover {
 		color: var(--accent);
@@ -576,6 +683,7 @@
 		display: flex;
 		flex: 1;
 		gap: 0.8rem;
+		min-height: 44px;
 		min-width: 0;
 		padding: 0.72rem 0.4rem 0.35rem;
 		transition: background 0.2s var(--ease-out);
@@ -591,10 +699,15 @@
 	}
 
 	.copy {
+		align-items: center;
 		border-left: 1px solid var(--line);
 		color: var(--ink-3);
+		display: inline-flex;
 		font-size: var(--text-xs);
+		justify-content: center;
 		letter-spacing: 0.09em;
+		min-height: 44px;
+		min-width: 44px;
 		padding: 0 0.8rem;
 		text-transform: uppercase;
 		transition: color 0.2s var(--ease-out), background 0.2s var(--ease-out);
@@ -604,6 +717,11 @@
 	.copy:hover {
 		background: var(--bg-2);
 		color: var(--accent);
+	}
+
+	.copy.copy-error {
+		background: color-mix(in srgb, #ff4f30 8%, var(--bg-2));
+		color: color-mix(in srgb, #ff4f30 78%, var(--ink));
 	}
 
 	.os {
@@ -648,7 +766,11 @@
 	}
 
 	.asset-meta a {
+		align-items: center;
+		display: inline-flex;
 		flex: none;
+		min-height: 44px;
+		padding-inline: 0.25rem;
 		text-decoration: underline;
 		text-underline-offset: 0.2em;
 	}
@@ -658,12 +780,36 @@
 		white-space: nowrap;
 	}
 
+	.asset-meta a[aria-current='true'] {
+		color: var(--accent);
+	}
+
 	.verification {
 		color: var(--ink-3);
 		font-size: var(--text-xs);
 		line-height: 1.55;
 		margin-top: 0.9rem;
 		max-width: 42rem;
+	}
+
+	.sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
+		border: 0;
+	}
+
+	:global(.external-icon),
+	.release-note :global(.functional-icon),
+	.trust-guide :global(.functional-icon),
+	.menu-head :global(.functional-icon),
+	.release-fallback :global(.functional-icon) {
+		flex: none;
 	}
 
 	@media (max-width: 860px) {
@@ -714,13 +860,6 @@
 
 		.asset-meta {
 			gap: 0.45rem 0.7rem;
-		}
-
-		.asset-meta a {
-			display: inline-flex;
-			align-items: center;
-			min-height: 44px;
-			padding-inline: 0.25rem;
 		}
 
 		.after-download > span {

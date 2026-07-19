@@ -52,14 +52,23 @@
 				if (btn) {
 					btn.textContent = 'copied';
 					btn.classList.add('done');
+					btn.classList.remove('copy-error');
+					btn.setAttribute('aria-label', 'Code copied');
 					setTimeout(() => {
 						btn.textContent = 'copy';
 						btn.classList.remove('done');
+						btn.removeAttribute('aria-label');
 					}, 1600);
 				}
 				if (status) status.textContent = 'Copied to clipboard';
 			} catch {
-				if (status) status.textContent = 'Copy failed';
+				if (btn) {
+					btn.textContent = 'copy failed · retry';
+					btn.classList.remove('done');
+					btn.classList.add('copy-error');
+					btn.setAttribute('aria-label', 'Copy failed. Retry copying code');
+				}
+				if (status) status.textContent = 'Copy failed. Activate the button to retry.';
 			}
 		}
 		document.addEventListener('click', onClick);
@@ -101,5 +110,12 @@
 
 	.skip:focus {
 		top: 1rem;
+	}
+
+	:global(.code-figure .code-copy.copy-error) {
+		background: color-mix(in srgb, #ff4f30 8%, var(--bg));
+		border-color: color-mix(in srgb, #ff4f30 48%, var(--line));
+		color: color-mix(in srgb, #ff4f30 78%, var(--ink));
+		opacity: 1;
 	}
 </style>

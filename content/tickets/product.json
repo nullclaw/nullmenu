@@ -83,12 +83,12 @@
 			{
 				"title": "Get the binary",
 				"body": "Download a prebuilt release for your platform — there are 7, from macOS arm64 down to riscv64 Linux, each 1.3–1.7 MB with SQLite 3.51.2 and FTS5 already inside. No runtime, no package manager, no external dependencies to install. If you prefer, `zig build` from source works too, as does `nullhub install nulltickets` via NullHub — the installer shared by the Null family of agent tools that NullTickets belongs to.",
-				"code": "curl -LO https://github.com/nullclaw/nulltickets/releases/download/v2026.5.29/nulltickets-linux-x86_64 && chmod +x nulltickets-linux-x86_64"
+				"code": "curl -LO https://github.com/nullclaw/nulltickets/releases/download/v2026.5.29/nulltickets-linux-x86_64.bin && chmod +x nulltickets-linux-x86_64.bin"
 			},
 			{
 				"title": "Start the tracker",
 				"body": "Launch it with a port and a database path. On startup it reads ~/.nulltickets/config.json if present (flags override it), creates the SQLite database if missing, runs its embedded migrations, and binds a JSON REST API to 127.0.0.1 — localhost only, by design. Add --token to require a bearer token on admin routes.",
-				"code": "./nulltickets-linux-x86_64 --port 7700 --db tracker.db"
+				"code": "./nulltickets-linux-x86_64.bin --port 7700 --db tracker.db"
 			},
 			{
 				"title": "Verify and discover",

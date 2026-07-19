@@ -1,6 +1,8 @@
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { existsSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { basename, resolve } from 'node:path';
+import { gzipSync } from 'node:zlib';
+import { finalizeStaticSecurity, validateStaticSecurity } from './security-policy.js';
 import { requireSite } from './site-targets.js';
 
 const runtimeFonts = new Set([
@@ -10,6 +12,95 @@ const runtimeFonts = new Set([
 	'InstrumentSerif-normal-400-latin.woff2',
 	'LICENSE.md'
 ]);
+
+/**
+ * These ceilings cover every immutable client chunk and the separately loaded
+ * Pagefind runtime/index rather than only today's entry chunk. That makes both
+ * route-wide and lazy-search regressions visible in CI. WOFF2 files are already
+ * compressed, so they are counted as-is in the transfer budget.
+ */
+export const buildBudgets = Object.freeze({
+	indexHtml: 112 * 1024,
+	immutableJavaScript: 210 * 1024,
+	immutableCss: 92 * 1024,
+	runtimeFonts: 96 * 1024,
+	initialTransfer: 215 * 1024,
+	largestJavaScript: 64 * 1024,
+	largestCss: 40 * 1024,
+	immutableResources: 36,
+	pagefindRuntime: 260 * 1024,
+	pagefindIndex: 104 * 1024,
+	pagefindPayload: 360 * 1024,
+	largestPagefindAsset: 88 * 1024,
+	pagefindResources: 40
+});
+
+function filesBelow(directory) {
+	const files = [];
+	const visit = (current) => {
+		for (const entry of readdirSync(current, { withFileTypes: true })) {
+			const path = resolve(current, entry.name);
+			if (entry.isDirectory()) visit(path);
+			else files.push(path);
+		}
+	};
+	visit(directory);
+	return files;
+}
+
+const sum = (values) => values.reduce((total, value) => total + value, 0);
+
+export function measureBuildAssets(root) {
+	const immutable = filesBelow(resolve(root, '_app/immutable'));
+	const scripts = immutable.filter((file) => file.endsWith('.js'));
+	const styles = immutable.filter((file) => file.endsWith('.css'));
+	const fonts = filesBelow(resolve(root, 'fonts')).filter((file) => file.endsWith('.woff2'));
+	const pagefind = filesBelow(resolve(root, 'pagefind'));
+	const pagefindRuntime = pagefind.filter((file) => {
+		const name = basename(file);
+		return name === 'pagefind.js' || name === 'pagefind-worker.js' || /^wasm\..+\.pagefind$/.test(name);
+	});
+	const pagefindIndex = pagefind.filter((file) => !pagefindRuntime.includes(file));
+	const index = readFileSync(resolve(root, 'index.html'));
+	const bytes = (files) => files.map((file) => statSync(file).size);
+	const compressed = (files) => files.map((file) => gzipSync(readFileSync(file)).length);
+
+	const scriptBytes = bytes(scripts);
+	const styleBytes = bytes(styles);
+	const fontBytes = bytes(fonts);
+	const pagefindBytes = bytes(pagefind);
+	const pagefindRuntimeBytes = bytes(pagefindRuntime);
+	const pagefindIndexBytes = bytes(pagefindIndex);
+
+	return Object.freeze({
+		indexHtml: index.length,
+		immutableJavaScript: sum(scriptBytes),
+		immutableCss: sum(styleBytes),
+		runtimeFonts: sum(fontBytes),
+		initialTransfer:
+			gzipSync(index).length + sum(compressed(scripts)) + sum(compressed(styles)) + sum(fontBytes),
+		largestJavaScript: Math.max(0, ...scriptBytes),
+		largestCss: Math.max(0, ...styleBytes),
+		immutableResources: immutable.length,
+		pagefindRuntime: sum(pagefindRuntimeBytes),
+		pagefindIndex: sum(pagefindIndexBytes),
+		pagefindPayload: sum(pagefindBytes),
+		largestPagefindAsset: Math.max(0, ...pagefindBytes),
+		pagefindResources: pagefind.length
+	});
+}
+
+export function validateBuildBudgets(id, root = resolve(`build/${id}`)) {
+	const measured = measureBuildAssets(root);
+	for (const [metric, ceiling] of Object.entries(buildBudgets)) {
+		if (measured[metric] > ceiling) {
+			throw new Error(
+				`${id}: ${metric} budget exceeded (${measured[metric]} > ${ceiling}); inspect the production payload before raising the ceiling`
+			);
+		}
+	}
+	return measured;
+}
 
 function run(command, args, env = process.env) {
 	execFileSync(command, args, { stdio: 'inherit', env });
@@ -69,6 +160,22 @@ export function optimizeBuildAssets(id, root = resolve(`build/${id}`)) {
 	for (const name of readdirSync(fontsDir)) {
 		if (!runtimeFonts.has(name)) rmSync(resolve(fontsDir, name), { force: true });
 	}
+
+	/* The site has a custom search UI and only imports Pagefind's core runtime.
+	   The generator also emits three unused UI bundles and a highlighting helper. */
+	const unusedPagefindAssets = new Set([
+		'pagefind-component-ui.css',
+		'pagefind-component-ui.js',
+		'pagefind-highlight.js',
+		'pagefind-modular-ui.css',
+		'pagefind-modular-ui.js',
+		'pagefind-ui.css',
+		'pagefind-ui.js'
+	]);
+	const pagefindDir = resolve(root, 'pagefind');
+	for (const name of readdirSync(pagefindDir)) {
+		if (unusedPagefindAssets.has(name)) rmSync(resolve(pagefindDir, name), { force: true });
+	}
 }
 
 export function validateSiteBuild(id, root = resolve(`build/${id}`)) {
@@ -96,19 +203,13 @@ export function validateSiteBuild(id, root = resolve(`build/${id}`)) {
 	if (!readFileSync(resolve(root, '404.html'), 'utf8').includes('data-static-404')) {
 		throw new Error(`${id}: 404.html has no no-JavaScript fallback`);
 	}
+	validateStaticSecurity(root);
+	validateBuildBudgets(id, root);
 
 	if (existsSync(resolve(root, 'llms-full.txt'))) {
 		throw new Error(`${id}: llms-full.txt is a duplicate without enforceable noindex headers`);
 	}
-	const rawDocs = [];
-	const visit = (directory) => {
-		for (const entry of readdirSync(directory, { withFileTypes: true })) {
-			const path = resolve(directory, entry.name);
-			if (entry.isDirectory()) visit(path);
-			else if (entry.name.endsWith('.md')) rawDocs.push(path);
-		}
-	};
-	visit(resolve(root, 'docs'));
+	const rawDocs = filesBelow(resolve(root, 'docs')).filter((path) => path.endsWith('.md'));
 	if (rawDocs.length) {
 		throw new Error(`${id}: raw Markdown twins cannot be safely noindexed on the static host`);
 	}
@@ -122,5 +223,6 @@ export function buildSite(id) {
 	run('pnpm', ['exec', 'pagefind', '--site', root]);
 	optimizeBuildAssets(id, root);
 	enhanceFallback404(id, root);
+	finalizeStaticSecurity(root);
 	validateSiteBuild(id, root);
 }

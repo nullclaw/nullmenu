@@ -34,12 +34,13 @@ Tests are the family's main quality gate, and the numbers are taken seriously: N
 
 ## Shared CI: NullBuilder
 
-CI, nightlies and releases are reusable GitHub Actions workflows in [nullclaw/nullbuilder](https://github.com/nullclaw/nullbuilder), referenced at the `v1` branch. A consuming repo's CI is a few lines:
+CI, nightlies and releases are reusable GitHub Actions workflows in [nullclaw/nullbuilder](https://github.com/nullclaw/nullbuilder). Because `v1` is a mutable branch, consuming repos pin its reviewed snapshot and update it only after reviewing upstream changes:
 
 ```yaml
 jobs:
   ci:
-    uses: nullclaw/nullbuilder/.github/workflows/zig-ci.yml@v1
+    # NullBuilder v1 snapshot; review upstream before updating this full SHA.
+    uses: nullclaw/nullbuilder/.github/workflows/zig-ci.yml@2b9c2f2e7bb0ac085baea1c33b4f08beaf5c7fac
     permissions:
       contents: read
     with:
@@ -47,7 +48,7 @@ jobs:
       artifact_prefix: nullclaw
 ```
 
-The CI workflow runs tests, cross-compiles `ReleaseSmall` binaries for a configurable target matrix, and reports test count, MaxRSS and binary size in the job summary — binary size is a tracked metric here, not an afterthought. `zig-nightly.yml` and `zig-release.yml` cover nightly builds (12-target default matrix, including Android via the NDK) and tag-driven releases with optional multi-arch Docker publish to ghcr.io. All third-party actions are pinned to commit SHAs.
+The CI workflow runs tests, cross-compiles `ReleaseSmall` binaries for a configurable target matrix, and reports test count, MaxRSS and binary size in the job summary — binary size is a tracked metric here, not an afterthought. `zig-nightly.yml` and `zig-release.yml` cover nightly builds (12-target default matrix, including Android via the NDK) and tag-driven releases with optional multi-arch Docker publish to ghcr.io. General-purpose third-party actions are pinned to commit SHAs, and the bundled Zig installer verifies its archive; NullBuilder's three internal composite helpers remain referenced through its mutable `v1` branch.
 
 ## Releases
 

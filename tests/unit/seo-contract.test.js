@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 import test from 'node:test';
 import { buildStructuredData, serializeJsonLd } from '../../src/lib/content/seo.js';
 import { renderSitemap, sitemapEntries } from '../../src/lib/content/sitemap.js';
+import { sites } from '../../src/lib/site/sites.js';
 
 const product = {
 	id: 'hub',
@@ -13,6 +14,15 @@ const product = {
 	github: 'https://github.com/nullclaw/nullhub',
 	license: 'MIT'
 };
+
+test('site meta descriptions stay within 160 characters', () => {
+	for (const site of Object.values(sites)) {
+		assert.ok(
+			site.description.length <= 160,
+			`${site.id} description is ${site.description.length} characters`
+		);
+	}
+});
 
 test('product JSON-LD includes organization, software, breadcrumbs and FAQ safely', () => {
 	const data = buildStructuredData({

@@ -98,6 +98,73 @@
 	opacity: 0.055;
 }
 
+/* The pre-paint theme script is progressive enhancement. If JavaScript is
+   unavailable, the operating-system preference still receives the complete
+   paper palette instead of silently falling back to mineral black. */
+@media (prefers-color-scheme: light) {
+	:root:not([data-theme]) {
+		--bg: #f2ead8;
+		--bg-2: #ece2cb;
+		--bg-3: #e4d8bd;
+		--bg-glass: rgba(242, 234, 216, 0.78);
+		--ink: #26211a;
+		--ink-2: #52483a;
+		--ink-3: #665c4a;
+		--line: rgba(38, 33, 26, 0.52);
+		--line-2: rgba(38, 33, 26, 0.62);
+		--accent: color-mix(in srgb, var(--spice) 32%, #26211a);
+		--accent-dim: color-mix(in srgb, var(--spice) 30%, #8a7f6a);
+		--accent-ink: #f2ead8;
+		--accent-glow: color-mix(in srgb, var(--spice) 22%, transparent);
+		--halo: rgba(242, 234, 216, 0.75);
+		color-scheme: light;
+	}
+
+	:root:not([data-theme]) body {
+		background:
+			radial-gradient(55rem 38rem at 6% 10%, rgba(158, 126, 74, 0.055), transparent 62%),
+			radial-gradient(48rem 34rem at 94% 88%, rgba(158, 126, 74, 0.045), transparent 62%),
+			var(--bg);
+	}
+
+	:root:not([data-theme]) .grain {
+		opacity: 0.055;
+	}
+
+	/* Component pigments that intentionally use the raw product spice need the
+	   same ink-dark correction as the JavaScript-selected light theme. */
+	:root:not([data-theme]) :is(.station .mark, .tag--status) {
+		color: color-mix(in srgb, var(--spice) 45%, var(--ink));
+	}
+
+	:root:not([data-theme])
+		:is(.hub-band:hover .mark, .pantry-band:hover .mark, .menu-row:hover .mark) {
+		color: color-mix(in srgb, var(--spice) 50%, var(--ink));
+	}
+
+	:root:not([data-theme])
+		:is(.menu-row:hover .leaders, .row:hover .leaders) {
+		border-color: color-mix(in srgb, var(--spice) 45%, var(--ink));
+	}
+
+	:root:not([data-theme])
+		:is(.row:hover .mark, .row:hover .course, .pair:hover .mark, .pair:hover .go) {
+		color: color-mix(in srgb, var(--spice) 45%, var(--ink));
+	}
+
+	:root:not([data-theme]) .callout--tip {
+		--callout-color: #44622c;
+	}
+
+	:root:not([data-theme]) .callout--warning {
+		--callout-color: #7a5a10;
+	}
+
+	:root:not([data-theme]) .callout--danger {
+		--callout-color: #8c2410;
+	}
+}
+
 /* ———— reset ———— */
 
 *,
@@ -463,6 +530,45 @@ pre {
 	overflow-x: auto;
 }
 
+/* Markdown tables receive this semantic keyboard-scroll region in the
+   renderer. Local/scroll backgrounds form real edge shadows: the cue clears
+   as the reader reaches either edge instead of permanently tinting content. */
+.prose .table-scroll {
+	max-width: 100%;
+	overflow-x: auto;
+	overscroll-behavior-inline: contain;
+	scrollbar-gutter: stable;
+	scrollbar-width: thin;
+	background:
+		linear-gradient(90deg, var(--bg) 42%, transparent) left center,
+		linear-gradient(270deg, var(--bg) 42%, transparent) right center,
+		radial-gradient(
+			farthest-side at 0 50%,
+			color-mix(in srgb, var(--accent) 62%, transparent),
+			transparent
+		) left center,
+		radial-gradient(
+			farthest-side at 100% 50%,
+			color-mix(in srgb, var(--accent) 62%, transparent),
+			transparent
+		) right center;
+	background-repeat: no-repeat;
+	background-size: 3rem 100%, 3rem 100%, 1.5rem 100%, 1.5rem 100%;
+	background-attachment: local, local, scroll, scroll;
+}
+
+.prose .table-scroll table {
+	display: table;
+	min-width: max(100%, 38rem);
+	overflow: visible;
+}
+
+.prose a > .external-icon {
+	display: inline-block;
+	margin-inline-start: 0.25em;
+	vertical-align: -0.18em;
+}
+
 .prose th {
 	font-family: var(--font-mono);
 	font-size: var(--text-xs);
@@ -626,10 +732,9 @@ pre {
 @media (prefers-reduced-motion: no-preference) {
 	/* fallback: one-shot IO reveal */
 	.reveal {
-		opacity: 0;
-		transform: translateY(18px);
+		opacity: 1;
+		transform: translateY(12px);
 		transition:
-			opacity 0.7s var(--ease-out),
 			transform 0.7s var(--ease-out);
 		transition-delay: var(--reveal-delay, 0ms);
 	}
@@ -678,7 +783,7 @@ pre {
 @media (prefers-reduced-motion: no-preference) {
 	@supports (animation-timeline: view()) {
 		/* product marks engrave themselves as they enter the page */
-		.mark svg :is(path, circle, line) {
+		.mark svg :is(path, circle, line, rect) {
 			stroke-dasharray: 140;
 			stroke-dashoffset: 140;
 			animation: engrave linear both;
@@ -712,17 +817,178 @@ pre {
 
 @keyframes sda-develop {
 	from {
-		opacity: 0;
-		transform: translateY(16px);
-		filter: blur(3px);
-	}
-	65% {
-		filter: blur(0);
+		opacity: 1;
+		transform: translateY(12px);
 	}
 	to {
 		opacity: 1;
 		transform: none;
-		filter: none;
+	}
+}
+
+@media (max-width: 640px) {
+	/* Two-column references can stay fully visible and retain native table
+	   semantics. The first column becomes the compact term rail; wider matrices
+	   keep their measured width and the scroll shadows above advertise swipe. */
+	.prose .table-scroll:has(thead th:nth-child(2):last-child) {
+		overflow: visible;
+		background: none;
+		scrollbar-gutter: auto;
+	}
+
+	.prose .table-scroll:has(thead th:nth-child(2):last-child) table {
+		width: 100%;
+		min-width: 0;
+		border-collapse: separate;
+		border-spacing: 0 0.6rem;
+		table-layout: fixed;
+	}
+
+	.prose .table-scroll:has(thead th:nth-child(2):last-child) th:first-child,
+	.prose .table-scroll:has(thead th:nth-child(2):last-child) td:first-child {
+		width: 38%;
+	}
+
+	.prose .table-scroll:has(thead th:nth-child(2):last-child) tbody td {
+		padding: 0.8rem;
+		border-block: 1px solid var(--line);
+		background: var(--bg-2);
+		overflow-wrap: anywhere;
+	}
+
+	.prose .table-scroll:has(thead th:nth-child(2):last-child) tbody td:first-child {
+		border-left: 1px solid var(--line);
+		font-family: var(--font-mono);
+		font-size: var(--text-xs);
+		color: var(--accent);
+	}
+
+	.prose .table-scroll:has(thead th:nth-child(2):last-child) tbody td:last-child {
+		border-right: 1px solid var(--line);
+	}
+}
+
+/* Printing is a first-class reading mode. Decorative motion must never hide
+   copy from a PDF or full-page capture, and fixed GPU/grain layers should not
+   turn a six-page text document into a multi-megabyte raster. */
+@media print {
+	@page {
+		margin: 16mm;
+	}
+
+	:root {
+		--bg: #fff;
+		--bg-2: #fff;
+		--bg-3: #f5f2eb;
+		--bg-glass: #fff;
+		--ink: #17130f;
+		--ink-2: #3e372f;
+		--ink-3: #5d554b;
+		--line: rgba(23, 19, 15, 0.32);
+		--line-2: rgba(23, 19, 15, 0.48);
+		--accent: #493f34;
+		--accent-dim: #675b4d;
+		--accent-ink: #fff;
+		--accent-glow: transparent;
+		--halo: transparent;
+		color-scheme: light;
+	}
+
+	html,
+	body {
+		background: #fff !important;
+		color: var(--ink) !important;
+		scroll-behavior: auto !important;
+		print-color-adjust: economy;
+		-webkit-print-color-adjust: economy;
+	}
+
+	main {
+		padding-top: 0 !important;
+	}
+
+	header:has(> .inner.container),
+	.grain,
+	.skip,
+	.sr-status,
+	.nav-toggle,
+	.nojs-navigation,
+	.nojs-docs-navigation,
+	.sidebar,
+	.toc,
+	.mobile-toc,
+	canvas,
+	.watermark {
+		display: none !important;
+	}
+
+	.reveal,
+	.reveal.is-visible,
+	.sda,
+	.mark svg :is(path, circle, line, rect) {
+		opacity: 1 !important;
+		transform: none !important;
+		filter: none !important;
+		animation: none !important;
+		transition: none !important;
+		stroke-dashoffset: 0 !important;
+	}
+
+	main details > :not(summary) {
+		display: block !important;
+	}
+
+	.section,
+	.hero,
+	.head,
+	.docs {
+		min-height: 0 !important;
+		padding-block: 1.4rem !important;
+		background: none !important;
+	}
+
+	.prose .table-scroll {
+		overflow: visible !important;
+		background: none !important;
+	}
+
+	.prose .table-scroll table,
+	.prose table {
+		display: table !important;
+		width: 100% !important;
+		min-width: 0 !important;
+		table-layout: auto !important;
+		font-size: 9pt;
+	}
+
+	.prose pre,
+	.code-figure,
+	.card,
+	section,
+	article,
+	table,
+	tr,
+	img,
+	svg {
+		break-inside: avoid;
+	}
+
+	.prose pre {
+		white-space: pre-wrap;
+		word-break: break-word;
+		background: #f5f2eb !important;
+		color: #17130f !important;
+		border-color: var(--line) !important;
+	}
+
+	footer {
+		padding: 1rem 0 0 !important;
+		background: none !important;
+	}
+
+	footer .signoff,
+	footer .cols {
+		display: none !important;
 	}
 }
 

@@ -70,7 +70,7 @@
 				<span class="serif-i accent">à&nbsp;la&nbsp;carte.</span>
 			</h1>
 			<p class="sub">
-				<span class="hero-lead">{heroIntro.lead}</span>{#if heroIntro.tail}<span class="hero-tail">
+				<span class="hero-lead">{heroIntro.lead}</span>{#if heroIntro.tail}{' '}<span class="hero-tail">
 					{heroIntro.tail}</span
 				>{/if}
 			</p>

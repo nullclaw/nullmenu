@@ -2,7 +2,7 @@
 	"hero": {
 		"kicker": "SHARED CI — RELEASE INFRASTRUCTURE",
 		"title": "One YAML block, twelve targets, every release.",
-		"sub": "Reusable GitHub Actions workflows for Zig projects. Add a ten-line job block per pipeline — `uses: nullclaw/nullbuilder/.github/workflows/zig-ci.yml@v1` for tests and cross-compiled binaries, plus sibling workflows for nightly builds and tag-driven GitHub releases that ship binaries for 12 targets across Linux, Android, macOS, and Windows. Nothing to install — it all runs in your repo's own Actions."
+		"sub": "Reusable GitHub Actions workflows for Zig projects. Add a ten-line job block per pipeline — `uses: nullclaw/nullbuilder/.github/workflows/zig-ci.yml@2b9c2f2e7bb0ac085baea1c33b4f08beaf5c7fac` pins the reviewed v1 snapshot for tests and cross-compiled binaries, with sibling workflows for nightlies and 12-target releases. Nothing to install — it all runs in your repo's own Actions."
 	},
 	"metrics": [
 		{
@@ -25,20 +25,20 @@
 	"install": {
 		"primary": {
 			"label": "Reference from a caller repo",
-			"code": "jobs:\n  ci:\n    uses: nullclaw/nullbuilder/.github/workflows/zig-ci.yml@v1\n    permissions:\n      contents: read\n    with:\n      binary_name: nullclaw\n      artifact_prefix: nullclaw"
+			"code": "jobs:\n  ci:\n    # NullBuilder v1 snapshot; update this full SHA deliberately.\n    uses: nullclaw/nullbuilder/.github/workflows/zig-ci.yml@2b9c2f2e7bb0ac085baea1c33b4f08beaf5c7fac\n    permissions:\n      contents: read\n    with:\n      binary_name: nullclaw\n      artifact_prefix: nullclaw"
 		},
 		"alts": [
 			{
 				"label": "Nightly pipeline",
-				"code": "jobs:\n  nightly:\n    uses: nullclaw/nullbuilder/.github/workflows/zig-nightly.yml@v1\n    permissions:\n      actions: read\n      contents: read\n    with:\n      binary_name: nullclaw\n      artifact_prefix: nullclaw\n      force: ${{ inputs.force || false }}"
+				"code": "jobs:\n  nightly:\n    # NullBuilder v1 snapshot; update this full SHA deliberately.\n    uses: nullclaw/nullbuilder/.github/workflows/zig-nightly.yml@2b9c2f2e7bb0ac085baea1c33b4f08beaf5c7fac\n    permissions:\n      actions: read\n      contents: read\n    with:\n      binary_name: nullclaw\n      artifact_prefix: nullclaw\n      force: ${{ inputs.force || false }}"
 			},
 			{
 				"label": "Release pipeline",
-				"code": "jobs:\n  release:\n    uses: nullclaw/nullbuilder/.github/workflows/zig-release.yml@v1\n    permissions:\n      contents: write\n      packages: write\n    secrets: inherit\n    with:\n      binary_name: nullclaw\n      artifact_prefix: nullclaw\n      publish_docker: true"
+				"code": "jobs:\n  release:\n    # NullBuilder v1 snapshot; update this full SHA deliberately.\n    uses: nullclaw/nullbuilder/.github/workflows/zig-release.yml@2b9c2f2e7bb0ac085baea1c33b4f08beaf5c7fac\n    permissions:\n      contents: write\n      packages: write # needed only because publish_docker is true\n    with:\n      binary_name: nullclaw\n      artifact_prefix: nullclaw\n      publish_docker: true"
 			}
 		]
 	},
-	"quickstart": "There is nothing to install. In any Zig project on GitHub, add one workflow file that calls the shared pipeline:\n\n```bash\n# in your project repo\nmkdir -p .github/workflows\n\n# one job block wires up tests + cross-compiled ReleaseSmall builds\ncat > .github/workflows/ci.yml <<'EOF'\nname: CI\non: [push, pull_request]\njobs:\n  ci:\n    uses: nullclaw/nullbuilder/.github/workflows/zig-ci.yml@v1\n    permissions:\n      contents: read\n    with:\n      binary_name: myproject   # your binary under zig-out/bin\nEOF\n\ngit add .github/workflows/ci.yml\ngit commit -m \"ci: adopt nullbuilder shared workflows\"\ngit push\n```",
+	"quickstart": "There is nothing to install. In any Zig project on GitHub, add one workflow file that calls the shared pipeline at a reviewed commit; update the pin deliberately when you adopt upstream changes:\n\n```bash\n# in your project repo\nmkdir -p .github/workflows\n\n# one job block wires up tests + cross-compiled ReleaseSmall builds\ncat > .github/workflows/ci.yml <<'EOF'\nname: CI\non: [push, pull_request]\njobs:\n  ci:\n    # NullBuilder v1 snapshot; update this full SHA deliberately.\n    uses: nullclaw/nullbuilder/.github/workflows/zig-ci.yml@2b9c2f2e7bb0ac085baea1c33b4f08beaf5c7fac\n    permissions:\n      contents: read\n    with:\n      binary_name: myproject   # your binary under zig-out/bin\nEOF\n\ngit add .github/workflows/ci.yml\ngit commit -m \"ci: adopt nullbuilder shared workflows\"\ngit push\n```",
 	"features": [
 		{
 			"title": "One CI block",
@@ -54,7 +54,7 @@
 		},
 		{
 			"title": "Checksums and manifests",
-			"body": "Every nightly binary ships with a .sha256 checksum file and a JSON manifest recording the commit, run URL, target, and build time. Third-party actions in the workflows are pinned to full commit SHAs with weekly Dependabot updates — the one tag reference is the Zig installer, mlugg/setup-zig@v2."
+			"body": "Every nightly binary ships with a .sha256 checksum file and a JSON manifest recording the commit, run URL, target, and build time. General-purpose third-party actions are pinned to full commit SHAs with weekly Dependabot updates. The remaining upstream gap is internal: all three bundled composite helpers are still loaded through NullBuilder's mutable v1 branch."
 		},
 		{
 			"title": "Android without Gradle",
@@ -71,9 +71,9 @@
 		"tickets",
 		"boiler"
 	],
-	"note": "Not an end-user tool — the repo contains no build.zig and ships no binary of its own. No releases or tags yet: `v1` is a branch, so callers track moving code and workflow inputs may change.",
+	"note": "Not an end-user tool — the repo contains no build.zig and ships no binary of its own. No releases or tags yet: `v1` is a mutable branch, so every published caller example pins the reviewed v1 snapshot at commit `2b9c2f2e7bb0ac085baea1c33b4f08beaf5c7fac`.",
 	"plain": {
-		"what": "A set of reusable GitHub Actions workflows and composite actions that give any Zig repo on GitHub its CI, nightly-build, and release pipelines. Your repo calls them with a `uses: nullclaw/nullbuilder/...@v1` line instead of copying workflow YAML; there is no binary to install and nothing runs outside GitHub Actions. The three pipelines cover per-push tests with cross-compiled artifacts, deduplicating scheduled nightlies, and tag-driven releases for 12 targets across Linux, Android, macOS, and Windows.",
+		"what": "A set of reusable GitHub Actions workflows and composite actions that give any Zig repo on GitHub its CI, nightly-build, and release pipelines. Your repo references a reviewed NullBuilder commit instead of copying workflow YAML; there is no binary to install and nothing runs outside GitHub Actions. The three pipelines cover per-push tests with cross-compiled artifacts, deduplicating scheduled nightlies, and tag-driven releases for 12 targets across Linux, Android, macOS, and Windows.",
 		"why": "Every Zig repo in the NullClaw GitHub org (the ecosystem this site belongs to) needs the same pipeline: run the tests, cross-compile small ReleaseSmall binaries for a dozen platforms, publish a GitHub release with checksums. Copy-pasting that YAML into each repo means every bug fix and every Zig version bump has to be repeated in every copy. Keeping the pipelines in one repo that all others reference means one fix propagates everywhere, and the tricky parts — Android NDK setup without Gradle, nightly dedupe against the GitHub API — are solved once, with unit tests.",
 		"when": "You maintain a Zig project on GitHub and want tests plus cross-compiled release binaries for Linux, Android, macOS, and Windows without writing your own matrix workflows — you add a ten-line job block per pipeline and override inputs only where your build is unusual. It is not for you if you are not on GitHub Actions, or if your build steps go beyond what the setup/pre-test/pre-build hook inputs can express.",
 		"fit": "The workshop — not something you run, something that builds the rest: shared CI that gives any Zig repo twelve-target releases from one YAML block."
@@ -84,7 +84,7 @@
 			{
 				"title": "Add the CI job block",
 				"body": "Create .github/workflows/ci.yml in your Zig repo with push and pull_request triggers and a single job that calls the shared pipeline, passing your binary's name (the file under zig-out/bin). Each run executes `zig build test --summary all`, then cross-compiles size-optimized ReleaseSmall binaries for three default targets: x86_64 Linux (musl), aarch64 macOS, and x86_64 Windows.",
-				"code": "uses: nullclaw/nullbuilder/.github/workflows/zig-ci.yml@v1"
+				"code": "# NullBuilder v1 snapshot; update this full SHA deliberately.\nuses: nullclaw/nullbuilder/.github/workflows/zig-ci.yml@2b9c2f2e7bb0ac085baea1c33b4f08beaf5c7fac"
 			},
 			{
 				"title": "Push and read the job summary",
@@ -94,7 +94,7 @@
 			{
 				"title": "Wire the nightly pipeline",
 				"body": "A second workflow file on a schedule calls zig-nightly.yml. Before building, a small unit-tested Zig program (nightly-decide) queries the GitHub workflow-runs API and skips the build if the current commit already has a successful nightly. Each built binary ships with a .sha256 checksum and a JSON provenance manifest; artifacts are kept 14 days, and an optional rolling prerelease replaces its assets on every build.",
-				"code": "uses: nullclaw/nullbuilder/.github/workflows/zig-nightly.yml@v1"
+				"code": "# NullBuilder v1 snapshot; update this full SHA deliberately.\nuses: nullclaw/nullbuilder/.github/workflows/zig-nightly.yml@2b9c2f2e7bb0ac085baea1c33b4f08beaf5c7fac"
 			},
 			{
 				"title": "Tag a release",
@@ -116,7 +116,7 @@
 				"Zig Release (zig-release.yml)",
 				"Zig Nightly (zig-nightly.yml)"
 			],
-			"note": "All three are `on: workflow_call` — callers reference them with `uses: nullclaw/nullbuilder/...@v1` and never copy the YAML."
+			"note": "All three are `on: workflow_call` — callers pin a reviewed full commit SHA and never copy the YAML. The published pin is the v1 snapshot at `2b9c2f2e7bb0ac085baea1c33b4f08beaf5c7fac`."
 		},
 		{
 			"title": "3 composite actions",
@@ -174,7 +174,7 @@
 		{
 			"title": "Nightly builds that skip themselves when nothing changed",
 			"body": "You want fresh binaries every night without burning runner minutes on quiet weeks. zig-nightly.yml runs a preflight where the nightly-decide program checks the GitHub workflow-runs API for a prior successful nightly of the same commit and prints should_build=false if it finds one. When a build does happen, each binary ships with a SHA-256 checksum file and a manifest-<target>.json recording the commit, run URL, target, and build time — enough provenance to answer 'which commit is this binary from' months later.",
-			"code": "uses: nullclaw/nullbuilder/.github/workflows/zig-nightly.yml@v1\nwith:\n  retention_days: 14"
+			"code": "# NullBuilder v1 snapshot; update this full SHA deliberately.\nuses: nullclaw/nullbuilder/.github/workflows/zig-nightly.yml@2b9c2f2e7bb0ac085baea1c33b4f08beaf5c7fac\nwith:\n  retention_days: 14"
 		},
 		{
 			"title": "Android binaries without touching Gradle",
@@ -190,15 +190,15 @@
 	"faq": [
 		{
 			"q": "Can I download and run nullbuilder itself?",
-			"a": "No — the repo contains no build.zig and no src/ directory, so there is nothing to compile or install. It exists to be referenced: your repo's workflow files call it with `uses: nullclaw/nullbuilder/.github/workflows/zig-ci.yml@v1` and everything executes inside your own repo's GitHub Actions runs."
+			"a": "No — the repo contains no build.zig and no src/ directory, so there is nothing to compile or install. It exists to be referenced: your repo's workflow files pin a reviewed NullBuilder commit, and everything executes inside your own repo's GitHub Actions runs."
 		},
 		{
-			"q": "How stable is the @v1 reference?",
-			"a": "Less stable than it looks: v1 is a branch, not a tag — the repo currently has zero releases and zero tags. Callers therefore track moving code, and workflow input names or defaults may change underneath them. Pinning to a specific commit SHA instead of @v1 is the cautious option until real version tags exist."
+			"q": "Why do the examples pin a commit instead of the v1 branch?",
+			"a": "The repo currently has zero releases and zero tags, and v1 is a mutable branch. A full commit SHA makes the reviewed workflow revision explicit and prevents that caller reference from changing underneath you. The examples pin `2b9c2f2e7bb0ac085baea1c33b4f08beaf5c7fac`; review upstream changes before updating it."
 		},
 		{
-			"q": "Are all third-party actions really pinned to commit SHAs?",
-			"a": "Almost. General-purpose actions in the workflows are pinned to full 40-character SHAs with version comments and updated by weekly Dependabot, but the setup-zig composite action delegates to mlugg/setup-zig@v2 — a mutable tag — and that runs in every job of all three workflows. The repo even contains its own checksum-verifying Zig installer script (install-zig.sh), but it is currently dead code and not wired into the action."
+			"q": "Is the complete action chain pinned to commit SHAs?",
+			"a": "Not yet. General-purpose third-party actions are pinned to full 40-character SHAs with version comments and weekly Dependabot updates. At the reviewed snapshot, setup-zig runs NullBuilder's bundled install-zig.sh and verifies the Zig archive against ziglang.org metadata. The remaining gap is that every reusable workflow loads setup-zig, nightly-decide, and package-artifact through NullBuilder's mutable v1 branch, so the internal helper implementations can still move independently of a caller's pinned workflow file."
 		},
 		{
 			"q": "My project doesn't build with a plain `zig build` — can I still use it?",

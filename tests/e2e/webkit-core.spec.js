@@ -33,7 +33,7 @@ test('mobile navigation hands focus to Search and restores its trigger in WebKit
 	const dialog = page.getByRole('dialog', { name: /search/i });
 	await expect(dialog).toBeVisible();
 	await expect(page.locator('#mobile-navigation')).toBeHidden();
-	await expect(dialog.getByRole('searchbox')).toBeFocused();
+	await expect(dialog.getByRole('combobox')).toBeFocused();
 	await page.keyboard.press('Escape');
 	await expect(trigger).toBeFocused();
 
@@ -48,7 +48,7 @@ test('docs drawer remains bounded and keyboard-dismissable in WebKit', async ({ 
 	await openStable(page, `${menu}/docs/`, { width: 390, height: 844 });
 	const trigger = page.getByRole('button', { name: /docs/i }).first();
 	await trigger.click();
-	const navigation = page.getByRole('navigation', { name: 'Documentation' });
+	const navigation = page.getByRole('dialog', { name: 'Documentation', exact: true });
 	await expect(navigation).toBeVisible();
 	expect((await navigation.boundingBox()).height).toBeLessThanOrEqual(844);
 	await page.keyboard.press('Escape');
@@ -59,13 +59,15 @@ test('suggested search keeps a usable keyboard path to results in WebKit', async
 	await openStable(page, `${menu}/docs/`, { width: 1280, height: 900 });
 	await page.getByRole('button', { name: /search docs/i }).first().click();
 	const dialog = page.getByRole('dialog', { name: /search/i });
-	const input = dialog.getByRole('searchbox');
+	const input = dialog.getByRole('combobox');
 	await dialog.getByRole('button', { name: 'install' }).click();
 	await expect(input).toBeFocused();
 	const firstResult = dialog.locator('[data-search-result]').first();
 	await expect(firstResult).toBeVisible();
 	await page.keyboard.press('ArrowDown');
-	await expect(firstResult).toBeFocused();
+	await expect(input).toBeFocused();
+	await expect(input).toHaveAttribute('aria-activedescendant', 'search-result-0');
+	await expect(firstResult).toHaveAttribute('aria-selected', 'true');
 });
 
 test('alternate Windows asset updates its post-download instructions in WebKit', async ({ page }) => {

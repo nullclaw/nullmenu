@@ -29,7 +29,8 @@ In a caller repo's workflow file:
 ```yaml
 jobs:
   ci:
-    uses: nullclaw/nullbuilder/.github/workflows/zig-ci.yml@v1
+    # NullBuilder v1 snapshot; review upstream before updating this full SHA.
+    uses: nullclaw/nullbuilder/.github/workflows/zig-ci.yml@2b9c2f2e7bb0ac085baea1c33b4f08beaf5c7fac
     permissions:
       contents: read
     with:
@@ -39,16 +40,16 @@ jobs:
 
 `binary_name` is the only required input — the binary your `zig build` produces under `zig-out/bin`. Everything else has a working default. The full input tables live in [Workflows](/docs/reference/workflows/), and the target matrices in [Targets](/docs/reference/targets/).
 
-The release workflow needs write permissions and inherited secrets:
+The release workflow needs explicit write permissions but no caller repository secrets:
 
 ```yaml
 jobs:
   release:
-    uses: nullclaw/nullbuilder/.github/workflows/zig-release.yml@v1
+    # NullBuilder v1 snapshot; review upstream before updating this full SHA.
+    uses: nullclaw/nullbuilder/.github/workflows/zig-release.yml@2b9c2f2e7bb0ac085baea1c33b4f08beaf5c7fac
     permissions:
       contents: write
-      packages: write
-    secrets: inherit
+      packages: write # needed only because publish_docker is true
     with:
       binary_name: nullclaw
       artifact_prefix: nullclaw
@@ -57,10 +58,12 @@ jobs:
 
 ## Versioning
 
-NullBuilder has no tags and no GitHub releases. Callers pin to the `v1` **branch** — that is what `@v1` in the `uses:` line resolves to. Inside the workflows the story is stricter: every third-party action is pinned to a full commit SHA, and Dependabot keeps those pins current.
+NullBuilder has no tags and no GitHub releases. The `v1` branch is mutable, so the examples above pin its reviewed snapshot, commit `2b9c2f2e7bb0ac085baea1c33b4f08beaf5c7fac`. Review upstream changes before replacing that SHA. The caller passes no repository secrets: the workflow uses GitHub's scoped token and the explicit job permissions shown above.
+
+The pinned caller reference prevents the selected reusable workflow file from moving. At this snapshot, NullBuilder's workflows still reference their own composite helpers through the mutable `v1` branch. The reviewed `setup-zig` helper uses NullBuilder's bundled checksum-verifying installer, but that helper — along with `nightly-decide` and `package-artifact` — must be pinned internally before the chain is fully immutable.
 
 > [!NOTE]
-> Pre-1.0: config and CLI may change between releases. For NullBuilder specifically that means workflow inputs and defaults may change on the `v1` branch without a tagged release.
+> Pre-1.0: workflow inputs and defaults may change upstream. Keep the full SHA until you have reviewed the next revision and its internal action references.
 
 ## Status
 

@@ -3,6 +3,7 @@
 	import Seo from '$lib/components/Seo.svelte';
 	import Ink from '$lib/components/Ink.svelte';
 	import Downloads from '$lib/components/Downloads.svelte';
+	import FunctionalIcon from '$lib/components/FunctionalIcon.svelte';
 	import ProductMark from '$lib/components/ProductMark.svelte';
 	import Reveal from '$lib/components/Reveal.svelte';
 
@@ -10,6 +11,9 @@
 
 	const p = $derived(data.product);
 	let activeInstall = $state(0);
+	let tabsOverflow = $state(false);
+	let tabsAtStart = $state(true);
+	let tabsAtEnd = $state(true);
 
 	// remember the visitor's preferred install method
 	$effect(() => {
@@ -21,13 +25,35 @@
 		}
 	});
 
-	function pickInstall(i) {
+	function pickInstall(i, button) {
 		activeInstall = i;
 		try {
 			localStorage.setItem(`install-${site.id}`, String(i));
 		} catch {
 			/* private mode */
 		}
+		requestAnimationFrame(() => button?.scrollIntoView({ block: 'nearest', inline: 'center' }));
+	}
+
+	function trackTabs(node) {
+		function measure() {
+			const maxScroll = Math.max(0, node.scrollWidth - node.clientWidth);
+			tabsOverflow = maxScroll > 1;
+			tabsAtStart = node.scrollLeft <= 1;
+			tabsAtEnd = node.scrollLeft >= maxScroll - 1;
+		}
+
+		const resize = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure);
+		resize?.observe(node);
+		node.addEventListener('scroll', measure, { passive: true });
+		requestAnimationFrame(measure);
+
+		return {
+			destroy() {
+				resize?.disconnect();
+				node.removeEventListener('scroll', measure);
+			}
+		};
 	}
 
 	const installTabs = $derived(
@@ -113,7 +139,7 @@
 				</p>
 				<h1 class="serif">{p?.hero.title ?? site.title.split('—')[1] ?? site.display}</h1>
 				<p class="sub">
-					<span class="hero-lead">{heroIntro.lead}</span>{#if heroIntro.tail}<span class="hero-tail">
+					<span class="hero-lead">{heroIntro.lead}</span>{#if heroIntro.tail}{' '}<span class="hero-tail">
 						{heroIntro.tail}</span
 					>{/if}
 				</p>
@@ -126,12 +152,16 @@
 
 				<div class="cta">
 					{#if data.release}
-						<a class="btn btn--solid" href="#download">Download &darr;</a>
-						<a class="btn" href="/docs/">Documentation</a>
+						<a class="btn btn--solid cta-primary" href="#download"
+							>Download <FunctionalIcon name="arrow-down" size={16} /></a
+						>
+						<a class="btn cta-secondary" href="/docs/">Documentation</a>
 					{:else}
-						<a class="btn btn--solid" href="/docs/">Documentation</a>
+						<a class="btn btn--solid cta-primary" href="/docs/">Documentation</a>
 					{/if}
-					<a class="btn" href={site.github} target="_blank" rel="noopener">GitHub &nearr;</a>
+					<a class="btn cta-secondary" href={site.github} target="_blank" rel="noopener"
+						>GitHub <FunctionalIcon name="external" size={16} label="opens in a new tab" /></a
+					>
 				</div>
 			</div>
 
@@ -172,15 +202,24 @@
 
 		{#if p && !site.comingSoon}
 			<div class="install">
-				<div class="tabs" role="group" aria-label="Install methods">
-					{#each installTabs as t, i}
-						<button
-							class="tab mono"
-							aria-pressed={activeInstall === i}
-							class:active={activeInstall === i}
-							onclick={() => pickInstall(i)}>{t.label}</button
-						>
-					{/each}
+				<div
+					class="tabs-shell"
+					class:has-overflow={tabsOverflow}
+					class:at-start={tabsAtStart}
+					class:at-end={tabsAtEnd}
+				>
+					<div class="tabs" role="group" aria-label="Install methods" use:trackTabs>
+						{#each installTabs as t, i}
+							<button
+								class="tab mono"
+								aria-pressed={activeInstall === i}
+								class:active={activeInstall === i}
+								onfocus={(event) =>
+									event.currentTarget.scrollIntoView({ block: 'nearest', inline: 'center' })}
+								onclick={(event) => pickInstall(i, event.currentTarget)}>{t.label}</button
+							>
+						{/each}
+					</div>
 				</div>
 				{@html installTabs[activeInstall].html}
 			</div>
@@ -247,7 +286,9 @@
 							<details class="plain-more">
 								<summary>
 									<span class="serif-i">Why it exists — and when you need it</span>
-									<span class="plain-ind mono" aria-hidden="true">+</span>
+									<span class="plain-ind" aria-hidden="true"
+										><FunctionalIcon name="plus" size={17} /></span
+									>
 								</summary>
 								<div>
 									<dl class="plain-row">
@@ -297,7 +338,9 @@
 								<summary>
 									<span class="num serif-i" aria-hidden="true">{i + 1}</span>
 									<span class="how-title mono">{step.title}</span>
-									<span class="how-ind mono" aria-hidden="true">+</span>
+									<span class="how-ind" aria-hidden="true"
+										><FunctionalIcon name="plus" size={17} /></span
+									>
 								</summary>
 								<div class="how-body">
 									<p>{step.body}</p>
@@ -354,7 +397,9 @@
 							<details class="case">
 								<summary>
 									<span class="serif-i">{c.title}</span>
-									<span class="case-ind mono" aria-hidden="true">+</span>
+									<span class="case-ind" aria-hidden="true"
+										><FunctionalIcon name="plus" size={17} /></span
+									>
 								</summary>
 								<div class="case-body">
 									<p>{c.body}</p>
@@ -383,7 +428,9 @@
 							<span class="label label--accent">What's inside</span>
 							<span class="serif inventory-title">Counted in the source, not the brochure.</span>
 						</span>
-						<span class="inventory-count mono">{insideItemCount} listed&nbsp;&nbsp;＋</span>
+						<span class="inventory-count mono"
+							>{insideItemCount} listed <FunctionalIcon name="plus" size={15} /></span
+						>
 					</summary>
 					<div class="inside">
 						{#each p.inside as group}
@@ -440,7 +487,9 @@
 							<details class="faq-item">
 								<summary>
 									<span class="serif q">{f.q}</span>
-									<span class="ind mono" aria-hidden="true">+</span>
+									<span class="ind" aria-hidden="true"
+										><FunctionalIcon name="plus" size={17} /></span
+									>
 								</summary>
 								<p class="a">{f.a}</p>
 							</details>
@@ -468,7 +517,9 @@
 									<span class="course serif-i">{pair.role}</span>
 								</span>
 								<span class="line">{pair.line}</span>
-								<span class="go mono" aria-hidden="true">&rarr;</span>
+								<span class="go" aria-hidden="true"
+									><FunctionalIcon name="arrow-right" size={18} /></span
+								>
 							</a>
 						</Reveal>
 					{/each}
@@ -580,6 +631,10 @@
 		flex-wrap: wrap;
 	}
 
+	.cta .btn {
+		gap: 0.45rem;
+	}
+
 	/* one framed unit: the tab strip and the code share edges exactly */
 	.install {
 		margin-top: 3rem;
@@ -588,11 +643,15 @@
 		background: var(--bg-2);
 	}
 
+	.tabs-shell {
+		position: relative;
+		border-bottom: 1px solid var(--line);
+	}
+
 	.tabs {
 		display: flex;
 		flex-wrap: wrap;
 		gap: 0;
-		border-bottom: 1px solid var(--line);
 	}
 
 	.tab {
@@ -1062,12 +1121,19 @@
 	}
 
 	.inventory-count {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.45rem;
 		color: var(--ink-3);
 		font-size: var(--text-xs);
 		letter-spacing: 0.08em;
 		text-transform: uppercase;
 		white-space: nowrap;
 		transition: color 0.2s;
+	}
+
+	.inventory-count :global(.functional-icon) {
+		flex: 0 0 auto;
 	}
 
 	.inventory[open] .inventory-count,
@@ -1479,6 +1545,7 @@
 		font-size: var(--text-xs);
 		color: var(--ink-3);
 		letter-spacing: 0.05em;
+		overflow-wrap: anywhere;
 	}
 
 	@media (max-width: 980px) {
@@ -1497,7 +1564,7 @@
 			grid-template-columns: 1fr;
 		}
 		.inside-group {
-			grid-template-columns: 1fr;
+			grid-template-columns: minmax(0, 1fr);
 			gap: 1rem;
 		}
 		.quickstart {
@@ -1612,14 +1679,24 @@
 		}
 
 		.cta {
+			display: grid;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
 			margin-top: 1.4rem;
 			gap: 0.65rem;
 		}
 
 		.cta .btn {
+			justify-content: center;
+			text-align: center;
+			white-space: normal;
 			font-size: 0.76rem;
 			padding-inline: 1.15em;
 			min-height: 2.75rem;
+		}
+
+		.cta-primary,
+		.cta-secondary:last-child:nth-child(2) {
+			grid-column: 1 / -1;
 		}
 
 		.hero-proof {
@@ -1655,11 +1732,44 @@
 		.tabs {
 			overflow-x: auto;
 			flex-wrap: nowrap;
+			scroll-snap-type: x proximity;
+			scrollbar-width: thin;
+			overscroll-behavior-inline: contain;
+		}
+
+		.tabs-shell::before,
+		.tabs-shell::after {
+			content: '';
+			position: absolute;
+			top: 0;
+			bottom: 0;
+			z-index: 2;
+			width: 2.25rem;
+			opacity: 0;
+			pointer-events: none;
+			transition: opacity 0.2s var(--ease-out);
+		}
+
+		.tabs-shell::before {
+			left: 0;
+			background: linear-gradient(90deg, var(--bg-2), transparent);
+		}
+
+		.tabs-shell::after {
+			right: 0;
+			background: linear-gradient(270deg, var(--bg-2), transparent);
+		}
+
+		.tabs-shell.has-overflow:not(.at-start)::before,
+		.tabs-shell.has-overflow:not(.at-end)::after {
+			opacity: 1;
 		}
 
 		.tab {
 			flex: 0 0 auto;
 			min-height: 2.75rem;
+			scroll-snap-align: center;
+			scroll-margin-inline: 2.25rem;
 		}
 
 		.watermark {
@@ -1767,6 +1877,13 @@
 
 		.proof-facts {
 			grid-template-columns: minmax(0, 1fr);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.tabs-shell::before,
+		.tabs-shell::after {
+			transition: none;
 		}
 	}
 </style>

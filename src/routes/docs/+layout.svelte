@@ -1,6 +1,7 @@
 <script>
 	import { page } from '$app/state';
 	import { site, products } from '$lib/site';
+	import FunctionalIcon from '$lib/components/FunctionalIcon.svelte';
 	import {
 		inertElements,
 		lockPageScroll,
@@ -45,6 +46,7 @@
 			releaseInert = inertElements([
 				document.querySelector('header'),
 				document.querySelector('footer'),
+				navToggle,
 				content
 			]);
 		});
@@ -122,20 +124,23 @@
 		></div>
 	{/if}
 
-	<nav
+	<div
 		bind:this={sidebar}
 		id="docs-navigation"
 		class="sidebar"
 		class:open={navOpen}
-		aria-label="Documentation"
+		role={navOpen ? 'dialog' : 'navigation'}
+		aria-modal={navOpen ? 'true' : undefined}
+		aria-label={navOpen ? undefined : 'Documentation'}
+		aria-labelledby={navOpen ? 'docs-navigation-title' : undefined}
 	>
 		<div class="drawer-head mono">
 			<div>
 				<span class="drawer-kicker">Browse</span>
-				<span class="drawer-title">Documentation</span>
+				<span id="docs-navigation-title" class="drawer-title">Documentation</span>
 			</div>
 			<button bind:this={navClose} class="drawer-close" onclick={() => closeNav(true)}>
-				<span>close</span><span class="close-mark" aria-hidden="true">×</span>
+				<span>close</span><FunctionalIcon name="close" size={20} />
 			</button>
 		</div>
 		<a
@@ -173,14 +178,14 @@
 					{#each products as p}
 						<li>
 							<a href="https://{p.domain}/docs/" class="ext-link" onclick={() => closeNav(false)}>
-								{p.display} <span aria-hidden="true">&nearr;</span>
+							{p.display} <FunctionalIcon name="external" size={15} />
 							</a>
 						</li>
 					{/each}
 				</ul>
 			</div>
 		{/if}
-	</nav>
+	</div>
 
 	<div bind:this={content} class="content">
 		{@render children()}
@@ -270,8 +275,9 @@
 		border-left-color: var(--accent);
 	}
 
-	.ext-link span {
-		font-size: 0.8em;
+	.ext-link :global(.functional-icon) {
+		flex: none;
+		margin-left: 0.3rem;
 		opacity: 0.6;
 	}
 
@@ -444,13 +450,6 @@
 		.drawer-close:hover {
 			color: var(--accent);
 			background: var(--bg-2);
-		}
-
-		.close-mark {
-			font-family: var(--font-sans);
-			font-size: 1.35rem;
-			font-weight: 300;
-			line-height: 1;
 		}
 
 		.cookbook-link {

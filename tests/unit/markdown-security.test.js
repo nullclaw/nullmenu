@@ -50,3 +50,27 @@ test('heading permalinks remain accessible and every generated DOM id is unique'
 		]
 	);
 });
+
+test('generated documentation controls stay out of search and tables remain keyboard reachable', async () => {
+	const { html } = await renderMarkdown(`
+| Platform | Status |
+| --- | --- |
+| Linux | supported |
+
+\`\`\`bash
+nullhub status
+\`\`\`
+
+[Project release](https://example.com/releases/latest)
+`);
+
+	assert.match(
+		html,
+		/<div class="table-scroll" role="region" aria-label="Data table: Platform, Status" tabindex="0">/
+	);
+	assert.match(html, /<button class="code-copy"[^>]*data-pagefind-ignore[^>]*>copy<\/button>/);
+	assert.match(html, /target="_blank" rel="noopener"/);
+	assert.match(html, /aria-label="Project release \(opens in a new tab\)"/);
+	assert.match(html, /class="functional-icon external-icon"/);
+	assert.doesNotMatch(html, /&nearr;|↗/);
+});
